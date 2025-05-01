@@ -12,6 +12,9 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import AdminStudents from "@/pages/admin/students";
 import AdminCourses from "@/pages/admin/courses";
 import AdminSupervisors from "@/pages/admin/supervisors";
+import AdminTrainingSites from "@/pages/admin/training-sites";
+import AdminReports from "@/pages/admin/reports";
+import AdminSettings from "@/pages/admin/settings";
 
 // Supervisor pages
 import SupervisorDashboard from "@/pages/supervisor/dashboard";
@@ -36,6 +39,9 @@ function Router() {
       <Route path="/admin/students" component={AdminStudents} />
       <Route path="/admin/courses" component={AdminCourses} />
       <Route path="/admin/supervisors" component={AdminSupervisors} />
+      <Route path="/admin/training-sites" component={AdminTrainingSites} />
+      <Route path="/admin/reports" component={AdminReports} />
+      <Route path="/admin/settings" component={AdminSettings} />
       
       {/* Supervisor Routes */}
       <Route path="/supervisor" component={SupervisorDashboard} />
