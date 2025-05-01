@@ -206,7 +206,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">لا تختر</SelectItem>
+                          <SelectItem value="none">لا تختر</SelectItem>
                           {faculties?.map((faculty: any) => (
                             <SelectItem key={faculty.id} value={String(faculty.id)}>
                               {faculty.name}
@@ -235,7 +235,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">لا تختر</SelectItem>
+                          <SelectItem value="none">لا تختر</SelectItem>
                           {supervisors?.map((supervisor: any) => (
                             <SelectItem key={supervisor.id} value={String(supervisor.id)}>
                               {supervisor.user.name}

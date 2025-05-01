@@ -180,7 +180,7 @@ const AddSupervisorForm: React.FC<AddSupervisorFormProps> = ({ onSuccess }) => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">لا يوجد</SelectItem>
+                          <SelectItem value="none">لا يوجد</SelectItem>
                           {faculties?.map((faculty: any) => (
                             <SelectItem key={faculty.id} value={String(faculty.id)}>
                               {faculty.name}
