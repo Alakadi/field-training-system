@@ -31,6 +31,8 @@ import {
   type InsertEvaluation,
   LoginData
 } from "@shared/schema";
+import { eq, and, isNull, desc, sql } from "drizzle-orm";
+import { db } from "./db";
 
 export interface IStorage {
   // User operations
@@ -808,4 +810,460 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async updateUser(id: number, userUpdate: Partial<User>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set(userUpdate)
+      .where(eq(users.id, id))
+      .returning();
+    return user || undefined;
+  }
+
+  async login(loginData: LoginData): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(
+        and(
+          eq(users.username, loginData.username),
+          eq(users.password, loginData.password),
+          eq(users.active, true)
+        )
+      );
+    return user || undefined;
+  }
+
+  async getAllFaculties(): Promise<Faculty[]> {
+    return db.select().from(faculties);
+  }
+
+  async getFaculty(id: number): Promise<Faculty | undefined> {
+    const [faculty] = await db.select().from(faculties).where(eq(faculties.id, id));
+    return faculty || undefined;
+  }
+
+  async createFaculty(insertFaculty: InsertFaculty): Promise<Faculty> {
+    const [faculty] = await db
+      .insert(faculties)
+      .values(insertFaculty)
+      .returning();
+    return faculty;
+  }
+
+  async getAllMajors(): Promise<Major[]> {
+    return db.select().from(majors);
+  }
+
+  async getMajorsByFaculty(facultyId: number): Promise<Major[]> {
+    return db.select().from(majors).where(eq(majors.facultyId, facultyId));
+  }
+
+  async getMajor(id: number): Promise<Major | undefined> {
+    const [major] = await db.select().from(majors).where(eq(majors.id, id));
+    return major || undefined;
+  }
+
+  async createMajor(insertMajor: InsertMajor): Promise<Major> {
+    const [major] = await db
+      .insert(majors)
+      .values(insertMajor)
+      .returning();
+    return major;
+  }
+
+  async getAllLevels(): Promise<Level[]> {
+    return db.select().from(levels);
+  }
+
+  async getLevel(id: number): Promise<Level | undefined> {
+    const [level] = await db.select().from(levels).where(eq(levels.id, id));
+    return level || undefined;
+  }
+
+  async createLevel(insertLevel: InsertLevel): Promise<Level> {
+    const [level] = await db
+      .insert(levels)
+      .values(insertLevel)
+      .returning();
+    return level;
+  }
+
+  async getAllSupervisors(): Promise<Supervisor[]> {
+    return db.select().from(supervisors);
+  }
+
+  async getSupervisor(id: number): Promise<Supervisor | undefined> {
+    const [supervisor] = await db.select().from(supervisors).where(eq(supervisors.id, id));
+    return supervisor || undefined;
+  }
+
+  async createSupervisor(insertSupervisor: InsertSupervisor): Promise<Supervisor> {
+    const [supervisor] = await db
+      .insert(supervisors)
+      .values(insertSupervisor)
+      .returning();
+    return supervisor;
+  }
+
+  async getSupervisorWithUser(id: number): Promise<(Supervisor & { user: User }) | undefined> {
+    const supervisor = await this.getSupervisor(id);
+    if (!supervisor) return undefined;
+    
+    const user = await this.getUser(supervisor.userId);
+    if (!user) return undefined;
+    
+    return { ...supervisor, user };
+  }
+
+  async getAllStudents(): Promise<Student[]> {
+    return db.select().from(students);
+  }
+
+  async getStudent(id: number): Promise<Student | undefined> {
+    const [student] = await db.select().from(students).where(eq(students.id, id));
+    return student || undefined;
+  }
+
+  async getStudentByUniversityId(universityId: string): Promise<Student | undefined> {
+    const [student] = await db.select().from(students).where(eq(students.universityId, universityId));
+    return student || undefined;
+  }
+
+  async createStudent(insertStudent: InsertStudent): Promise<Student> {
+    const [student] = await db
+      .insert(students)
+      .values(insertStudent)
+      .returning();
+    return student;
+  }
+
+  async getStudentWithDetails(id: number): Promise<(Student & { 
+    user: User, 
+    faculty?: Faculty, 
+    major?: Major, 
+    level?: Level, 
+    supervisor?: Supervisor 
+  }) | undefined> {
+    const student = await this.getStudent(id);
+    if (!student) return undefined;
+    
+    const user = await this.getUser(student.userId);
+    if (!user) return undefined;
+    
+    const faculty = student.facultyId ? await this.getFaculty(student.facultyId) : undefined;
+    const major = student.majorId ? await this.getMajor(student.majorId) : undefined;
+    const level = student.levelId ? await this.getLevel(student.levelId) : undefined;
+    const supervisor = student.supervisorId ? await this.getSupervisor(student.supervisorId) : undefined;
+    
+    return { 
+      ...student, 
+      user, 
+      faculty, 
+      major, 
+      level, 
+      supervisor 
+    };
+  }
+
+  async getStudentsByFaculty(facultyId: number): Promise<Student[]> {
+    return db.select().from(students).where(eq(students.facultyId, facultyId));
+  }
+
+  async getStudentsBySupervisor(supervisorId: number): Promise<Student[]> {
+    return db.select().from(students).where(eq(students.supervisorId, supervisorId));
+  }
+
+  async getAllTrainingSites(): Promise<TrainingSite[]> {
+    return db.select().from(trainingSites);
+  }
+
+  async getTrainingSite(id: number): Promise<TrainingSite | undefined> {
+    const [site] = await db.select().from(trainingSites).where(eq(trainingSites.id, id));
+    return site || undefined;
+  }
+
+  async createTrainingSite(insertSite: InsertTrainingSite): Promise<TrainingSite> {
+    const [site] = await db
+      .insert(trainingSites)
+      .values(insertSite)
+      .returning();
+    return site;
+  }
+
+  async getAllTrainingCourses(): Promise<TrainingCourse[]> {
+    return db.select().from(trainingCourses);
+  }
+
+  async getTrainingCourse(id: number): Promise<TrainingCourse | undefined> {
+    const [course] = await db.select().from(trainingCourses).where(eq(trainingCourses.id, id));
+    return course || undefined;
+  }
+
+  async createTrainingCourse(insertCourse: InsertTrainingCourse): Promise<TrainingCourse> {
+    const [course] = await db
+      .insert(trainingCourses)
+      .values(insertCourse)
+      .returning();
+    return course;
+  }
+
+  async getTrainingCourseWithDetails(id: number): Promise<(TrainingCourse & { 
+    site: TrainingSite, 
+    faculty?: Faculty, 
+    supervisor?: Supervisor 
+  }) | undefined> {
+    const course = await this.getTrainingCourse(id);
+    if (!course) return undefined;
+    
+    const site = await this.getTrainingSite(course.siteId);
+    if (!site) return undefined;
+    
+    const faculty = course.facultyId ? await this.getFaculty(course.facultyId) : undefined;
+    const supervisor = course.supervisorId ? await this.getSupervisor(course.supervisorId) : undefined;
+    
+    return { 
+      ...course, 
+      site, 
+      faculty, 
+      supervisor 
+    };
+  }
+
+  async getTrainingCoursesByFaculty(facultyId: number): Promise<TrainingCourse[]> {
+    return db.select().from(trainingCourses).where(eq(trainingCourses.facultyId, facultyId));
+  }
+
+  async getTrainingCoursesBySupervisor(supervisorId: number): Promise<TrainingCourse[]> {
+    return db.select().from(trainingCourses).where(eq(trainingCourses.supervisorId, supervisorId));
+  }
+
+  async getAllTrainingAssignments(): Promise<TrainingAssignment[]> {
+    return db.select().from(trainingAssignments);
+  }
+
+  async getTrainingAssignment(id: number): Promise<TrainingAssignment | undefined> {
+    const [assignment] = await db.select().from(trainingAssignments).where(eq(trainingAssignments.id, id));
+    return assignment || undefined;
+  }
+
+  async createTrainingAssignment(insertAssignment: InsertTrainingAssignment): Promise<TrainingAssignment> {
+    const [assignment] = await db
+      .insert(trainingAssignments)
+      .values(insertAssignment)
+      .returning();
+    return assignment;
+  }
+
+  async getTrainingAssignmentsByStudent(studentId: number): Promise<TrainingAssignment[]> {
+    return db.select().from(trainingAssignments).where(eq(trainingAssignments.studentId, studentId));
+  }
+
+  async getTrainingAssignmentsByCourse(courseId: number): Promise<TrainingAssignment[]> {
+    return db.select().from(trainingAssignments).where(eq(trainingAssignments.courseId, courseId));
+  }
+
+  async getTrainingAssignmentWithDetails(id: number): Promise<(TrainingAssignment & { 
+    student: Student & { user: User }, 
+    course: TrainingCourse & { site: TrainingSite } 
+  }) | undefined> {
+    const assignment = await this.getTrainingAssignment(id);
+    if (!assignment) return undefined;
+    
+    const student = await this.getStudent(assignment.studentId);
+    if (!student) return undefined;
+    
+    const user = await this.getUser(student.userId);
+    if (!user) return undefined;
+    
+    const course = await this.getTrainingCourse(assignment.courseId);
+    if (!course) return undefined;
+    
+    const site = await this.getTrainingSite(course.siteId);
+    if (!site) return undefined;
+    
+    return { 
+      ...assignment, 
+      student: { ...student, user }, 
+      course: { ...course, site } 
+    };
+  }
+
+  async confirmTrainingAssignment(id: number): Promise<TrainingAssignment | undefined> {
+    const [assignment] = await db
+      .update(trainingAssignments)
+      .set({ confirmed: true })
+      .where(eq(trainingAssignments.id, id))
+      .returning();
+    return assignment || undefined;
+  }
+
+  async getAllEvaluations(): Promise<Evaluation[]> {
+    return db.select().from(evaluations);
+  }
+
+  async getEvaluation(id: number): Promise<Evaluation | undefined> {
+    const [evaluation] = await db.select().from(evaluations).where(eq(evaluations.id, id));
+    return evaluation || undefined;
+  }
+
+  async createEvaluation(insertEvaluation: InsertEvaluation): Promise<Evaluation> {
+    const [evaluation] = await db
+      .insert(evaluations)
+      .values(insertEvaluation)
+      .returning();
+    return evaluation;
+  }
+
+  async getEvaluationsByAssignment(assignmentId: number): Promise<Evaluation[]> {
+    return db.select().from(evaluations).where(eq(evaluations.assignmentId, assignmentId));
+  }
+
+  async importStudents(studentsData: { 
+    universityId: string, 
+    name: string, 
+    faculty: string, 
+    major: string, 
+    level: string 
+  }[]): Promise<{ success: number, errors: number, messages: string[] }> {
+    const result = {
+      success: 0,
+      errors: 0,
+      messages: [] as string[]
+    };
+    
+    for (const studentData of studentsData) {
+      try {
+        // Find faculty or create if it doesn't exist
+        let faculty = (await db
+          .select()
+          .from(faculties)
+          .where(eq(faculties.name, studentData.faculty)))[0];
+          
+        if (!faculty) {
+          [faculty] = await db
+            .insert(faculties)
+            .values({ name: studentData.faculty })
+            .returning();
+          result.messages.push(`تم إضافة كلية جديدة: ${studentData.faculty}`);
+        }
+        
+        // Find major or create if it doesn't exist
+        let major = (await db
+          .select()
+          .from(majors)
+          .where(and(
+            eq(majors.name, studentData.major),
+            eq(majors.facultyId, faculty.id)
+          )))[0];
+          
+        if (!major) {
+          [major] = await db
+            .insert(majors)
+            .values({ 
+              name: studentData.major,
+              facultyId: faculty.id
+            })
+            .returning();
+          result.messages.push(`تم إضافة تخصص جديد: ${studentData.major}`);
+        }
+        
+        // Find level or create if it doesn't exist
+        let level = (await db
+          .select()
+          .from(levels)
+          .where(eq(levels.name, studentData.level)))[0];
+          
+        if (!level) {
+          [level] = await db
+            .insert(levels)
+            .values({ name: studentData.level })
+            .returning();
+          result.messages.push(`تم إضافة مستوى جديد: ${studentData.level}`);
+        }
+        
+        // Check if student already exists
+        const existingStudent = (await db
+          .select()
+          .from(students)
+          .where(eq(students.universityId, studentData.universityId)))[0];
+          
+        if (existingStudent) {
+          result.messages.push(`الطالب ${studentData.name} موجود بالفعل (${studentData.universityId})`);
+          result.errors++;
+          continue;
+        }
+        
+        // Create user for student
+        const [user] = await db
+          .insert(users)
+          .values({
+            username: studentData.universityId,
+            password: "password", // Default password can be changed later by admin
+            role: "student",
+            name: studentData.name,
+            active: true
+          })
+          .returning();
+        
+        // Create student
+        await db
+          .insert(students)
+          .values({
+            userId: user.id,
+            universityId: studentData.universityId,
+            facultyId: faculty.id,
+            majorId: major.id,
+            levelId: level.id
+          })
+          .returning();
+          
+        result.success++;
+        result.messages.push(`تم إضافة الطالب ${studentData.name} (${studentData.universityId}) بنجاح`);
+      } catch (error) {
+        result.errors++;
+        result.messages.push(`فشل في إضافة الطالب ${studentData.name} (${studentData.universityId}): ${error instanceof Error ? error.message : "خطأ غير معروف"}`);
+      }
+    }
+    
+    return result;
+  }
+
+  // Helper methods
+  async getSupervisorByUserId(userId: number): Promise<Supervisor | undefined> {
+    const [supervisor] = await db
+      .select()
+      .from(supervisors)
+      .where(eq(supervisors.userId, userId));
+    return supervisor || undefined;
+  }
+
+  async getStudentByUserId(userId: number): Promise<Student | undefined> {
+    const [student] = await db
+      .select()
+      .from(students)
+      .where(eq(students.userId, userId));
+    return student || undefined;
+  }
+}
+
+// Use DatabaseStorage since we've set up PostgreSQL
+export const storage = new DatabaseStorage();
