@@ -188,7 +188,7 @@ const AdminStudents: React.FC = () => {
                   <SelectValue placeholder="كل الكليات" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">كل الكليات</SelectItem>
+                  <SelectItem value="all">كل الكليات</SelectItem>
                   {faculties?.map((faculty: any) => (
                     <SelectItem key={faculty.id} value={String(faculty.id)}>
                       {faculty.name}
@@ -207,7 +207,7 @@ const AdminStudents: React.FC = () => {
                   <SelectValue placeholder="كل التخصصات" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">كل التخصصات</SelectItem>
+                  <SelectItem value="all">كل التخصصات</SelectItem>
                   {majors?.map((major: any) => (
                     <SelectItem key={major.id} value={String(major.id)}>
                       {major.name}
