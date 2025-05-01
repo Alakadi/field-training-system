@@ -164,7 +164,7 @@ const SupervisorStudents: React.FC = () => {
                   <SelectValue placeholder="جميع الحالات" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">جميع الحالات</SelectItem>
+                  <SelectItem value="all">جميع الحالات</SelectItem>
                   <SelectItem value="active">قيد التدريب</SelectItem>
                   <SelectItem value="completed">مكتمل</SelectItem>
                   <SelectItem value="pending">قيد الانتظار</SelectItem>
