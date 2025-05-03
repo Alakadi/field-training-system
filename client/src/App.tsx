@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
-import { AuthProvider } from "@/hooks/use-auth";
+import { AuthProvider, useAuth } from "@/hooks/use-auth";
 
 // Auth components for role-based access
 import AdminOnly from "@/components/auth/admin-only";
@@ -32,30 +32,34 @@ import StudentDashboard from "@/pages/student/dashboard";
 import StudentCourses from "@/pages/student/courses";
 import StudentResults from "@/pages/student/results";
 
-// صفحة للتحويل عند تسجيل الدخول
+// صفحة للتحويل عند تسجيل الدخول بناءً على الدور
 const RoleRouter: React.FC = () => {
-  return (
-    <Switch>
-      <Route path="/admin">
-        <AdminOnly>
-          <AdminDashboard />
-        </AdminOnly>
-      </Route>
-      <Route path="/supervisor">
-        <SupervisorOnly>
-          <SupervisorDashboard />
-        </SupervisorOnly>
-      </Route>
-      <Route path="/student">
-        <StudentOnly>
-          <StudentDashboard />
-        </StudentOnly>
-      </Route>
-      <Route>
-        <Login />
-      </Route>
-    </Switch>
-  );
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="text-center">
+          <p className="text-lg font-medium text-neutral-500">جاري التحميل...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Login />;
+  }
+  
+  // التوجيه بناءً على دور المستخدم
+  if (user.role === "admin") {
+    return <AdminDashboard />;
+  } else if (user.role === "supervisor") {
+    return <SupervisorDashboard />;
+  } else if (user.role === "student") {
+    return <StudentDashboard />;
+  } else {
+    return <Login />;
+  }
 };
 
 function Router() {
@@ -66,6 +70,11 @@ function Router() {
       <Route path="/login" component={Login} />
       
       {/* Admin Routes */}
+      <Route path="/admin">
+        <AdminOnly>
+          <AdminDashboard />
+        </AdminOnly>
+      </Route>
       <Route path="/admin/dashboard">
         <AdminOnly>
           <AdminDashboard />
@@ -108,6 +117,11 @@ function Router() {
       </Route>
       
       {/* Supervisor Routes */}
+      <Route path="/supervisor">
+        <SupervisorOnly>
+          <SupervisorDashboard />
+        </SupervisorOnly>
+      </Route>
       <Route path="/supervisor/dashboard">
         <SupervisorOnly>
           <SupervisorDashboard />
@@ -125,6 +139,11 @@ function Router() {
       </Route>
       
       {/* Student Routes */}
+      <Route path="/student">
+        <StudentOnly>
+          <StudentDashboard />
+        </StudentOnly>
+      </Route>
       <Route path="/student/dashboard">
         <StudentOnly>
           <StudentDashboard />
