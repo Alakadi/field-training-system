@@ -6,29 +6,37 @@ import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { formatDate } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
 const StudentDashboard: React.FC = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   
   // Fetch student data
   const { data: studentData, isLoading: isLoadingStudent } = useQuery({
     queryKey: ["/api/students/me"],
     queryFn: async () => {
-      const res = await fetch("/api/students/me", {
-        credentials: "include",
-      });
-      if (!res.ok) {
-        if (res.status === 404) {
+      try {
+        const res = await fetch("/api/students/me", {
+          credentials: "include",
+        });
+        if (!res.ok) {
+          if (res.status === 404) {
+            return null;
+          }
+          console.error("Failed to fetch student data:", res.status, res.statusText);
           return null;
         }
-        throw new Error("Failed to fetch student data");
+        return res.json();
+      } catch (error) {
+        console.error("Error fetching student data:", error);
+        return null;
       }
-      return res.json();
     },
   });
 
   // Fetch training assignments
-  const { data: assignments, isLoading: isLoadingAssignments } = useQuery({
+  const { data: assignments = [], isLoading: isLoadingAssignments } = useQuery({
     queryKey: ["/api/training-assignments/student"],
     queryFn: async () => {
       if (!studentData?.id) return [];
@@ -49,12 +57,12 @@ const StudentDashboard: React.FC = () => {
     enabled: !!studentData?.id,
   });
 
-  // Get current training
-  const currentTraining = assignments && assignments.length > 0 ? 
+  // Get current training - with type safety
+  const currentTraining = Array.isArray(assignments) && assignments.length > 0 ? 
     assignments.find((a: any) => a.status === "active") : undefined;
 
-  // Get completed assignments
-  const completedAssignments = assignments && assignments.length > 0 ? 
+  // Get completed assignments - with type safety
+  const completedAssignments = Array.isArray(assignments) ? 
     assignments.filter((a: any) => a.status === "completed") : [];
 
   const isLoading = isLoadingStudent || isLoadingAssignments;

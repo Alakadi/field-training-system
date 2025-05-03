@@ -1,114 +1,81 @@
-import React, { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import React, { useEffect } from "react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { loginSchema, type LoginData } from "@shared/schema";
-import { useAuth } from "@/hooks/use-auth";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { getUniversityLogoUrl } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
 
 const Login: React.FC = () => {
-  const { login, loading } = useAuth();
-  const [activeRole, setActiveRole] = useState<"student" | "supervisor" | "admin">("student");
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
 
-  const form = useForm<LoginData>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      username: "",
-      password: "",
-    },
-  });
+  // إذا كان المستخدم مسجل الدخول، قم بتوجيهه إلى لوحة التحكم المناسبة
+  useEffect(() => {
+    if (user) {
+      if (user.role === "admin") {
+        setLocation("/admin");
+      } else if (user.role === "supervisor") {
+        setLocation("/supervisor");
+      } else if (user.role === "student") {
+        setLocation("/student");
+      }
+    }
+  }, [user, setLocation]);
 
-  const onSubmit = async (data: LoginData) => {
-    try {
-      await login(data);
-    } catch (error) {
-      console.error("Login failed:", error);
+  // توجيه المستخدم إلى صفحة تسجيل الدخول المناسبة
+  const redirectToLogin = (role: string) => {
+    if (role === "admin") {
+      setLocation("/admin-login");
+    } else if (role === "supervisor") {
+      setLocation("/supervisor-login");
+    } else if (role === "student") {
+      setLocation("/student-login");
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-neutral-100">
       <Card className="w-full max-w-md">
-        <CardContent className="pt-6">
-          <div className="text-center mb-8">
+        <CardHeader className="text-center p-6">
+          <div className="mb-6">
             <img 
               src={getUniversityLogoUrl()} 
               alt="شعار الجامعة" 
               className="mx-auto h-20 w-20 rounded-full shadow-md mb-4" 
             />
-            <h1 className="text-2xl font-bold text-primary">نظام إدارة التدريب الميداني</h1>
-            <p className="text-neutral-600">تسجيل الدخول للوصول إلى المنصة</p>
           </div>
-          
-          <div className="mb-6 flex justify-center space-x-2 space-x-reverse">
-            <Button
-              type="button"
-              onClick={() => setActiveRole("student")}
-              variant={activeRole === "student" ? "default" : "outline"}
-              className="px-4 py-2 text-sm"
+          <CardTitle className="text-2xl font-bold text-primary">نظام إدارة التدريب الميداني</CardTitle>
+          <CardDescription className="text-neutral-600">
+            اختر نوع المستخدم للدخول إلى النظام
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent className="space-y-6 p-6">
+          <div className="grid grid-cols-1 gap-4">
+            <Button 
+              size="lg"
+              className="w-full py-6 text-lg"
+              onClick={() => redirectToLogin("student")}
             >
-              طالب
+              دخول كطالب
             </Button>
-            <Button
-              type="button"
-              onClick={() => setActiveRole("supervisor")}
-              variant={activeRole === "supervisor" ? "default" : "outline"}
-              className="px-4 py-2 text-sm"
+            
+            <Button 
+              size="lg"
+              className="w-full py-6 text-lg"
+              onClick={() => redirectToLogin("supervisor")}
             >
-              مشرف
+              دخول كمشرف
             </Button>
-            <Button
-              type="button"
-              onClick={() => setActiveRole("admin")}
-              variant={activeRole === "admin" ? "default" : "outline"}
-              className="px-4 py-2 text-sm"
+            
+            <Button 
+              size="lg"
+              className="w-full py-6 text-lg"
+              onClick={() => redirectToLogin("admin")}
             >
-              مسؤول
+              دخول كمسؤول
             </Button>
           </div>
-          
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="username"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {activeRole === "student" ? "الرقم الجامعي" : "اسم المستخدم"}
-                      </FormLabel>
-                      <FormControl>
-                        <Input placeholder={activeRole === "student" ? "أدخل الرقم الجامعي" : "أدخل اسم المستخدم"} {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>كلمة المرور</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="أدخل كلمة المرور" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "جاري تسجيل الدخول..." : "دخول"}
-              </Button>
-            </form>
-          </Form>
         </CardContent>
       </Card>
     </div>

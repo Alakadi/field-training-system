@@ -1,19 +1,17 @@
+import React from "react";
 import RoleRedirect from "./role-redirect";
 
 interface SupervisorOnlyProps {
   children: React.ReactNode;
-  redirectPath?: string;
 }
 
 /**
- * مكون للتحقق من أن المستخدم هو مشرف فقط
+ * مكون للمحتوى المتاح فقط للمشرفين
+ * يقوم بإعادة توجيه المستخدمين غير المشرفين إلى صفحة تسجيل دخول المشرف
  */
-const SupervisorOnly: React.FC<SupervisorOnlyProps> = ({ 
-  children, 
-  redirectPath = "/login" 
-}) => {
+const SupervisorOnly: React.FC<SupervisorOnlyProps> = ({ children }) => {
   return (
-    <RoleRedirect allowedRoles="supervisor" redirectPath={redirectPath}>
+    <RoleRedirect allowedRoles="supervisor" redirectPath="/supervisor-login">
       {children}
     </RoleRedirect>
   );

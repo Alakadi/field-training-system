@@ -1,19 +1,17 @@
+import React from "react";
 import RoleRedirect from "./role-redirect";
 
 interface AdminOnlyProps {
   children: React.ReactNode;
-  redirectPath?: string;
 }
 
 /**
- * مكون للتحقق من أن المستخدم هو مسؤول النظام فقط
+ * مكون للمحتوى المتاح فقط للمسؤولين
+ * يقوم بإعادة توجيه المستخدمين غير المسؤولين إلى صفحة تسجيل دخول المسؤول
  */
-const AdminOnly: React.FC<AdminOnlyProps> = ({ 
-  children, 
-  redirectPath = "/login" 
-}) => {
+const AdminOnly: React.FC<AdminOnlyProps> = ({ children }) => {
   return (
-    <RoleRedirect allowedRoles="admin" redirectPath={redirectPath}>
+    <RoleRedirect allowedRoles="admin" redirectPath="/admin-login">
       {children}
     </RoleRedirect>
   );
