@@ -5,6 +5,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
+import AdminLogin from "@/pages/admin-login";
+import SupervisorLogin from "@/pages/supervisor-login";
+import StudentLogin from "@/pages/student-login";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
 
 // Auth components for role-based access
@@ -68,6 +71,9 @@ function Router() {
       {/* Auth Routes */}
       <Route path="/" component={RoleRouter} />
       <Route path="/login" component={Login} />
+      <Route path="/admin-login" component={AdminLogin} />
+      <Route path="/supervisor-login" component={SupervisorLogin} />
+      <Route path="/student-login" component={StudentLogin} />
       
       {/* Admin Routes */}
       <Route path="/admin">

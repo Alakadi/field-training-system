@@ -163,6 +163,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get current student info (for logged-in student)
+  app.get("/api/students/me", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      if (!req.user || req.user.role !== "student") {
+        return res.status(403).json({ message: "غير مصرح بالوصول" });
+      }
+      
+      // Find student record by user ID
+      const student = await storage.getStudentByUserId(req.user.id);
+      
+      if (!student) {
+        return res.status(404).json({ message: "لم يتم العثور على بيانات الطالب" });
+      }
+      
+      // Get full student details
+      const studentWithDetails = await storage.getStudentWithDetails(student.id);
+      res.json(studentWithDetails);
+    } catch (error) {
+      console.error("Error fetching student data:", error);
+      res.status(500).json({ message: "خطأ في استرجاع بيانات الطالب" });
+    }
+  });
+  
   app.get("/api/students/:id", authMiddleware, async (req: Request, res: Response) => {
     try {
       const id = Number(req.params.id);

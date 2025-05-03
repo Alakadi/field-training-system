@@ -1,19 +1,17 @@
+import React from "react";
 import RoleRedirect from "./role-redirect";
 
 interface StudentOnlyProps {
   children: React.ReactNode;
-  redirectPath?: string;
 }
 
 /**
- * مكون للتحقق من أن المستخدم هو طالب فقط
+ * مكون للمحتوى المتاح فقط للطلاب
+ * يقوم بإعادة توجيه المستخدمين غير الطلاب إلى صفحة تسجيل دخول الطالب
  */
-const StudentOnly: React.FC<StudentOnlyProps> = ({ 
-  children, 
-  redirectPath = "/login" 
-}) => {
+const StudentOnly: React.FC<StudentOnlyProps> = ({ children }) => {
   return (
-    <RoleRedirect allowedRoles="student" redirectPath={redirectPath}>
+    <RoleRedirect allowedRoles="student" redirectPath="/student-login">
       {children}
     </RoleRedirect>
   );
