@@ -45,11 +45,19 @@ const SupervisorDashboard: React.FC = () => {
   const { data: assignments, isLoading: isLoadingAssignments } = useQuery({
     queryKey: ["/api/training-assignments"],
     queryFn: async () => {
-      const res = await fetch("/api/training-assignments", {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to fetch assignments");
-      return res.json();
+      try {
+        const res = await fetch("/api/training-assignments", {
+          credentials: "include",
+        });
+        if (!res.ok) {
+          console.error("Failed to fetch assignments:", res.status, res.statusText);
+          return []; // Return empty array instead of throwing error
+        }
+        return res.json();
+      } catch (error) {
+        console.error("Error fetching assignments:", error);
+        return []; // Return empty array in case of error
+      }
     },
   });
 
