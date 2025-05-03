@@ -20,7 +20,7 @@ const RoleRedirect: React.FC<RoleRedirectProps> = ({
   redirectPath,
   children,
 }) => {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
 
   // تحويل allowedRoles إلى مصفوفة إذا لم تكن بالفعل
@@ -28,16 +28,16 @@ const RoleRedirect: React.FC<RoleRedirectProps> = ({
 
   useEffect(() => {
     // انتظر حتى يتم تحميل معلومات المستخدم
-    if (!isLoading) {
+    if (!loading) {
       // إذا لم يكن المستخدم مسجل الدخول أو ليس لديه دور مسموح به، قم بإعادة التوجيه
       if (!user || !roles.includes(user.role as RoleType)) {
         setLocation(redirectPath);
       }
     }
-  }, [user, isLoading, roles, redirectPath, setLocation]);
+  }, [user, loading, roles, redirectPath, setLocation]);
 
   // عرض شاشة التحميل أثناء التحقق من المستخدم
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="text-center">
