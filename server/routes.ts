@@ -389,6 +389,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Training Assignment Routes
+  app.get("/api/training-assignments/student", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      if (!req.user || req.user.role !== "student") {
+        return res.status(403).json({ message: "غير مصرح بالوصول" });
+      }
+      
+      // Get current student
+      const student = await storage.getStudentByUserId(req.user.id);
+      
+      if (!student) {
+        return res.status(404).json({ message: "لم يتم العثور على بيانات الطالب" });
+      }
+      
+      // Get assignments for current student
+      const assignments = await storage.getTrainingAssignmentsByStudent(student.id);
+      
+      // Fetch details for each assignment
+      const result = await Promise.all(
+        assignments.map(async (assignment) => {
+          try {
+            const details = await storage.getTrainingAssignmentWithDetails(assignment.id);
+            return details || null;
+          } catch (error) {
+            console.error(`Failed to fetch details for assignment ${assignment.id}:`, error);
+            return null;
+          }
+        })
+      );
+      
+      // Filter out null values
+      const validAssignments = result.filter(assignment => assignment !== null);
+      
+      res.json(validAssignments);
+    } catch (error) {
+      console.error("Error in /api/training-assignments/student:", error);
+      res.status(500).json({ message: "خطأ في استرجاع بيانات التعيينات التدريبية" });
+    }
+  });
+  
   app.get("/api/training-assignments", authMiddleware, async (req: Request, res: Response) => {
     try {
       let assignments = await storage.getAllTrainingAssignments();
@@ -407,12 +446,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Fetch details for each assignment
       const result = await Promise.all(
         assignments.map(async (assignment) => {
-          return await storage.getTrainingAssignmentWithDetails(assignment.id);
+          try {
+            return await storage.getTrainingAssignmentWithDetails(assignment.id);
+          } catch (error) {
+            console.error(`Failed to fetch details for assignment ${assignment.id}:`, error);
+            return null;
+          }
         })
       );
       
-      res.json(result);
+      // Filter out null values
+      const validAssignments = result.filter(assignment => assignment !== null);
+      
+      res.json(validAssignments);
     } catch (error) {
+      console.error("Error in /api/training-assignments:", error);
       res.status(500).json({ message: "خطأ في استرجاع بيانات التعيينات التدريبية" });
     }
   });

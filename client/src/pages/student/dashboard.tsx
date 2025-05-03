@@ -35,26 +35,27 @@ const StudentDashboard: React.FC = () => {
     },
   });
 
-  // Fetch training assignments
+  // Fetch training assignments using the new endpoint specifically for students
   const { data: assignments = [], isLoading: isLoadingAssignments } = useQuery({
     queryKey: ["/api/training-assignments/student"],
     queryFn: async () => {
-      if (!studentData?.id) return [];
       try {
-        const res = await fetch(`/api/training-assignments?studentId=${studentData.id}`, {
+        const res = await fetch(`/api/training-assignments/student`, {
           credentials: "include",
         });
         if (!res.ok) {
           console.error("Failed to fetch assignments:", res.status, res.statusText);
           return []; // Return empty array instead of throwing error
         }
-        return res.json();
+        const data = await res.json();
+        return Array.isArray(data) ? data : []; // Ensure we always return an array
       } catch (error) {
         console.error("Error fetching assignments:", error);
         return []; // Return empty array in case of error
       }
     },
-    enabled: !!studentData?.id,
+    // No longer dependent on studentData.id as we use the authenticated user
+    enabled: true,
   });
 
   // Get current training - with type safety
