@@ -50,10 +50,12 @@ const StudentDashboard: React.FC = () => {
   });
 
   // Get current training
-  const currentTraining = assignments?.find((a: any) => a.status === "active");
+  const currentTraining = assignments && assignments.length > 0 ? 
+    assignments.find((a: any) => a.status === "active") : undefined;
 
   // Get completed assignments
-  const completedAssignments = assignments?.filter((a: any) => a.status === "completed") || [];
+  const completedAssignments = assignments && assignments.length > 0 ? 
+    assignments.filter((a: any) => a.status === "completed") : [];
 
   const isLoading = isLoadingStudent || isLoadingAssignments;
 

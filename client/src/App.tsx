@@ -7,6 +7,11 @@ import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import { AuthProvider } from "@/hooks/use-auth";
 
+// Auth components for role-based access
+import AdminOnly from "@/components/auth/admin-only";
+import SupervisorOnly from "@/components/auth/supervisor-only";
+import StudentOnly from "@/components/auth/student-only";
+
 // Admin pages
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminStudents from "@/pages/admin/students";
@@ -27,35 +32,114 @@ import StudentDashboard from "@/pages/student/dashboard";
 import StudentCourses from "@/pages/student/courses";
 import StudentResults from "@/pages/student/results";
 
+// صفحة للتحويل عند تسجيل الدخول
+const RoleRouter: React.FC = () => {
+  return (
+    <Switch>
+      <Route path="/admin">
+        <AdminOnly>
+          <AdminDashboard />
+        </AdminOnly>
+      </Route>
+      <Route path="/supervisor">
+        <SupervisorOnly>
+          <SupervisorDashboard />
+        </SupervisorOnly>
+      </Route>
+      <Route path="/student">
+        <StudentOnly>
+          <StudentDashboard />
+        </StudentOnly>
+      </Route>
+      <Route>
+        <Login />
+      </Route>
+    </Switch>
+  );
+};
+
 function Router() {
   return (
     <Switch>
       {/* Auth Routes */}
-      <Route path="/" component={Login} />
+      <Route path="/" component={RoleRouter} />
       <Route path="/login" component={Login} />
       
       {/* Admin Routes */}
-      <Route path="/admin" component={AdminDashboard} />
-      <Route path="/admin/dashboard" component={AdminDashboard} />
-      <Route path="/admin/students" component={AdminStudents} />
-      <Route path="/admin/courses" component={AdminCourses} />
-      <Route path="/admin/supervisors" component={AdminSupervisors} />
-      <Route path="/admin/training-sites" component={AdminTrainingSites} />
-      <Route path="/admin/student-levels" component={AdminStudentLevels} />
-      <Route path="/admin/reports" component={AdminReports} />
-      <Route path="/admin/settings" component={AdminSettings} />
+      <Route path="/admin/dashboard">
+        <AdminOnly>
+          <AdminDashboard />
+        </AdminOnly>
+      </Route>
+      <Route path="/admin/students">
+        <AdminOnly>
+          <AdminStudents />
+        </AdminOnly>
+      </Route>
+      <Route path="/admin/courses">
+        <AdminOnly>
+          <AdminCourses />
+        </AdminOnly>
+      </Route>
+      <Route path="/admin/supervisors">
+        <AdminOnly>
+          <AdminSupervisors />
+        </AdminOnly>
+      </Route>
+      <Route path="/admin/training-sites">
+        <AdminOnly>
+          <AdminTrainingSites />
+        </AdminOnly>
+      </Route>
+      <Route path="/admin/student-levels">
+        <AdminOnly>
+          <AdminStudentLevels />
+        </AdminOnly>
+      </Route>
+      <Route path="/admin/reports">
+        <AdminOnly>
+          <AdminReports />
+        </AdminOnly>
+      </Route>
+      <Route path="/admin/settings">
+        <AdminOnly>
+          <AdminSettings />
+        </AdminOnly>
+      </Route>
       
       {/* Supervisor Routes */}
-      <Route path="/supervisor" component={SupervisorDashboard} />
-      <Route path="/supervisor/dashboard" component={SupervisorDashboard} />
-      <Route path="/supervisor/students" component={SupervisorStudents} />
-      <Route path="/supervisor/evaluations" component={SupervisorEvaluations} />
+      <Route path="/supervisor/dashboard">
+        <SupervisorOnly>
+          <SupervisorDashboard />
+        </SupervisorOnly>
+      </Route>
+      <Route path="/supervisor/students">
+        <SupervisorOnly>
+          <SupervisorStudents />
+        </SupervisorOnly>
+      </Route>
+      <Route path="/supervisor/evaluations">
+        <SupervisorOnly>
+          <SupervisorEvaluations />
+        </SupervisorOnly>
+      </Route>
       
       {/* Student Routes */}
-      <Route path="/student" component={StudentDashboard} />
-      <Route path="/student/dashboard" component={StudentDashboard} />
-      <Route path="/student/courses" component={StudentCourses} />
-      <Route path="/student/results" component={StudentResults} />
+      <Route path="/student/dashboard">
+        <StudentOnly>
+          <StudentDashboard />
+        </StudentOnly>
+      </Route>
+      <Route path="/student/courses">
+        <StudentOnly>
+          <StudentCourses />
+        </StudentOnly>
+      </Route>
+      <Route path="/student/results">
+        <StudentOnly>
+          <StudentResults />
+        </StudentOnly>
+      </Route>
       
       {/* Fallback to 404 */}
       <Route component={NotFound} />
