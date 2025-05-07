@@ -184,6 +184,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         department
       });
       
+      // Log activity
+      if (req.user) {
+        await logActivity(
+          req.user.id,
+          "create",
+          "supervisor",
+          supervisor.id,
+          { 
+            message: `تم إنشاء حساب مشرف: ${name}`,
+            supervisorData: { name, username, facultyId, department }
+          },
+          req.ip
+        );
+      }
+      
       res.status(201).json({ ...supervisor, user });
     } catch (error) {
       res.status(500).json({ message: "خطأ في إنشاء حساب المشرف" });
@@ -288,6 +303,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         supervisorId: supervisorId ? Number(supervisorId) : undefined
       });
       
+      // Log activity
+      if (req.user) {
+        await logActivity(
+          req.user.id,
+          "create",
+          "student",
+          student.id,
+          { 
+            message: `تم إنشاء حساب طالب: ${name}`,
+            studentData: { name, universityId, facultyId, majorId, levelId, supervisorId }
+          },
+          req.ip
+        );
+      }
+      
       res.status(201).json({ ...student, user });
     } catch (error) {
       res.status(500).json({ message: "خطأ في إنشاء حساب الطالب" });
@@ -355,6 +385,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         contactEmail,
         contactPhone
       });
+      
+      // Log activity
+      if (req.user) {
+        await logActivity(
+          req.user.id,
+          "create",
+          "training_site",
+          site.id,
+          { 
+            message: `تم إنشاء جهة تدريب: ${name}`,
+            siteData: { name, address, contactName, contactEmail, contactPhone }
+          },
+          req.ip
+        );
+      }
       
       res.status(201).json(site);
     } catch (error) {
@@ -437,6 +482,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: status || "upcoming",
         createdBy: req.user.id
       });
+      
+      // Log activity
+      if (req.user) {
+        // Get site name
+        const site = await storage.getTrainingSite(Number(siteId));
+        
+        await logActivity(
+          req.user.id,
+          "create",
+          "training_course",
+          course.id,
+          { 
+            message: `تم إنشاء دورة تدريبية: ${name}`,
+            courseData: { 
+              name, 
+              siteId, 
+              siteName: site?.name,
+              facultyId,
+              supervisorId, 
+              startDate, 
+              endDate,
+              capacity
+            }
+          },
+          req.ip
+        );
+      }
       
       res.status(201).json(course);
     } catch (error) {
@@ -543,6 +615,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         confirmed: false
       });
       
+      // Log activity
+      if (req.user) {
+        // Get student and course details
+        const student = await storage.getStudent(Number(studentId));
+        const course = await storage.getTrainingCourse(Number(courseId));
+        const studentUser = student ? await storage.getUser(student.userId) : null;
+        
+        await logActivity(
+          req.user.id,
+          "create",
+          "training_assignment",
+          assignment.id,
+          { 
+            message: `تم تعيين طالب في دورة تدريبية`,
+            assignmentData: { 
+              studentId,
+              studentName: studentUser?.name,
+              courseId,
+              courseName: course?.name
+            }
+          },
+          req.ip
+        );
+      }
+      
       res.status(201).json(assignment);
     } catch (error) {
       res.status(500).json({ message: "خطأ في إنشاء تعيين تدريبي جديد" });
@@ -566,6 +663,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const updatedAssignment = await storage.confirmTrainingAssignment(id);
+      
+      // Log activity
+      if (req.user && student) {
+        const course = assignment.courseId ? await storage.getTrainingCourse(assignment.courseId) : null;
+        const studentUser = await storage.getUser(student.userId);
+        
+        await logActivity(
+          req.user.id,
+          "confirm",
+          "training_assignment",
+          assignment.id,
+          { 
+            message: `تم تأكيد التسجيل في الدورة التدريبية`,
+            confirmationData: { 
+              assignmentId: assignment.id,
+              studentId: student.id,
+              studentName: studentUser.name,
+              courseId: course?.id,
+              courseName: course?.name
+            }
+          },
+          req.ip
+        );
+      }
       
       res.json(updatedAssignment);
     } catch (error) {
@@ -601,6 +722,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         evaluatorName,
         createdBy: req.user.id
       });
+      
+      // Log activity
+      if (req.user) {
+        // Get assignment details
+        const assignment = await storage.getTrainingAssignment(Number(assignmentId));
+        if (assignment) {
+          const student = assignment.studentId ? await storage.getStudent(assignment.studentId) : null;
+          const course = assignment.courseId ? await storage.getTrainingCourse(assignment.courseId) : null;
+          const studentUser = student ? await storage.getUser(student.userId) : null;
+          
+          await logActivity(
+            req.user.id,
+            "create",
+            "evaluation",
+            evaluation.id,
+            { 
+              message: `تم إنشاء تقييم للطالب: ${studentUser?.name}`,
+              evaluationData: { 
+                assignmentId,
+                studentId: student?.id,
+                studentName: studentUser?.name,
+                courseId: course?.id,
+                courseName: course?.name,
+                score
+              }
+            },
+            req.ip
+          );
+        }
+      }
       
       res.status(201).json(evaluation);
     } catch (error) {
