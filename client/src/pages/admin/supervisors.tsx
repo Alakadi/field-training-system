@@ -61,6 +61,14 @@ const AdminSupervisors: React.FC = () => {
     currentPage * itemsPerPage
   );
 
+  const handleViewSupervisor = (supervisorId: number) => {
+    setLocation(`/admin/supervisors/${supervisorId}`);
+  };
+
+  const handleEditSupervisor = (supervisorId: number) => {
+    setLocation(`/admin/supervisors/edit/${supervisorId}`);
+  };
+  
   const handleDeleteSupervisor = async (supervisorId: number) => {
     if (window.confirm("هل أنت متأكد من حذف هذا المشرف؟")) {
       try {
@@ -215,10 +223,20 @@ const AdminSupervisors: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
                           <div className="flex items-center space-x-2 space-x-reverse">
-                            <Button variant="ghost" size="sm" className="text-primary hover:text-primary-dark">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-primary hover:text-primary-dark"
+                              onClick={() => handleEditSupervisor(supervisor.id)}
+                            >
                               <span className="material-icons text-sm">edit</span>
                             </Button>
-                            <Button variant="ghost" size="sm" className="text-neutral-600 hover:text-neutral-900">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-neutral-600 hover:text-neutral-900"
+                              onClick={() => handleViewSupervisor(supervisor.id)}
+                            >
                               <span className="material-icons text-sm">visibility</span>
                             </Button>
                             <Button

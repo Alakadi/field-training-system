@@ -83,6 +83,14 @@ const AdminStudents: React.FC = () => {
     currentPage * itemsPerPage
   );
 
+  const handleViewStudent = (studentId: number) => {
+    setLocation(`/admin/students/${studentId}`);
+  };
+
+  const handleEditStudent = (studentId: number) => {
+    setLocation(`/admin/students/edit/${studentId}`);
+  };
+  
   const handleDeleteStudent = async (studentId: number) => {
     if (window.confirm("هل أنت متأكد من حذف هذا الطالب؟")) {
       try {
@@ -292,10 +300,20 @@ const AdminStudents: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
                         <div className="flex items-center space-x-2 space-x-reverse">
-                          <Button variant="ghost" size="sm" className="text-primary hover:text-primary-dark">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-primary hover:text-primary-dark"
+                            onClick={() => handleEditStudent(student.id)}
+                          >
                             <span className="material-icons text-sm">edit</span>
                           </Button>
-                          <Button variant="ghost" size="sm" className="text-neutral-600 hover:text-neutral-900">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-neutral-600 hover:text-neutral-900"
+                            onClick={() => handleViewStudent(student.id)}
+                          >
                             <span className="material-icons text-sm">visibility</span>
                           </Button>
                           <Button
