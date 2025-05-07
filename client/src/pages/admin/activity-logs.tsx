@@ -86,21 +86,21 @@ const ActivityLogs: React.FC = () => {
   });
 
   // Filter logs based on search term and filters
-  const filteredLogs = logs?.filter((log: ActivityLog) => {
+  const filteredLogs = logs ? logs.filter((log: ActivityLog) => {
     const matchesSearch = 
       !searchTerm || 
       (log.user?.name && log.user.name.includes(searchTerm)) ||
       (log.details?.message && log.details.message.includes(searchTerm));
     
-    const matchesAction = !actionFilter || log.action === actionFilter;
-    const matchesEntity = !entityFilter || log.entityType === entityFilter;
+    const matchesAction = !actionFilter || actionFilter === "all" || log.action === actionFilter;
+    const matchesEntity = !entityFilter || entityFilter === "all" || log.entityType === entityFilter;
     
     return matchesSearch && matchesAction && matchesEntity;
-  });
+  }) : [];
 
   // Get unique actions and entities for filters
-  const uniqueActions = logs ? [...new Set(logs.map((log: ActivityLog) => log.action))] : [];
-  const uniqueEntities = logs ? [...new Set(logs.map((log: ActivityLog) => log.entityType))] : [];
+  const uniqueActions = logs ? Array.from(new Set(logs.map((log: ActivityLog) => log.action))) : [];
+  const uniqueEntities = logs ? Array.from(new Set(logs.map((log: ActivityLog) => log.entityType))) : [];
 
   return (
     <AdminLayout>
@@ -130,7 +130,7 @@ const ActivityLogs: React.FC = () => {
                     <SelectValue placeholder="نوع النشاط" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">جميع الأنشطة</SelectItem>
+                    <SelectItem value="all">جميع الأنشطة</SelectItem>
                     {uniqueActions.map((action) => (
                       <SelectItem key={action} value={action}>{action}</SelectItem>
                     ))}
@@ -144,7 +144,7 @@ const ActivityLogs: React.FC = () => {
                     <SelectValue placeholder="نوع الكيان" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">جميع الكيانات</SelectItem>
+                    <SelectItem value="all">جميع الكيانات</SelectItem>
                     {uniqueEntities.map((entity) => (
                       <SelectItem key={entity} value={entity}>{entity}</SelectItem>
                     ))}

@@ -8,35 +8,11 @@ import * as XLSX from "xlsx";
 import { authMiddleware, requireRole } from "./middlewares/auth";
 
 // Helper function to log activities
-const logActivity = async (
-  userId: number | null, 
-  action: string, 
-  entityType: string, 
-  entityId: number | null = null,
-  details: any = null,
-  ipAddress: string | null = null
-) => {
-  try {
-    await storage.logActivity({
-      userId,
-      action,
-      entityType,
-      entityId,
-      details,
-      ipAddress,
-      timestamp: new Date(),
-    });
-  } catch (error) {
-    console.error("Error logging activity:", error);
-  }
-};
-
-// Helper function to log activities
 async function logActivity(
   userId: number | null, 
   action: string, 
   entityType: string, 
-  entityId: number | null, 
+  entityId: number | null = null, 
   details: any = {}, 
   ipAddress: string | null = null
 ): Promise<void> {
