@@ -1,386 +1,260 @@
-import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
-import { arEG } from "date-fns/locale";
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import AdminLayout from "@/components/layout/admin-layout";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { CalendarIcon, ClockIcon, SearchIcon, UserIcon } from "lucide-react";
+import { format } from "date-fns";
+import { arDZ } from "date-fns/locale";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const AdminActivityLogs = () => {
-  const [location, setLocation] = useLocation();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+interface ActivityLog {
+  id: number;
+  userId: number | null;
+  action: string;
+  entityType: string;
+  entityId: number | null;
+  details: any;
+  timestamp: string;
+  ipAddress: string | null;
+  user?: {
+    id: number;
+    username: string;
+    name: string;
+    role: string;
+  };
+}
 
-  // States for filters
-  const [searchQuery, setSearchQuery] = useState("");
-  const [userTypeFilter, setUserTypeFilter] = useState("all");
-  const [actionTypeFilter, setActionTypeFilter] = useState("all");
-  const [dateFilter, setDateFilter] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+const actionColors: Record<string, string> = {
+  create: "bg-green-500",
+  update: "bg-blue-500",
+  delete: "bg-red-500",
+  login: "bg-purple-500",
+  logout: "bg-purple-500",
+  import: "bg-amber-500",
+  export: "bg-amber-500",
+  view: "bg-gray-500",
+  default: "bg-gray-500"
+};
 
-  // Fetch logs data
-  const { data: activityLogs, isLoading: isLoadingLogs } = useQuery({
+const entityColors: Record<string, string> = {
+  user: "bg-blue-500",
+  student: "bg-green-500",
+  supervisor: "bg-amber-500",
+  course: "bg-purple-500",
+  assignment: "bg-red-500",
+  evaluation: "bg-pink-500",
+  site: "bg-indigo-500",
+  default: "bg-gray-500"
+};
+
+const formatDate = (dateString: string): string => {
+  try {
+    return format(new Date(dateString), "dd MMMM yyyy", { locale: arDZ });
+  } catch (e) {
+    return dateString;
+  }
+};
+
+const formatTime = (dateString: string): string => {
+  try {
+    return format(new Date(dateString), "hh:mm a", { locale: arDZ });
+  } catch (e) {
+    return "";
+  }
+};
+
+const getActionColor = (action: string): string => {
+  return actionColors[action] || actionColors.default;
+};
+
+const getEntityColor = (entityType: string): string => {
+  return entityColors[entityType] || entityColors.default;
+};
+
+const ActivityLogs: React.FC = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [actionFilter, setActionFilter] = useState("");
+  const [entityFilter, setEntityFilter] = useState("");
+
+  const { data: logs, isLoading, error } = useQuery({
     queryKey: ["/api/activity-logs"],
-    retry: 1,
+    staleTime: 10000, // 10 seconds
   });
 
-  // Filtered and paginated logs
-  const filteredLogs = activityLogs
-    ? activityLogs.filter((log: any) => {
-        // Search query filter
-        const matchesSearch =
-          !searchQuery ||
-          log.details?.entityName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          log.action.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          log.entityType.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          log.user?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+  // Filter logs based on search term and filters
+  const filteredLogs = logs?.filter((log: ActivityLog) => {
+    const matchesSearch = 
+      !searchTerm || 
+      (log.user?.name && log.user.name.includes(searchTerm)) ||
+      (log.details?.message && log.details.message.includes(searchTerm));
+    
+    const matchesAction = !actionFilter || log.action === actionFilter;
+    const matchesEntity = !entityFilter || log.entityType === entityFilter;
+    
+    return matchesSearch && matchesAction && matchesEntity;
+  });
 
-        // User type filter
-        const matchesUserType =
-          userTypeFilter === "all" ||
-          (log.user?.role === userTypeFilter);
-
-        // Action type filter
-        const matchesActionType =
-          actionTypeFilter === "all" ||
-          log.action === actionTypeFilter;
-
-        // Date filter
-        const logDate = new Date(log.timestamp);
-        const today = new Date();
-        const yesterday = new Date(today);
-        yesterday.setDate(yesterday.getDate() - 1);
-        const lastWeek = new Date(today);
-        lastWeek.setDate(lastWeek.getDate() - 7);
-        const lastMonth = new Date(today);
-        lastMonth.setMonth(lastMonth.getMonth() - 1);
-
-        const matchesDate =
-          dateFilter === "all" ||
-          (dateFilter === "today" &&
-            logDate.toDateString() === today.toDateString()) ||
-          (dateFilter === "yesterday" &&
-            logDate.toDateString() === yesterday.toDateString()) ||
-          (dateFilter === "last-week" &&
-            logDate >= lastWeek) ||
-          (dateFilter === "last-month" &&
-            logDate >= lastMonth);
-
-        return matchesSearch && matchesUserType && matchesActionType && matchesDate;
-      })
-    : [];
-
-  // Calculate total pages
-  const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
-
-  // Get current page data
-  const paginatedLogs = filteredLogs.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  // Helper function to format dates
-  const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), "PPpp", { locale: arEG });
-    } catch (e) {
-      return dateString;
-    }
-  };
-
-  // Helper function to get action color class
-  const getActionColorClass = (action: string) => {
-    switch (action.toLowerCase()) {
-      case "create":
-        return "bg-green-100 text-green-800";
-      case "update":
-        return "bg-blue-100 text-blue-800";
-      case "delete":
-        return "bg-red-100 text-red-800";
-      case "login":
-        return "bg-purple-100 text-purple-800";
-      case "logout":
-        return "bg-neutral-100 text-neutral-800";
-      default:
-        return "bg-neutral-100 text-neutral-800";
-    }
-  };
-
-  // Helper function to translate entity types
-  const translateEntityType = (type: string) => {
-    const translations: {[key: string]: string} = {
-      "user": "مستخدم",
-      "student": "طالب",
-      "supervisor": "مشرف",
-      "course": "دورة تدريبية",
-      "assignment": "تكليف تدريب",
-      "evaluation": "تقييم",
-      "faculty": "كلية",
-      "major": "تخصص",
-      "level": "مستوى",
-      "site": "جهة تدريب"
-    };
-    return translations[type] || type;
-  };
-
-  // Helper function to translate actions
-  const translateAction = (action: string) => {
-    const translations: {[key: string]: string} = {
-      "create": "إنشاء",
-      "update": "تعديل",
-      "delete": "حذف",
-      "login": "تسجيل دخول",
-      "logout": "تسجيل خروج",
-      "confirm": "تأكيد"
-    };
-    return translations[action] || action;
-  };
+  // Get unique actions and entities for filters
+  const uniqueActions = logs ? [...new Set(logs.map((log: ActivityLog) => log.action))] : [];
+  const uniqueEntities = logs ? [...new Set(logs.map((log: ActivityLog) => log.entityType))] : [];
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">سجل النشاطات</h1>
-        </div>
-
-        {/* Search and Filters */}
-        <Card className="bg-white p-4 rounded-lg shadow">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="md:col-span-1">
-              <div className="relative">
+      <div className="container mx-auto py-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">سجلات النشاط</CardTitle>
+            <CardDescription>
+              عرض جميع الأنشطة التي تمت على النظام
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 sm:space-x-reverse mb-6">
+              <div className="relative flex-1">
+                <SearchIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                 <Input
-                  type="text"
-                  placeholder="بحث..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 py-2"
+                  placeholder="بحث عن نشاط..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pr-10"
                 />
-                <span className="material-icons absolute right-3 top-2 text-neutral-500">search</span>
+              </div>
+              
+              <div className="w-full sm:w-48">
+                <Select value={actionFilter} onValueChange={setActionFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="نوع النشاط" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">جميع الأنشطة</SelectItem>
+                    {uniqueActions.map((action) => (
+                      <SelectItem key={action} value={action}>{action}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="w-full sm:w-48">
+                <Select value={entityFilter} onValueChange={setEntityFilter}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="نوع الكيان" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">جميع الكيانات</SelectItem>
+                    {uniqueEntities.map((entity) => (
+                      <SelectItem key={entity} value={entity}>{entity}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-            <div>
-              <Select value={userTypeFilter} onValueChange={setUserTypeFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="نوع المستخدم" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">كل المستخدمين</SelectItem>
-                  <SelectItem value="admin">الإدارة</SelectItem>
-                  <SelectItem value="supervisor">المشرفين</SelectItem>
-                  <SelectItem value="student">الطلاب</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Select value={actionTypeFilter} onValueChange={setActionTypeFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="نوع الإجراء" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">كل الإجراءات</SelectItem>
-                  <SelectItem value="create">إنشاء</SelectItem>
-                  <SelectItem value="update">تعديل</SelectItem>
-                  <SelectItem value="delete">حذف</SelectItem>
-                  <SelectItem value="login">تسجيل دخول</SelectItem>
-                  <SelectItem value="logout">تسجيل خروج</SelectItem>
-                  <SelectItem value="confirm">تأكيد</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="التاريخ" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">كل الفترات</SelectItem>
-                  <SelectItem value="today">اليوم</SelectItem>
-                  <SelectItem value="yesterday">الأمس</SelectItem>
-                  <SelectItem value="last-week">الأسبوع الأخير</SelectItem>
-                  <SelectItem value="last-month">الشهر الأخير</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </Card>
 
-        {/* Activity Logs Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-neutral-200">
-              <thead className="bg-neutral-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    التاريخ والوقت
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    المستخدم
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    الإجراء
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    نوع السجل
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    التفاصيل
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    عنوان IP
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-neutral-200">
-                {isLoadingLogs ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center">
-                      جاري تحميل البيانات...
-                    </td>
-                  </tr>
-                ) : paginatedLogs.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center">
-                      لا توجد بيانات للعرض
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedLogs.map((log: any) => (
-                    <tr key={log.id} className="hover:bg-neutral-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                        {formatDate(log.timestamp)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                        {log.user?.name || "غير معروف"}
-                        {log.user?.role && (
-                          <span className={`mr-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            log.user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 
-                            log.user.role === 'supervisor' ? 'bg-blue-100 text-blue-800' : 
-                            'bg-green-100 text-green-800'
-                          }`}>
-                            {log.user.role === 'admin' ? 'إدارة' : 
-                             log.user.role === 'supervisor' ? 'مشرف' : 'طالب'}
+            {isLoading ? (
+              <div className="space-y-4">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="flex items-center space-x-4 space-x-reverse">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-[250px]" />
+                      <Skeleton className="h-4 w-[200px]" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : error ? (
+              <div className="text-center py-4 text-red-500">
+                حدث خطأ في استرجاع سجلات النشاط
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>المستخدم</TableHead>
+                      <TableHead>النشاط</TableHead>
+                      <TableHead>الكيان</TableHead>
+                      <TableHead>التفاصيل</TableHead>
+                      <TableHead>التاريخ والوقت</TableHead>
+                      <TableHead>عنوان IP</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredLogs?.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-4 text-gray-500">
+                          لا توجد سجلات نشاط للعرض
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {filteredLogs?.map((log: ActivityLog) => (
+                      <TableRow key={log.id}>
+                        <TableCell>
+                          <div className="flex items-center space-x-2 space-x-reverse">
+                            <div className="bg-primary w-8 h-8 rounded-full flex items-center justify-center">
+                              <UserIcon size={14} className="text-white" />
+                            </div>
+                            <div>
+                              <div className="font-medium">{log.user?.name || 'غير معروف'}</div>
+                              <div className="text-xs text-gray-500">
+                                {log.user?.role === 'admin' ? 'مسؤول' : 
+                                 log.user?.role === 'supervisor' ? 'مشرف' : 
+                                 log.user?.role === 'student' ? 'طالب' : 'غير معروف'}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getActionColor(log.action)}>
+                            {log.action}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={getEntityColor(log.entityType)}>
+                            {log.entityType}
+                          </Badge>
+                          {log.entityId && (
+                            <span className="text-xs text-gray-500 mr-1">
+                              ({log.entityId})
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="max-w-xs truncate">
+                            {log.details?.message || '-'}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col text-sm">
+                            <div className="flex items-center">
+                              <CalendarIcon size={14} className="ml-1 text-gray-500" />
+                              {formatDate(log.timestamp)}
+                            </div>
+                            <div className="flex items-center text-gray-500">
+                              <ClockIcon size={14} className="ml-1" />
+                              {formatTime(log.timestamp)}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-xs font-mono">
+                            {log.ipAddress || '-'}
                           </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getActionColorClass(log.action)}`}>
-                          {translateAction(log.action)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                        {translateEntityType(log.entityType)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-neutral-800">
-                        {log.details?.entityName || 
-                         log.details?.message || 
-                         (log.entityId ? `رقم ${log.entityId}` : "-")}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                        {log.ipAddress || "-"}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-          
-          {/* Pagination */}
-          {filteredLogs.length > 0 && (
-            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-neutral-200 sm:px-6">
-              <div className="flex-1 flex justify-between sm:hidden">
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                >
-                  السابق
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  التالي
-                </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-sm text-neutral-700">
-                    عرض
-                    <span className="font-medium mx-1">
-                      {(currentPage - 1) * itemsPerPage + 1}
-                    </span>
-                    إلى
-                    <span className="font-medium mx-1">
-                      {Math.min(currentPage * itemsPerPage, filteredLogs.length)}
-                    </span>
-                    من أصل
-                    <span className="font-medium mx-1">{filteredLogs.length}</span>
-                    سجل
-                  </p>
-                </div>
-                <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                    <Button
-                      variant="outline"
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-neutral-300 text-sm font-medium"
-                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                      disabled={currentPage === 1}
-                    >
-                      <span className="sr-only">السابق</span>
-                      <span className="material-icons text-sm">chevron_right</span>
-                    </Button>
-                    
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum = i + 1;
-                      if (totalPages > 5 && currentPage > 3) {
-                        pageNum = currentPage - 3 + i;
-                      }
-                      if (pageNum <= totalPages) {
-                        return (
-                          <Button
-                            key={pageNum}
-                            variant={currentPage === pageNum ? "default" : "outline"}
-                            className="relative inline-flex items-center px-4 py-2 border text-sm font-medium"
-                            onClick={() => setCurrentPage(pageNum)}
-                          >
-                            {pageNum}
-                          </Button>
-                        );
-                      }
-                      return null;
-                    })}
-                    
-                    <Button
-                      variant="outline"
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-neutral-300 text-sm font-medium"
-                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                      disabled={currentPage === totalPages}
-                    >
-                      <span className="sr-only">التالي</span>
-                      <span className="material-icons text-sm">chevron_left</span>
-                    </Button>
-                  </nav>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </AdminLayout>
   );
 };
 
-export default AdminActivityLogs;
+export default ActivityLogs;

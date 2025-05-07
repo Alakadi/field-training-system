@@ -31,11 +31,47 @@ const logActivity = async (
   }
 };
 
+// Helper function to log activities
+async function logActivity(
+  userId: number | null, 
+  action: string, 
+  entityType: string, 
+  entityId: number | null, 
+  details: any = {}, 
+  ipAddress: string | null = null
+): Promise<void> {
+  try {
+    await storage.logActivity({
+      userId,
+      action,
+      entityType,
+      entityId,
+      details,
+      ipAddress
+    });
+  } catch (error) {
+    console.error("Error logging activity:", error);
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Activity logs route
   app.get("/api/activity-logs", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
       const logs = await storage.getAllActivityLogs();
+      
+      // Log this activity view
+      if (req.user) {
+        await logActivity(
+          req.user.id,
+          "view",
+          "activity_logs",
+          null,
+          { message: "عرض سجلات النشاط" },
+          req.ip
+        );
+      }
+      
       res.json(logs);
     } catch (error) {
       res.status(500).json({ message: "خطأ في استرجاع سجلات النشاط" });

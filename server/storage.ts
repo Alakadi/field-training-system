@@ -123,6 +123,40 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
+  // Activity log operations
+  async getAllActivityLogs(): Promise<ActivityLog[]> {
+    return Array.from(this.activityLogs.values()).sort((a, b) => {
+      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+    }).map(log => {
+      if (log.userId) {
+        const user = this.users.get(log.userId);
+        return { ...log, user };
+      }
+      return log;
+    });
+  }
+  
+  async getActivityLog(id: number): Promise<ActivityLog | undefined> {
+    const log = this.activityLogs.get(id);
+    if (!log) return undefined;
+    
+    if (log.userId) {
+      const user = this.users.get(log.userId);
+      return { ...log, user };
+    }
+    
+    return log;
+  }
+  
+  private currentActivityLogId: number = 1;
+  
+  async logActivity(insertLog: InsertActivityLog): Promise<ActivityLog> {
+    const id = this.currentActivityLogId++;
+    const timestamp = new Date();
+    const log: ActivityLog = { ...insertLog, id, timestamp: timestamp.toISOString() };
+    this.activityLogs.set(id, log);
+    return log;
+  }
   private users: Map<number, User>;
   private faculties: Map<number, Faculty>;
   private majors: Map<number, Major>;
