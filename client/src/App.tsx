@@ -24,6 +24,7 @@ import AdminTrainingSites from "@/pages/admin/training-sites";
 import AdminReports from "@/pages/admin/reports";
 import AdminSettings from "@/pages/admin/settings";
 import AdminStudentLevels from "@/pages/admin/student-levels";
+import AdminActivityLogs from "@/pages/admin/activity-logs";
 
 // Supervisor pages
 import SupervisorDashboard from "@/pages/supervisor/dashboard";
@@ -119,6 +120,11 @@ function Router() {
       <Route path="/admin/settings">
         <AdminOnly>
           <AdminSettings />
+        </AdminOnly>
+      </Route>
+      <Route path="/admin/activity-logs">
+        <AdminOnly>
+          <AdminActivityLogs />
         </AdminOnly>
       </Route>
       

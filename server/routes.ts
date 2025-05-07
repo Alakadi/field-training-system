@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import * as schema from "@shared/schema";
@@ -6,6 +6,30 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import * as XLSX from "xlsx";
 import { authMiddleware, requireRole } from "./middlewares/auth";
+
+// Helper function to log activities
+const logActivity = async (
+  userId: number | null, 
+  action: string, 
+  entityType: string, 
+  entityId: number | null = null,
+  details: any = null,
+  ipAddress: string | null = null
+) => {
+  try {
+    await storage.logActivity({
+      userId,
+      action,
+      entityType,
+      entityId,
+      details,
+      ipAddress,
+      timestamp: new Date(),
+    });
+  } catch (error) {
+    console.error("Error logging activity:", error);
+  }
+};
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
