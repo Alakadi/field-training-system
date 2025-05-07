@@ -1038,7 +1038,7 @@ export class DatabaseStorage implements IStorage {
     if (!site) return undefined;
     
     const faculty = course.facultyId ? await this.getFaculty(course.facultyId) : undefined;
-    const supervisor = course.supervisorId ? await this.getSupervisor(course.supervisorId) : undefined;
+    const supervisor = course.supervisorId ? await this.getSupervisorWithUser(course.supervisorId) : undefined;
     
     return { 
       ...course, 

@@ -68,6 +68,14 @@ const AdminCourses: React.FC = () => {
     currentPage * itemsPerPage
   );
 
+  const handleViewCourse = (courseId: number) => {
+    setLocation(`/admin/courses/${courseId}`);
+  };
+
+  const handleEditCourse = (courseId: number) => {
+    setLocation(`/admin/courses/edit/${courseId}`);
+  };
+
   const handleDeleteCourse = async (courseId: number) => {
     if (window.confirm("هل أنت متأكد من حذف هذه الدورة التدريبية؟")) {
       try {
@@ -248,10 +256,20 @@ const AdminCourses: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
                         <div className="flex items-center space-x-2 space-x-reverse">
-                          <Button variant="ghost" size="sm" className="text-primary hover:text-primary-dark">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-primary hover:text-primary-dark"
+                            onClick={() => handleEditCourse(course.id)}
+                          >
                             <span className="material-icons text-sm">edit</span>
                           </Button>
-                          <Button variant="ghost" size="sm" className="text-neutral-600 hover:text-neutral-900">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-neutral-600 hover:text-neutral-900"
+                            onClick={() => handleViewCourse(course.id)}
+                          >
                             <span className="material-icons text-sm">visibility</span>
                           </Button>
                           <Button

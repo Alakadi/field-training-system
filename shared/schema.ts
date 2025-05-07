@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, date, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, date, uniqueIndex, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -107,6 +107,18 @@ export const evaluations = pgTable("evaluations", {
   createdBy: integer("created_by").references(() => users.id),
 });
 
+// Activity Logs table
+export const activityLogs = pgTable("activity_logs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  action: text("action").notNull(), // e.g. "create", "update", "delete"
+  entityType: text("entity_type").notNull(), // e.g. "student", "course", "assignment"
+  entityId: integer("entity_id"), // ID of the affected entity
+  details: jsonb("details"), // JSON details about the activity
+  ipAddress: text("ip_address"),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users);
 export const insertFacultySchema = createInsertSchema(faculties);
@@ -118,6 +130,7 @@ export const insertTrainingSiteSchema = createInsertSchema(trainingSites);
 export const insertTrainingCourseSchema = createInsertSchema(trainingCourses);
 export const insertTrainingAssignmentSchema = createInsertSchema(trainingAssignments);
 export const insertEvaluationSchema = createInsertSchema(evaluations);
+export const insertActivityLogSchema = createInsertSchema(activityLogs);
 
 // Export types
 export type User = typeof users.$inferSelect;
@@ -149,6 +162,9 @@ export type InsertTrainingAssignment = z.infer<typeof insertTrainingAssignmentSc
 
 export type Evaluation = typeof evaluations.$inferSelect;
 export type InsertEvaluation = z.infer<typeof insertEvaluationSchema>;
+
+export type ActivityLog = typeof activityLogs.$inferSelect;
+export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 
 // Login schema
 export const loginSchema = z.object({
