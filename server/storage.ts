@@ -9,6 +9,7 @@ import {
   trainingCourses,
   trainingAssignments,
   evaluations,
+  activityLogs,
   type User,
   type InsertUser,
   type Faculty,
@@ -29,6 +30,8 @@ import {
   type InsertTrainingAssignment,
   type Evaluation,
   type InsertEvaluation,
+  type ActivityLog,
+  type InsertActivityLog,
   LoginData
 } from "@shared/schema";
 import { eq, and, isNull, desc, sql } from "drizzle-orm";
@@ -41,6 +44,11 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<User>): Promise<User | undefined>;
   login(loginData: LoginData): Promise<User | undefined>;
+  
+  // Activity logs operations
+  getAllActivityLogs(): Promise<ActivityLog[]>;
+  getActivityLog(id: number): Promise<ActivityLog | undefined>;
+  logActivity(log: InsertActivityLog): Promise<ActivityLog>;
   
   // Faculty operations
   getAllFaculties(): Promise<Faculty[]>;
@@ -125,6 +133,7 @@ export class MemStorage implements IStorage {
   private trainingCourses: Map<number, TrainingCourse>;
   private trainingAssignments: Map<number, TrainingAssignment>;
   private evaluations: Map<number, Evaluation>;
+  private activityLogs: Map<number, ActivityLog>;
   
   private currentUserId: number;
   private currentFacultyId: number;
@@ -148,6 +157,7 @@ export class MemStorage implements IStorage {
     this.trainingCourses = new Map();
     this.trainingAssignments = new Map();
     this.evaluations = new Map();
+    this.activityLogs = new Map();
     
     this.currentUserId = 1;
     this.currentFacultyId = 1;
@@ -811,6 +821,38 @@ export class MemStorage implements IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Activity log operations
+  async getAllActivityLogs(): Promise<ActivityLog[]> {
+    const logs = await db.select().from(activityLogs).orderBy(desc(activityLogs.timestamp));
+    
+    // Add user details to each log
+    const logsWithUserDetails = await Promise.all(logs.map(async (log) => {
+      if (log.userId) {
+        const user = await this.getUser(log.userId);
+        return { ...log, user };
+      }
+      return log;
+    }));
+    
+    return logsWithUserDetails;
+  }
+  
+  async getActivityLog(id: number): Promise<ActivityLog | undefined> {
+    const [log] = await db.select().from(activityLogs).where(eq(activityLogs.id, id));
+    
+    if (log && log.userId) {
+      const user = await this.getUser(log.userId);
+      return { ...log, user };
+    }
+    
+    return log || undefined;
+  }
+  
+  async logActivity(log: InsertActivityLog): Promise<ActivityLog> {
+    const [createdLog] = await db.insert(activityLogs).values(log).returning();
+    return createdLog;
+  }
+
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;

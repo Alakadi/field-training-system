@@ -32,6 +32,16 @@ const logActivity = async (
 };
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Activity logs route
+  app.get("/api/activity-logs", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
+    try {
+      const logs = await storage.getAllActivityLogs();
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ message: "خطأ في استرجاع سجلات النشاط" });
+    }
+  });
+
   // Auth routes
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
@@ -47,6 +57,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         req.session = {} as any;
       }
       req.session.user = user;
+      
+      // Log login activity
+      await logActivity(
+        user.id,
+        "login",
+        "user",
+        user.id,
+        { message: `تم تسجيل الدخول` },
+        req.ip
+      );
       
       return res.json({
         id: user.id,
