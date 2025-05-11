@@ -97,6 +97,11 @@ function Router() {
           <AdminCourses />
         </AdminOnly>
       </Route>
+      <Route path="/admin/courses/edit/:id">
+        <AdminOnly>
+          <EditCourse />
+        </AdminOnly>
+      </Route>
       <Route path="/admin/supervisors">
         <AdminOnly>
           <AdminSupervisors />
