@@ -10,6 +10,12 @@ export default defineConfig({
   schema: "./shared/schema.ts",
   driver: 'pg',
   dbCredentials: {
-    connectionString: process.env.DATABASE_URL,
+      _connectionString: process.env.DATABASE_URL,
+      get connectionString() {
+          return this._connectionString;
+      },
+      set connectionString(value) {
+          this._connectionString = value;
+      },
   },
 });
