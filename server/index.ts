@@ -3,20 +3,23 @@ import session from "express-session";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { pool } from "./db";
-import connectPgSimple from "connect-pg-simple";
+// لا نستخدم connectPgSimple مع VS Code
+// import connectPgSimple from "connect-pg-simple"; 
+import createMemoryStore from 'memorystore';
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Set up session middleware with PostgreSQL store
-const PgSession = connectPgSimple(session);
+// استخدام خيار التخزين في الذاكرة بدلاً من PostgreSQL للجلسات
+// هذا يحل مشكلة الاتصال في VS Code المحلي
+const MemoryStore = createMemoryStore(session);
+
 app.use(
   session({
-    store: new PgSession({
-      pool,
-      tableName: "session",
-      createTableIfMissing: true
+    // استخدام تخزين الذاكرة بدلاً من قاعدة البيانات للمقاطع
+    store: new MemoryStore({
+      checkPeriod: 86400000 // التنظيف كل 24 ساعة
     }),
     secret: process.env.SESSION_SECRET || "your-session-secret",
     resave: false,

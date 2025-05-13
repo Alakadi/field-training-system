@@ -57,12 +57,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
+      console.log("Login attempt:", req.body); // إضافة للتصحيح
       const loginData = schema.loginSchema.parse(req.body);
-      const user = await storage.login(loginData);
+      
+      // محاولة التسجيل عبر الدالة الأساسية
+      let user = await storage.login(loginData);
+      
+      // إذا لم تنجح محاولة تسجيل الدخول، نحاول البحث عن المستخدم مباشرة
+      if (!user) {
+        console.log("Login failed, trying direct lookup"); // إضافة للتصحيح
+        
+        // البحث عن المستخدم بناءً على اسم المستخدم
+        const userByUsername = await storage.getUserByUsername(loginData.username);
+        
+        console.log("Found user by username:", userByUsername ? "yes" : "no"); // إضافة للتصحيح
+        
+        // التحقق من كلمة المرور
+        if (userByUsername && userByUsername.password === loginData.password) {
+          user = userByUsername;
+          console.log("Password matched for direct lookup"); // إضافة للتصحيح
+        }
+      }
       
       if (!user) {
+        console.log("Login failed: Invalid credentials"); // إضافة للتصحيح
         return res.status(401).json({ message: "اسم المستخدم أو كلمة المرور غير صحيحة" });
       }
+      
+      console.log("Login successful for:", user.username); // إضافة للتصحيح
       
       // Set user in session
       if (!req.session) {
@@ -71,14 +93,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.user = user;
       
       // Log login activity
-      await logActivity(
-        user.id,
-        "login",
-        "user",
-        user.id,
-        { message: `تم تسجيل الدخول` },
-        req.ip
-      );
+      try {
+        await logActivity(
+          user.id,
+          "login",
+          "user",
+          user.id,
+          { message: `تم تسجيل الدخول` },
+          req.ip
+        );
+      } catch (logError) {
+        console.error("Error logging activity:", logError);
+        // لا نريد أن تفشل عملية تسجيل الدخول بسبب خطأ في تسجيل النشاط
+      }
       
       return res.json({
         id: user.id,
@@ -87,6 +114,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: user.role
       });
     } catch (error) {
+      console.error("Login error:", error); // إضافة للتصحيح
+      
       if (error instanceof ZodError) {
         return res.status(400).json({
           message: "بيانات غير صالحة",

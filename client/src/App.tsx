@@ -25,6 +25,12 @@ import AdminReports from "@/pages/admin/reports";
 import AdminSettings from "@/pages/admin/settings";
 import AdminStudentLevels from "@/pages/admin/student-levels";
 import AdminActivityLogs from "@/pages/admin/activity-logs";
+import EditCourse from "@/pages/admin/edit-course";
+import ViewCourse from "@/pages/admin/view-course";
+import EditSupervisor from "@/pages/admin/edit-supervisor";
+import ViewSupervisor from "@/pages/admin/view-supervisor";
+import EditStudent from "@/pages/admin/edit-student";
+import ViewStudent from "@/pages/admin/view-student";
 
 // Supervisor pages
 import SupervisorDashboard from "@/pages/supervisor/dashboard";
@@ -102,9 +108,34 @@ function Router() {
           <EditCourse />
         </AdminOnly>
       </Route>
+      <Route path="/admin/courses/:id">
+        <AdminOnly>
+          <ViewCourse />
+        </AdminOnly>
+      </Route>
       <Route path="/admin/supervisors">
         <AdminOnly>
           <AdminSupervisors />
+        </AdminOnly>
+      </Route>
+      <Route path="/admin/supervisors/edit/:id">
+        <AdminOnly>
+          <EditSupervisor />
+        </AdminOnly>
+      </Route>
+      <Route path="/admin/supervisors/:id">
+        <AdminOnly>
+          <ViewSupervisor />
+        </AdminOnly>
+      </Route>
+      <Route path="/admin/students/edit/:id">
+        <AdminOnly>
+          <EditStudent />
+        </AdminOnly>
+      </Route>
+      <Route path="/admin/students/:id">
+        <AdminOnly>
+          <ViewStudent />
         </AdminOnly>
       </Route>
       <Route path="/admin/training-sites">
