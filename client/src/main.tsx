@@ -4,13 +4,13 @@ import "./index.css";
 
 // Add Material Icons
 const link = document.createElement("link");
-link.href = "https://fonts.googleapis.com/icon?family=Material+Icons";
+link.href = "file-d/icon.css";
 link.rel = "stylesheet";
 document.head.appendChild(link);
 
 // Add Tajawal font
 const fontLink = document.createElement("link");
-fontLink.href = "https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap";
+fontLink.href = "file-d/css2.css";
 fontLink.rel = "stylesheet";
 document.head.appendChild(fontLink);
 
