@@ -44,34 +44,34 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<User>): Promise<User | undefined>;
   login(loginData: LoginData): Promise<User | undefined>;
-  
+
   // Activity logs operations
   getAllActivityLogs(): Promise<ActivityLog[]>;
   getActivityLog(id: number): Promise<ActivityLog | undefined>;
   logActivity(log: InsertActivityLog): Promise<ActivityLog>;
-  
+
   // Faculty operations
   getAllFaculties(): Promise<Faculty[]>;
   getFaculty(id: number): Promise<Faculty | undefined>;
   createFaculty(faculty: InsertFaculty): Promise<Faculty>;
-  
+
   // Major operations
   getAllMajors(): Promise<Major[]>;
   getMajorsByFaculty(facultyId: number): Promise<Major[]>;
   getMajor(id: number): Promise<Major | undefined>;
   createMajor(major: InsertMajor): Promise<Major>;
-  
+
   // Level operations
   getAllLevels(): Promise<Level[]>;
   getLevel(id: number): Promise<Level | undefined>;
   createLevel(level: InsertLevel): Promise<Level>;
-  
+
   // Supervisor operations
   getAllSupervisors(): Promise<Supervisor[]>;
   getSupervisor(id: number): Promise<Supervisor | undefined>;
   createSupervisor(supervisor: InsertSupervisor): Promise<Supervisor>;
   getSupervisorWithUser(id: number): Promise<(Supervisor & { user: User }) | undefined>;
-  
+
   // Student operations
   getAllStudents(): Promise<Student[]>;
   getStudent(id: number): Promise<Student | undefined>;
@@ -80,12 +80,12 @@ export interface IStorage {
   getStudentWithDetails(id: number): Promise<(Student & { user: User, faculty?: Faculty, major?: Major, level?: Level, supervisor?: Supervisor }) | undefined>;
   getStudentsByFaculty(facultyId: number): Promise<Student[]>;
   getStudentsBySupervisor(supervisorId: number): Promise<Student[]>;
-  
+
   // Training Site operations
   getAllTrainingSites(): Promise<TrainingSite[]>;
   getTrainingSite(id: number): Promise<TrainingSite | undefined>;
   createTrainingSite(site: InsertTrainingSite): Promise<TrainingSite>;
-  
+
   // Training Course operations
   getAllTrainingCourses(): Promise<TrainingCourse[]>;
   getTrainingCourse(id: number): Promise<TrainingCourse | undefined>;
@@ -93,7 +93,7 @@ export interface IStorage {
   getTrainingCourseWithDetails(id: number): Promise<(TrainingCourse & { site: TrainingSite, faculty?: Faculty, supervisor?: Supervisor }) | undefined>;
   getTrainingCoursesByFaculty(facultyId: number): Promise<TrainingCourse[]>;
   getTrainingCoursesBySupervisor(supervisorId: number): Promise<TrainingCourse[]>;
-  
+
   // Training Assignment operations
   getAllTrainingAssignments(): Promise<TrainingAssignment[]>;
   getTrainingAssignment(id: number): Promise<TrainingAssignment | undefined>;
@@ -105,13 +105,13 @@ export interface IStorage {
     course: TrainingCourse & { site: TrainingSite } 
   }) | undefined>;
   confirmTrainingAssignment(id: number): Promise<TrainingAssignment | undefined>;
-  
+
   // Evaluation operations
   getAllEvaluations(): Promise<Evaluation[]>;
   getEvaluation(id: number): Promise<Evaluation | undefined>;
   createEvaluation(evaluation: InsertEvaluation): Promise<Evaluation>;
   getEvaluationsByAssignment(assignmentId: number): Promise<Evaluation[]>;
-  
+
   // Import/Export operations
   importStudents(students: { 
     universityId: string, 
@@ -135,21 +135,21 @@ export class MemStorage implements IStorage {
       return log;
     });
   }
-  
+
   async getActivityLog(id: number): Promise<ActivityLog | undefined> {
     const log = this.activityLogs.get(id);
     if (!log) return undefined;
-    
+
     if (log.userId) {
       const user = this.users.get(log.userId);
       return { ...log, user };
     }
-    
+
     return log;
   }
-  
+
   private currentActivityLogId: number = 1;
-  
+
   async logActivity(insertLog: InsertActivityLog): Promise<ActivityLog> {
     const id = this.currentActivityLogId++;
     const timestamp = new Date();
@@ -168,7 +168,7 @@ export class MemStorage implements IStorage {
   private trainingAssignments: Map<number, TrainingAssignment>;
   private evaluations: Map<number, Evaluation>;
   private activityLogs: Map<number, ActivityLog>;
-  
+
   private currentUserId: number;
   private currentFacultyId: number;
   private currentMajorId: number;
@@ -192,7 +192,7 @@ export class MemStorage implements IStorage {
     this.trainingAssignments = new Map();
     this.evaluations = new Map();
     this.activityLogs = new Map();
-    
+
     this.currentUserId = 1;
     this.currentFacultyId = 1;
     this.currentMajorId = 1;
@@ -203,7 +203,7 @@ export class MemStorage implements IStorage {
     this.currentCourseId = 1;
     this.currentAssignmentId = 1;
     this.currentEvaluationId = 1;
-    
+
     // Initialize with sample data
     this.initializeData();
   }
@@ -219,18 +219,18 @@ export class MemStorage implements IStorage {
       email: "admin@example.com",
       active: true
     });
-    
+
     // Create faculties
     const engineeringFaculty = this.createFaculty({ name: "كلية الهندسة" });
     const businessFaculty = this.createFaculty({ name: "كلية إدارة الأعمال" });
     const scienceFaculty = this.createFaculty({ name: "كلية العلوم" });
-    
+
     // Create majors
     const csMajor = this.createMajor({ name: "علوم الحاسب", facultyId: scienceFaculty.id });
     const isMajor = this.createMajor({ name: "نظم المعلومات", facultyId: scienceFaculty.id });
     const ceMajor = this.createMajor({ name: "هندسة الحاسب", facultyId: engineeringFaculty.id });
     const businessMajor = this.createMajor({ name: "إدارة أعمال", facultyId: businessFaculty.id });
-    
+
     // Create levels
     const level1 = this.createLevel({ name: "المستوى الأول" });
     const level2 = this.createLevel({ name: "المستوى الثاني" });
@@ -240,7 +240,7 @@ export class MemStorage implements IStorage {
     const level6 = this.createLevel({ name: "المستوى السادس" });
     const level7 = this.createLevel({ name: "المستوى السابع" });
     const level8 = this.createLevel({ name: "المستوى الثامن" });
-    
+
     // Create supervisor users
     const user1 = this.createUser({
       username: "supervisor1",
@@ -250,7 +250,7 @@ export class MemStorage implements IStorage {
       email: "supervisor1@example.com",
       active: true
     });
-    
+
     const user2 = this.createUser({
       username: "supervisor2",
       password: "password",
@@ -259,7 +259,7 @@ export class MemStorage implements IStorage {
       email: "supervisor2@example.com",
       active: true
     });
-    
+
     const user3 = this.createUser({
       username: "supervisor3",
       password: "password",
@@ -268,26 +268,26 @@ export class MemStorage implements IStorage {
       email: "supervisor3@example.com",
       active: true
     });
-    
+
     // Create supervisors
     const supervisor1 = this.createSupervisor({
       userId: user1.id,
       facultyId: engineeringFaculty.id,
       department: "قسم الهندسة"
     });
-    
+
     const supervisor2 = this.createSupervisor({
       userId: user2.id,
       facultyId: businessFaculty.id,
       department: "قسم إدارة الأعمال"
     });
-    
+
     const supervisor3 = this.createSupervisor({
       userId: user3.id,
       facultyId: scienceFaculty.id,
       department: "قسم علوم الحاسب"
     });
-    
+
     // Create student users
     const studentUser1 = this.createUser({
       username: "43219876",
@@ -297,7 +297,7 @@ export class MemStorage implements IStorage {
       email: "student1@example.com",
       active: true
     });
-    
+
     const studentUser2 = this.createUser({
       username: "43215432",
       password: "password",
@@ -306,7 +306,7 @@ export class MemStorage implements IStorage {
       email: "student2@example.com",
       active: true
     });
-    
+
     const studentUser3 = this.createUser({
       username: "43217654",
       password: "password",
@@ -315,7 +315,7 @@ export class MemStorage implements IStorage {
       email: "student3@example.com",
       active: true
     });
-    
+
     // Create students
     const student1 = this.createStudent({
       userId: studentUser1.id,
@@ -325,7 +325,7 @@ export class MemStorage implements IStorage {
       levelId: level8.id,
       supervisorId: supervisor1.id
     });
-    
+
     const student2 = this.createStudent({
       userId: studentUser2.id,
       universityId: "43215432",
@@ -334,7 +334,7 @@ export class MemStorage implements IStorage {
       levelId: level7.id,
       supervisorId: supervisor2.id
     });
-    
+
     const student3 = this.createStudent({
       userId: studentUser3.id,
       universityId: "43217654",
@@ -343,7 +343,7 @@ export class MemStorage implements IStorage {
       levelId: level6.id,
       supervisorId: supervisor3.id
     });
-    
+
     // Create training sites
     const site1 = this.createTrainingSite({
       name: "شركة الاتصالات السعودية",
@@ -352,7 +352,7 @@ export class MemStorage implements IStorage {
       contactEmail: "contact@stc.com",
       contactPhone: "0555555555"
     });
-    
+
     const site2 = this.createTrainingSite({
       name: "شركة أرامكو",
       address: "الدمام - حي الشاطئ",
@@ -360,7 +360,7 @@ export class MemStorage implements IStorage {
       contactEmail: "contact@aramco.com",
       contactPhone: "0566666666"
     });
-    
+
     const site3 = this.createTrainingSite({
       name: "شركة علم",
       address: "الرياض - حي الملز",
@@ -368,7 +368,7 @@ export class MemStorage implements IStorage {
       contactEmail: "contact@elm.com",
       contactPhone: "0577777777"
     });
-    
+
     // Create training courses
     const course1 = this.createTrainingCourse({
       name: "تدريب الشبكات المتقدم",
@@ -383,7 +383,7 @@ export class MemStorage implements IStorage {
       status: "active",
       createdBy: user1.id
     });
-    
+
     const course2 = this.createTrainingCourse({
       name: "إدارة المشاريع الاحترافية",
       siteId: site2.id,
@@ -397,7 +397,7 @@ export class MemStorage implements IStorage {
       status: "active",
       createdBy: user2.id
     });
-    
+
     const course3 = this.createTrainingCourse({
       name: "تطوير تطبيقات الويب",
       siteId: site3.id,
@@ -411,7 +411,7 @@ export class MemStorage implements IStorage {
       status: "upcoming",
       createdBy: user3.id
     });
-    
+
     // Create training assignments
     const assignment1 = this.createTrainingAssignment({
       studentId: student1.id,
@@ -420,7 +420,7 @@ export class MemStorage implements IStorage {
       status: "active",
       confirmed: true
     });
-    
+
     const assignment2 = this.createTrainingAssignment({
       studentId: student2.id,
       courseId: course2.id,
@@ -428,7 +428,7 @@ export class MemStorage implements IStorage {
       status: "active",
       confirmed: true
     });
-    
+
     const assignment3 = this.createTrainingAssignment({
       studentId: student3.id,
       courseId: course3.id,
@@ -436,7 +436,7 @@ export class MemStorage implements IStorage {
       status: "pending",
       confirmed: false
     });
-    
+
     // Create evaluations
     this.createEvaluation({
       assignmentId: assignment1.id,
@@ -469,7 +469,7 @@ export class MemStorage implements IStorage {
   async updateUser(id: number, updates: Partial<User>): Promise<User | undefined> {
     const user = this.users.get(id);
     if (!user) return undefined;
-    
+
     const updatedUser = { ...user, ...updates };
     this.users.set(id, updatedUser);
     return updatedUser;
@@ -478,16 +478,16 @@ export class MemStorage implements IStorage {
   async login(loginData: LoginData): Promise<User | undefined> {
     try {
       console.log("Storage login attempt for username:", loginData.username);
-      
+
       const user = await this.getUserByUsername(loginData.username);
-      
+
       if (!user) {
         console.log("User not found in database");
         return undefined;
       }
-      
+
       console.log("User found, checking password...");
-      
+
       if (user.password === loginData.password) {
         console.log("Password matched");
         return user;
@@ -497,7 +497,7 @@ export class MemStorage implements IStorage {
           console.log("Special admin password match");
           return user;
         }
-        
+
         console.log("Password did not match");
         return undefined;
       }
@@ -566,8 +566,36 @@ export class MemStorage implements IStorage {
     return Array.from(this.supervisors.values());
   }
 
+  async getSupervisorByUserId(userId: number): Promise<Supervisor | undefined> {
+    return Array.from(this.supervisors.values()).find(
+      (supervisor) => supervisor.userId === userId
+    );
+  }
+
   async getSupervisor(id: number): Promise<Supervisor | undefined> {
     return this.supervisors.get(id);
+  }
+
+  async updateSupervisor(id: number, data: Partial<InsertSupervisor>): Promise<Supervisor> {
+    const existing = this.supervisors.get(id);
+    if (!existing) {
+      throw new Error("المشرف غير موجود");
+    }
+
+    const updated = { ...existing, ...data };
+    this.supervisors.set(id, updated);
+    return updated;
+  }
+
+  async updateUser(id: number, data: Partial<InsertUser>): Promise<User> {
+    const existing = this.users.get(id);
+    if (!existing) {
+      throw new Error("المستخدم غير موجود");
+    }
+
+    const updated = { ...existing, ...data };
+    this.users.set(id, updated);
+    return updated;
   }
 
   async createSupervisor(insertSupervisor: InsertSupervisor): Promise<Supervisor> {
@@ -580,10 +608,10 @@ export class MemStorage implements IStorage {
   async getSupervisorWithUser(id: number): Promise<(Supervisor & { user: User }) | undefined> {
     const supervisor = await this.getSupervisor(id);
     if (!supervisor) return undefined;
-    
+
     const user = await this.getUser(supervisor.userId);
     if (!user) return undefined;
-    
+
     return { ...supervisor, user };
   }
 
@@ -618,27 +646,27 @@ export class MemStorage implements IStorage {
   }) | undefined> {
     const student = await this.getStudent(id);
     if (!student) return undefined;
-    
+
     const user = await this.getUser(student.userId);
     if (!user) return undefined;
-    
+
     const result: any = { ...student, user };
-    
+
     if (student.facultyId) {
       result.faculty = await this.getFaculty(student.facultyId);
     }
-    
+
     if (student.majorId) {
       result.major = await this.getMajor(student.majorId);
     }
-    
+
     if (student.levelId) {
       result.level = await this.getLevel(student.levelId);
     }
-    
+
     if (student.supervisorId) {
       result.supervisor = await this.getSupervisor(student.supervisorId);
-      
+
       if (result.supervisor) {
         const supervisorUser = await this.getUser(result.supervisor.userId);
         if (supervisorUser) {
@@ -646,7 +674,7 @@ export class MemStorage implements IStorage {
         }
       }
     }
-    
+
     return result;
   }
 
@@ -702,20 +730,20 @@ export class MemStorage implements IStorage {
   }) | undefined> {
     const course = await this.getTrainingCourse(id);
     if (!course) return undefined;
-    
+
     const site = await this.getTrainingSite(course.siteId);
     if (!site) return undefined;
-    
+
     const result: any = { ...course, site };
-    
+
     if (course.facultyId) {
       result.faculty = await this.getFaculty(course.facultyId);
     }
-    
+
     if (course.supervisorId) {
       result.supervisor = await this.getSupervisorWithUser(course.supervisorId);
     }
-    
+
     return result;
   }
 
@@ -766,23 +794,23 @@ export class MemStorage implements IStorage {
   }) | undefined> {
     const assignment = await this.getTrainingAssignment(id);
     if (!assignment) return undefined;
-    
+
     const student = await this.getStudentWithDetails(assignment.studentId);
     if (!student) return undefined;
-    
+
     const course = await this.getTrainingCourseWithDetails(assignment.courseId);
     if (!course) return undefined;
-    
+
     return { ...assignment, student, course };
   }
 
   async confirmTrainingAssignment(id: number): Promise<TrainingAssignment | undefined> {
     const assignment = await this.getTrainingAssignment(id);
     if (!assignment) return undefined;
-    
+
     const updatedAssignment: TrainingAssignment = { ...assignment, confirmed: true };
     this.trainingAssignments.set(id, updatedAssignment);
-    
+
     return updatedAssignment;
   }
 
@@ -818,7 +846,7 @@ export class MemStorage implements IStorage {
     level: string 
   }[]): Promise<{ success: number, errors: number, messages: string[] }> {
     const result = { success: 0, errors: 0, messages: [] as string[] };
-    
+
     for (const studentData of studentsData) {
       try {
         // Check if student with this university ID already exists
@@ -828,13 +856,13 @@ export class MemStorage implements IStorage {
           result.messages.push(`الطالب برقم جامعي ${studentData.universityId} موجود بالفعل`);
           continue;
         }
-        
+
         // Find or create faculty
         let faculty = Array.from(this.faculties.values()).find(f => f.name === studentData.faculty);
         if (!faculty) {
           faculty = await this.createFaculty({ name: studentData.faculty });
         }
-        
+
         // Find or create major
         let major = Array.from(this.majors.values()).find(
           m => m.name === studentData.major && m.facultyId === faculty.id
@@ -842,13 +870,13 @@ export class MemStorage implements IStorage {
         if (!major) {
           major = await this.createMajor({ name: studentData.major, facultyId: faculty.id });
         }
-        
+
         // Find or create level
         let level = Array.from(this.levels.values()).find(l => l.name === studentData.level);
         if (!level) {
           level = await this.createLevel({ name: studentData.level });
         }
-        
+
         // Create user
         const user = await this.createUser({
           username: studentData.universityId,
@@ -857,7 +885,7 @@ export class MemStorage implements IStorage {
           name: studentData.name,
           active: true
         });
-        
+
         // Create student
         await this.createStudent({
           userId: user.id,
@@ -866,14 +894,14 @@ export class MemStorage implements IStorage {
           majorId: major.id,
           levelId: level.id
         });
-        
+
         result.success++;
       } catch (error) {
         result.errors++;
         result.messages.push(`خطأ في استيراد الطالب ${studentData.name}: ${error}`);
       }
     }
-    
+
     return result;
   }
 }
@@ -882,7 +910,7 @@ export class DatabaseStorage implements IStorage {
   // Activity log operations
   async getAllActivityLogs(): Promise<ActivityLog[]> {
     const logs = await db.select().from(activityLogs).orderBy(desc(activityLogs.timestamp));
-    
+
     // Add user details to each log
     const logsWithUserDetails = await Promise.all(logs.map(async (log) => {
       if (log.userId) {
@@ -891,21 +919,21 @@ export class DatabaseStorage implements IStorage {
       }
       return log;
     }));
-    
+
     return logsWithUserDetails;
   }
-  
+
   async getActivityLog(id: number): Promise<ActivityLog | undefined> {
     const [log] = await db.select().from(activityLogs).where(eq(activityLogs.id, id));
-    
+
     if (log && log.userId) {
       const user = await this.getUser(log.userId);
       return { ...log, user };
     }
-    
+
     return log || undefined;
   }
-  
+
   async logActivity(log: InsertActivityLog): Promise<ActivityLog> {
     const [createdLog] = await db.insert(activityLogs).values(log).returning();
     return createdLog;
@@ -1027,10 +1055,10 @@ export class DatabaseStorage implements IStorage {
   async getSupervisorWithUser(id: number): Promise<(Supervisor & { user: User }) | undefined> {
     const supervisor = await this.getSupervisor(id);
     if (!supervisor) return undefined;
-    
+
     const user = await this.getUser(supervisor.userId);
     if (!user) return undefined;
-    
+
     return { ...supervisor, user };
   }
 
@@ -1065,15 +1093,15 @@ export class DatabaseStorage implements IStorage {
   }) | undefined> {
     const student = await this.getStudent(id);
     if (!student) return undefined;
-    
+
     const user = await this.getUser(student.userId);
     if (!user) return undefined;
-    
+
     const faculty = student.facultyId ? await this.getFaculty(student.facultyId) : undefined;
     const major = student.majorId ? await this.getMajor(student.majorId) : undefined;
     const level = student.levelId ? await this.getLevel(student.levelId) : undefined;
     const supervisor = student.supervisorId ? await this.getSupervisor(student.supervisorId) : undefined;
-    
+
     return { 
       ...student, 
       user, 
@@ -1133,13 +1161,13 @@ export class DatabaseStorage implements IStorage {
   }) | undefined> {
     const course = await this.getTrainingCourse(id);
     if (!course) return undefined;
-    
+
     const site = await this.getTrainingSite(course.siteId);
     if (!site) return undefined;
-    
+
     const faculty = course.facultyId ? await this.getFaculty(course.facultyId) : undefined;
     const supervisor = course.supervisorId ? await this.getSupervisorWithUser(course.supervisorId) : undefined;
-    
+
     return { 
       ...course, 
       site, 
@@ -1187,19 +1215,19 @@ export class DatabaseStorage implements IStorage {
   }) | undefined> {
     const assignment = await this.getTrainingAssignment(id);
     if (!assignment) return undefined;
-    
+
     const student = await this.getStudent(assignment.studentId);
     if (!student) return undefined;
-    
+
     const user = await this.getUser(student.userId);
     if (!user) return undefined;
-    
+
     const course = await this.getTrainingCourse(assignment.courseId);
     if (!course) return undefined;
-    
+
     const site = await this.getTrainingSite(course.siteId);
     if (!site) return undefined;
-    
+
     return { 
       ...assignment, 
       student: { ...student, user }, 
@@ -1249,7 +1277,7 @@ export class DatabaseStorage implements IStorage {
       errors: 0,
       messages: [] as string[]
     };
-    
+
     for (const studentData of studentsData) {
       try {
         // Find faculty or create if it doesn't exist
@@ -1257,7 +1285,7 @@ export class DatabaseStorage implements IStorage {
           .select()
           .from(faculties)
           .where(eq(faculties.name, studentData.faculty)))[0];
-          
+
         if (!faculty) {
           [faculty] = await db
             .insert(faculties)
@@ -1265,7 +1293,7 @@ export class DatabaseStorage implements IStorage {
             .returning();
           result.messages.push(`تم إضافة كلية جديدة: ${studentData.faculty}`);
         }
-        
+
         // Find major or create if it doesn't exist
         let major = (await db
           .select()
@@ -1274,7 +1302,7 @@ export class DatabaseStorage implements IStorage {
             eq(majors.name, studentData.major),
             eq(majors.facultyId, faculty.id)
           )))[0];
-          
+
         if (!major) {
           [major] = await db
             .insert(majors)
@@ -1285,13 +1313,13 @@ export class DatabaseStorage implements IStorage {
             .returning();
           result.messages.push(`تم إضافة تخصص جديد: ${studentData.major}`);
         }
-        
+
         // Find level or create if it doesn't exist
         let level = (await db
           .select()
           .from(levels)
           .where(eq(levels.name, studentData.level)))[0];
-          
+
         if (!level) {
           [level] = await db
             .insert(levels)
@@ -1299,19 +1327,19 @@ export class DatabaseStorage implements IStorage {
             .returning();
           result.messages.push(`تم إضافة مستوى جديد: ${studentData.level}`);
         }
-        
+
         // Check if student already exists
         const existingStudent = (await db
           .select()
           .from(students)
           .where(eq(students.universityId, studentData.universityId)))[0];
-          
+
         if (existingStudent) {
           result.messages.push(`الطالب ${studentData.name} موجود بالفعل (${studentData.universityId})`);
           result.errors++;
           continue;
         }
-        
+
         // Create user for student
         const [user] = await db
           .insert(users)
@@ -1323,7 +1351,7 @@ export class DatabaseStorage implements IStorage {
             active: true
           })
           .returning();
-        
+
         // Create student
         await db
           .insert(students)
@@ -1335,7 +1363,7 @@ export class DatabaseStorage implements IStorage {
             levelId: level.id
           })
           .returning();
-          
+
         result.success++;
         result.messages.push(`تم إضافة الطالب ${studentData.name} (${studentData.universityId}) بنجاح`);
       } catch (error) {
@@ -1343,7 +1371,7 @@ export class DatabaseStorage implements IStorage {
         result.messages.push(`فشل في إضافة الطالب ${studentData.name} (${studentData.universityId}): ${error instanceof Error ? error.message : "خطأ غير معروف"}`);
       }
     }
-    
+
     return result;
   }
 

@@ -190,6 +190,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "خطأ في استرجاع بيانات المشرفين" });
     }
   });
+
+  app.get("/api/supervisors/:id", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const supervisor = await storage.getSupervisor(id);
+      
+      if (!supervisor) {
+        return res.status(404).json({ message: "المشرف غير موجود" });
+      }
+      
+      // Get user data
+      const user = await storage.getUser(supervisor.userId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "بيانات المستخدم غير موجودة" });
+      }
+      
+      res.json({ ...supervisor, user });
+    } catch (error) {
+      res.status(500).json({ message: "خطأ في استرجاع بيانات المشرف" });
+    }
+  });
   
   app.post("/api/supervisors", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
@@ -231,6 +253,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json({ ...supervisor, user });
     } catch (error) {
       res.status(500).json({ message: "خطأ في إنشاء حساب المشرف" });
+    }
+  });
+
+  app.put("/api/supervisors/:id", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const { name, username, email, phone, facultyId, department, active } = req.body;
+      
+      // Get existing supervisor
+      const supervisor = await storage.getSupervisor(id);
+      if (!supervisor) {
+        return res.status(404).json({ message: "المشرف غير موجود" });
+      }
+      
+      // Update user data
+      const updatedUser = await storage.updateUser(supervisor.userId, {
+        username,
+        name,
+        email,
+        phone,
+        active
+      });
+      
+      // Update supervisor data
+      const updatedSupervisor = await storage.updateSupervisor(id, {
+        facultyId: facultyId ? Number(facultyId) : undefined,
+        department
+      });
+      
+      // Log activity
+      if (req.user) {
+        await logActivity(
+          req.user.id,
+          "update",
+          "supervisor",
+          supervisor.id,
+          { 
+            message: `تم تحديث بيانات المشرف: ${name}`,
+            supervisorData: { name, username, facultyId, department, active }
+          },
+          req.ip
+        );
+      }
+      
+      res.json({ ...updatedSupervisor, user: updatedUser });
+    } catch (error) {
+      res.status(500).json({ message: "خطأ في تحديث بيانات المشرف" });
     }
   });
 
