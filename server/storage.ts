@@ -76,7 +76,9 @@ export interface IStorage {
   getAllStudents(): Promise<Student[]>;
   getStudent(id: number): Promise<Student | undefined>;
   getStudentByUniversityId(universityId: string): Promise<Student | undefined>;
+  getStudentByUserId(userId: number): Promise<Student | undefined>;
   createStudent(student: InsertStudent): Promise<Student>;
+  updateStudent(id: number, student: Partial<Student>, userData?: Partial<User>): Promise<Student | undefined>;
   getStudentWithDetails(id: number): Promise<(Student & { user: User, faculty?: Faculty, major?: Major, level?: Level, supervisor?: Supervisor }) | undefined>;
   getStudentsByFaculty(facultyId: number): Promise<Student[]>;
   getStudentsBySupervisor(supervisorId: number): Promise<Student[]>;
@@ -213,7 +215,7 @@ export class MemStorage implements IStorage {
     // Add admin user
     this.createUser({
       username: "admin",
-      password: "admin",
+      password: "admin123",
       role: "admin",
       name: "مسؤول النظام",
       email: "admin@example.com",
@@ -561,19 +563,15 @@ export class MemStorage implements IStorage {
     return level;
   }
 
-  // Supervisor operations
-  async getAllSupervisors(): Promise<Supervisor[]> {
-    return Array.from(this.supervisors.values());
-  }
-
   async getSupervisorByUserId(userId: number): Promise<Supervisor | undefined> {
     return Array.from(this.supervisors.values()).find(
       (supervisor) => supervisor.userId === userId
     );
   }
 
-  async getSupervisor(id: number): Promise<Supervisor | undefined> {
-    return this.supervisors.get(id);
+  // Supervisor operations
+  async getAllSupervisors(): Promise<Supervisor[]> {
+    return Array.from(this.supervisors.values());
   }
 
   async updateSupervisor(id: number, data: Partial<InsertSupervisor>): Promise<Supervisor> {
@@ -586,16 +584,8 @@ export class MemStorage implements IStorage {
     this.supervisors.set(id, updated);
     return updated;
   }
-
-  async updateUser(id: number, data: Partial<InsertUser>): Promise<User> {
-    const existing = this.users.get(id);
-    if (!existing) {
-      throw new Error("المستخدم غير موجود");
-    }
-
-    const updated = { ...existing, ...data };
-    this.users.set(id, updated);
-    return updated;
+  async getSupervisor(id: number): Promise<Supervisor | undefined> {
+    return this.supervisors.get(id);
   }
 
   async createSupervisor(insertSupervisor: InsertSupervisor): Promise<Supervisor> {
@@ -628,6 +618,27 @@ export class MemStorage implements IStorage {
     return Array.from(this.students.values()).find(
       (student) => student.universityId === universityId
     );
+  }
+
+  async getStudentByUserId(userId: number): Promise<Student | undefined> {
+    return Array.from(this.students.values()).find(
+      (student) => student.userId === userId
+    );
+  }
+
+  async updateStudent(id: number, updates: Partial<Student>, userData?: Partial<User>): Promise<Student | undefined> {
+    const student = this.students.get(id);
+    if (!student) return undefined;
+
+    const updatedStudent = { ...student, ...updates };
+    this.students.set(id, updatedStudent);
+
+    // إذا كان هناك تحديث لبيانات المستخدم، قم بتحديثها أيضاً
+    if (userData && student.userId) {
+      await this.updateUser(student.userId, userData);
+    }
+
+    return updatedStudent;
   }
 
   async createStudent(insertStudent: InsertStudent): Promise<Student> {
@@ -1084,6 +1095,30 @@ export class DatabaseStorage implements IStorage {
     return student;
   }
 
+  async updateStudent(id: number, studentUpdates: Partial<Student>, userData?: Partial<User>): Promise<Student | undefined> {
+    const student = await this.getStudent(id);
+    if (!student) return undefined;
+
+    // تحديث بيانات الطالب إذا كانت موجودة
+    if (Object.keys(studentUpdates).length > 0) {
+      await db
+        .update(students)
+        .set(studentUpdates)
+        .where(eq(students.id, id));
+    }
+
+    // تحديث بيانات المستخدم إذا كانت موجودة
+    if (userData && Object.keys(userData).length > 0 && student.userId) {
+      await db
+        .update(users)
+        .set(userData)
+        .where(eq(users.id, student.userId));
+    }
+
+    // إرجاع بيانات الطالب المحدثة
+    return await this.getStudentWithDetails(id);
+  }
+
   async getStudentWithDetails(id: number): Promise<(Student & { 
     user: User, 
     faculty?: Faculty, 
@@ -1390,6 +1425,30 @@ export class DatabaseStorage implements IStorage {
       .from(students)
       .where(eq(students.userId, userId));
     return student || undefined;
+  }
+
+  async updateStudent(id: number, studentUpdates: Partial<Student>, userData?: Partial<User>): Promise<Student | undefined> {
+    const student = await this.getStudent(id);
+    if (!student) return undefined;
+
+    // تحديث بيانات الطالب إذا كانت موجودة
+    if (Object.keys(studentUpdates).length > 0) {
+      await db
+        .update(students)
+        .set(studentUpdates)
+        .where(eq(students.id, id));
+    }
+
+    // تحديث بيانات المستخدم إذا كانت موجودة
+    if (userData && Object.keys(userData).length > 0 && student.userId) {
+      await db
+        .update(users)
+        .set(userData)
+        .where(eq(users.id, student.userId));
+    }
+
+    // إرجاع بيانات الطالب المحدثة
+    return await this.getStudentWithDetails(id);
   }
 }
 
