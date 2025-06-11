@@ -37,30 +37,61 @@ const EditStudent: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFaculty, setSelectedFaculty] = useState<string>("");
 
+  // تحديد أنواع البيانات
+  type StudentType = {
+    id: number;
+    userId: number;
+    universityId: string;
+    facultyId: number | null;
+    majorId: number | null;
+    levelId: number | null;
+    supervisorId: number | null;
+    user: {
+      id: number;
+      name: string;
+      email: string | null;
+      phone: string | null;
+    }
+  };
+
+  type FacultyType = { id: number; name: string };
+  type MajorType = { id: number; name: string; facultyId: number };
+  type LevelType = { id: number; name: string };
+  type SupervisorType = { 
+    id: number; 
+    userId: number; 
+    facultyId: number | null; 
+    department: string | null;
+    user: {
+      id: number;
+      name: string;
+    }
+  };
+
   // الحصول على بيانات الطالب
-  const { data: student, isLoading: isLoadingStudent } = useQuery({
+  const { data: student, isLoading: isLoadingStudent } = useQuery<StudentType>({
     queryKey: [`/api/students/${id}`],
     enabled: !!id,
   });
 
   // الحصول على البيانات اللازمة
-  const { data: faculties } = useQuery({
+  const { data: faculties } = useQuery<FacultyType[]>({
     queryKey: ["/api/faculties"],
   });
 
   // الحصول على التخصصات بناءً على الكلية المختارة
-  const { data: majors } = useQuery({
+  const { data: majors } = useQuery<MajorType[]>({
     queryKey: ["/api/majors", selectedFaculty],
     enabled: !!selectedFaculty,
   });
 
   // الحصول على المستويات
-  const { data: levels } = useQuery({
+  const { data: levels } = useQuery<LevelType[]>({
     queryKey: ["/api/levels"],
   });
 
   // الحصول على المشرفين
-  const { data: supervisors } = useQuery({
+  const { data: supervisors } = useQuery<SupervisorType[]>({
     queryKey: ["/api/supervisors"],
   });
 
@@ -93,7 +124,7 @@ const EditStudent: React.FC = () => {
   useEffect(() => {
     if (student) {
       setSelectedFaculty(String(student.facultyId));
-      
+
       form.reset({
         name: student.user.name,
         email: student.user.email || "",
@@ -102,6 +133,7 @@ const EditStudent: React.FC = () => {
         majorId: String(student.majorId),
         levelId: String(student.levelId),
         gpa: String(student.gpa || ""),
+
         supervisorId: student.supervisorId ? String(student.supervisorId) : "",
         active: student.user.active,
       });
@@ -260,6 +292,7 @@ const EditStudent: React.FC = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
+                            <SelectItem value="default" disabled>اختر الكلية</SelectItem>
                             {faculties?.map((faculty: any) => (
                               <SelectItem key={faculty.id} value={String(faculty.id)}>
                                 {faculty.name}
@@ -289,6 +322,7 @@ const EditStudent: React.FC = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
+                            <SelectItem value="default" disabled>اختر التخصص</SelectItem>
                             {majors?.filter((major: any) => major.facultyId === parseInt(selectedFaculty))
                               .map((major: any) => (
                                 <SelectItem key={major.id} value={String(major.id)}>
@@ -318,6 +352,7 @@ const EditStudent: React.FC = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
+                            <SelectItem value="default" disabled>اختر المستوى</SelectItem>
                             {levels?.map((level: any) => (
                               <SelectItem key={level.id} value={String(level.id)}>
                                 {level.name}
@@ -346,7 +381,7 @@ const EditStudent: React.FC = () => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">بدون مشرف</SelectItem>
+                            <SelectItem value="none">بدون مشرف</SelectItem>
                             {supervisors?.map((supervisor: any) => (
                               <SelectItem key={supervisor.id} value={String(supervisor.id)}>
                                 {supervisor.user.name}
