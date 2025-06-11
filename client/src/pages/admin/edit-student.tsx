@@ -46,11 +46,13 @@ const EditStudent: React.FC = () => {
     majorId: number | null;
     levelId: number | null;
     supervisorId: number | null;
+    gpa: number | null;
     user: {
       id: number;
       name: string;
       email: string | null;
       phone: string | null;
+      active: boolean;
     }
   };
 
