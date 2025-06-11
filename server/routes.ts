@@ -191,6 +191,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get current supervisor info (for logged-in supervisor)
+  app.get("/api/supervisors/me", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      if (!req.user || req.user.role !== "supervisor") {
+        return res.status(403).json({ message: "غير مصرح بالوصول" });
+      }
+
+      // Find supervisor record by user ID
+      const supervisor = await storage.getSupervisorByUserId(req.user.id);
+
+      if (!supervisor) {
+        return res.status(404).json({ message: "لم يتم العثور على بيانات المشرف" });
+      }
+
+      // Get full supervisor details
+      const supervisorWithUser = await storage.getSupervisorWithUser(supervisor.id);
+      res.json(supervisorWithUser);
+    } catch (error) {
+      console.error("Error fetching supervisor data:", error);
+      res.status(500).json({ message: "خطأ في استرجاع بيانات المشرف" });
+    }
+  });
+
   app.get("/api/supervisors/:id", authMiddleware, async (req: Request, res: Response) => {
     try {
       const id = Number(req.params.id);
@@ -909,18 +932,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Add helper methods to storage
-  storage.getSupervisorByUserId = async (userId: number): Promise<Supervisor | undefined> => {
-    return Array.from(storage.supervisors.values()).find(
-      (supervisor) => supervisor.userId === userId
-    );
-  };
+  // Add helper methods to storage for MemStorage compatibility
+  if (!storage.getSupervisorByUserId) {
+    storage.getSupervisorByUserId = async (userId: number): Promise<Supervisor | undefined> => {
+      if ('supervisors' in storage) {
+        return Array.from((storage as any).supervisors.values()).find(
+          (supervisor) => supervisor.userId === userId
+        );
+      }
+      // For DatabaseStorage, this method is already implemented
+      return undefined;
+    };
+  }
 
-  storage.getStudentByUserId = async (userId: number): Promise<Student | undefined> => {
-    return Array.from(storage.students.values()).find(
-      (student) => student.userId === userId
-    );
-  };
+  if (!storage.getStudentByUserId) {
+    storage.getStudentByUserId = async (userId: number): Promise<Student | undefined> => {
+      if ('students' in storage) {
+        return Array.from((storage as any).students.values()).find(
+          (student) => student.userId === userId
+        );
+      }
+      // For DatabaseStorage, this method is already implemented
+      return undefined;
+    };
+  }
 
   const httpServer = createServer(app);
   return httpServer;

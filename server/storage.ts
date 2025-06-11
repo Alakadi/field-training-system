@@ -1441,30 +1441,6 @@ export class DatabaseStorage implements IStorage {
       .where(eq(students.userId, userId));
     return student || undefined;
   }
-
-  async updateStudent(id: number, studentUpdates: Partial<Student>, userData?: Partial<User>): Promise<Student | undefined> {
-    const student = await this.getStudent(id);
-    if (!student) return undefined;
-
-    // تحديث بيانات الطالب إذا كانت موجودة
-    if (Object.keys(studentUpdates).length > 0) {
-      await db
-        .update(students)
-        .set(studentUpdates)
-        .where(eq(students.id, id));
-    }
-
-    // تحديث بيانات المستخدم إذا كانت موجودة
-    if (userData && Object.keys(userData).length > 0 && student.userId) {
-      await db
-        .update(users)
-        .set(userData)
-        .where(eq(users.id, student.userId));
-    }
-
-    // إرجاع بيانات الطالب المحدثة
-    return await this.getStudentWithDetails(id);
-  }
 }
 
 // Use DatabaseStorage since we've set up PostgreSQL
