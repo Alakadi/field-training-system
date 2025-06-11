@@ -1063,6 +1063,21 @@ export class DatabaseStorage implements IStorage {
     return supervisor;
   }
 
+  async updateSupervisor(id: number, data: Partial<InsertSupervisor>): Promise<Supervisor> {
+    const existing = await this.getSupervisor(id);
+    if (!existing) {
+      throw new Error("المشرف غير موجود");
+    }
+
+    const [updated] = await db
+      .update(supervisors)
+      .set(data)
+      .where(eq(supervisors.id, id))
+      .returning();
+    
+    return updated;
+  }
+
   async getSupervisorWithUser(id: number): Promise<(Supervisor & { user: User }) | undefined> {
     const supervisor = await this.getSupervisor(id);
     if (!supervisor) return undefined;
