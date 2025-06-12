@@ -38,14 +38,15 @@ const AdminCourses: React.FC = () => {
   });
 
   // Filter courses
-  const filteredCourses = courses?.filter((course: any) => {
+  const filteredCourses = (courses || []).filter((course: any) => {
     let matches = true;
     
     // Search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       matches = course.name.toLowerCase().includes(query) || 
-                course.site.name.toLowerCase().includes(query);
+                (course.faculty?.name || "").toLowerCase().includes(query) ||
+                (course.major?.name || "").toLowerCase().includes(query);
     }
     
     // Faculty filter
@@ -147,7 +148,7 @@ const AdminCourses: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">كل الكليات</SelectItem>
-                  {faculties?.map((faculty: any) => (
+                  {(faculties || []).map((faculty: any) => (
                     <SelectItem key={faculty.id} value={String(faculty.id)}>
                       {faculty.name}
                     </SelectItem>
@@ -181,22 +182,16 @@ const AdminCourses: React.FC = () => {
                     اسم الدورة
                   </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    جهة التدريب
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    تاريخ البداية
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    تاريخ النهاية
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
                     الكلية
                   </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    المشرف
+                    التخصص
                   </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    الطلاب
+                    عدد المجموعات
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
+                    إجمالي الطلاب
                   </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
                     الحالة
@@ -226,22 +221,16 @@ const AdminCourses: React.FC = () => {
                         {course.name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                        {course.site.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                        {formatDate(course.startDate)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                        {formatDate(course.endDate)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
                         {course.faculty?.name || "-"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                        {course.supervisor?.user?.name || "-"}
+                        {course.major?.name || "-"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                        {course.studentCount || 0} طالب
+                        {course.groups?.length || 0}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
+                        {course.totalStudents || 0} طالب
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${

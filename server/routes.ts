@@ -586,25 +586,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let courses = await storage.getAllTrainingCourses();
 
       const facultyId = req.query.facultyId ? Number(req.query.facultyId) : undefined;
-      const supervisorId = req.query.supervisorId ? Number(req.query.supervisorId) : undefined;
       const status = req.query.status as string | undefined;
 
       if (facultyId) {
         courses = courses.filter(course => course.facultyId === facultyId);
       }
 
-      if (supervisorId) {
-        courses = courses.filter(course => course.supervisorId === supervisorId);
-      }
-
       if (status) {
         courses = courses.filter(course => course.status === status);
       }
 
-      // Fetch details for each course
+      // Fetch details for each course including groups and student counts
       const result = await Promise.all(
         courses.map(async (course) => {
-          return await storage.getTrainingCourseWithDetails(course.id);
+          const courseDetails = await storage.getTrainingCourseWithDetails(course.id);
+          const groups = await storage.getTrainingCourseGroupsByCourse(course.id);
+          
+          // Calculate total students across all groups
+          let totalStudents = 0;
+          for (const group of groups) {
+            const assignments = await storage.getTrainingAssignmentsByGroup(group.id);
+            totalStudents += assignments.length;
+          }
+
+          return {
+            ...courseDetails,
+            groups: groups,
+            totalStudents: totalStudents
+          };
         })
       );
 
