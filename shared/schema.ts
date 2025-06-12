@@ -67,24 +67,40 @@ export const trainingSites = pgTable("training_sites", {
 export const trainingCourses = pgTable("training_courses", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  siteId: integer("site_id").notNull().references(() => trainingSites.id),
   facultyId: integer("faculty_id").references(() => faculties.id),
-  supervisorId: integer("supervisor_id").references(() => supervisors.id),
-  startDate: date("start_date").notNull(),
-  endDate: date("end_date").notNull(),
+  majorId: integer("major_id").references(() => majors.id), // ربط الدورة بتخصص معين
   description: text("description"),
-  capacity: integer("capacity").default(20),
-  location: text("location"),
   status: text("status").default("active"), // "active", "upcoming", "completed"
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: integer("created_by").references(() => users.id),
 });
 
-// Training Assignments table
+// Training Course Groups table - تقسيم الدورات إلى مجموعات
+export const trainingCourseGroups = pgTable("training_course_groups", {
+  id: serial("id").primaryKey(),
+  courseId: integer("course_id").notNull().references(() => trainingCourses.id),
+  groupName: text("group_name").notNull(), // اسم المجموعة (مجموعة 1، مجموعة 2)
+  siteId: integer("site_id").notNull().references(() => trainingSites.id),
+  supervisorId: integer("supervisor_id").notNull().references(() => supervisors.id),
+  startDate: date("start_date").notNull(),
+  endDate: date("end_date").notNull(),
+  capacity: integer("capacity").notNull().default(10), // العدد الأقصى للطلاب
+  currentEnrollment: integer("current_enrollment").default(0), // العدد الحالي للطلاب المسجلين
+  location: text("location"),
+  status: text("status").default("active"), // "active", "full", "completed"
+  createdAt: timestamp("created_at").defaultNow(),
+  createdBy: integer("created_by").references(() => users.id),
+}, (table) => {
+  return {
+    courseGroupUnique: uniqueIndex("course_group_unique").on(table.courseId, table.groupName),
+  };
+});
+
+// Training Assignments table - ربط الطلاب بالمجموعات
 export const trainingAssignments = pgTable("training_assignments", {
   id: serial("id").primaryKey(),
   studentId: integer("student_id").notNull().references(() => students.id),
-  courseId: integer("course_id").notNull().references(() => trainingCourses.id),
+  groupId: integer("group_id").notNull().references(() => trainingCourseGroups.id), // ربط بالمجموعة بدلاً من الدورة مباشرة
   assignedBySupervisorId: integer("assigned_by_supervisor_id").references(() => supervisors.id),
   assignedByAdminId: integer("assigned_by_admin_id").references(() => users.id),
   status: text("status").default("pending"), // "pending", "active", "completed"
@@ -92,7 +108,7 @@ export const trainingAssignments = pgTable("training_assignments", {
   assignedAt: timestamp("assigned_at").defaultNow(),
 }, (table) => {
   return {
-    studentCourseUnique: uniqueIndex("student_course_unique").on(table.studentId, table.courseId),
+    studentGroupUnique: uniqueIndex("student_group_unique").on(table.studentId, table.groupId),
   };
 });
 
@@ -128,6 +144,7 @@ export const insertSupervisorSchema = createInsertSchema(supervisors);
 export const insertStudentSchema = createInsertSchema(students);
 export const insertTrainingSiteSchema = createInsertSchema(trainingSites);
 export const insertTrainingCourseSchema = createInsertSchema(trainingCourses);
+export const insertTrainingCourseGroupSchema = createInsertSchema(trainingCourseGroups);
 export const insertTrainingAssignmentSchema = createInsertSchema(trainingAssignments);
 export const insertEvaluationSchema = createInsertSchema(evaluations);
 export const insertActivityLogSchema = createInsertSchema(activityLogs);
@@ -156,6 +173,9 @@ export type InsertTrainingSite = z.infer<typeof insertTrainingSiteSchema>;
 
 export type TrainingCourse = typeof trainingCourses.$inferSelect;
 export type InsertTrainingCourse = z.infer<typeof insertTrainingCourseSchema>;
+
+export type TrainingCourseGroup = typeof trainingCourseGroups.$inferSelect;
+export type InsertTrainingCourseGroup = z.infer<typeof insertTrainingCourseGroupSchema>;
 
 export type TrainingAssignment = typeof trainingAssignments.$inferSelect;
 export type InsertTrainingAssignment = z.infer<typeof insertTrainingAssignmentSchema>;
