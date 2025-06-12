@@ -623,12 +623,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "الدورة التدريبية غير موجودة" });
       }
 
-      // Fetch assignments to determine student count
-      const assignments = await storage.getTrainingAssignmentsByCourse(id);
+      // Fetch groups for this course to determine student count
+      const groups = await storage.getTrainingCourseGroupsByCourse(id);
+      const totalEnrolled = groups.reduce((sum, group) => sum + (group.currentEnrollment || 0), 0);
 
       res.json({
         ...course,
-        studentCount: assignments.length
+        groups: groups,
+        totalStudents: totalEnrolled
       });
     } catch (error) {
       res.status(500).json({ message: "خطأ في استرجاع بيانات الدورة التدريبية" });
@@ -637,30 +639,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/training-courses", authMiddleware, requireRole(["admin", "supervisor"]), async (req: Request, res: Response) => {
     try {
-      const { 
-        name, siteId, facultyId, supervisorId, startDate, endDate, 
-        description, capacity, location, status 
-      } = req.body;
+      const { name, facultyId, majorId, description, status } = req.body;
 
       const course = await storage.createTrainingCourse({
         name,
-        siteId: Number(siteId),
         facultyId: facultyId ? Number(facultyId) : undefined,
-        supervisorId: supervisorId ? Number(supervisorId) : undefined,
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
+        majorId: majorId ? Number(majorId) : undefined,
         description,
-        capacity: Number(capacity),
-        location,
-        status: status || "upcoming",
-        createdBy: req.user.id
+        status: status || "active",
+        createdBy: req.user?.id
       });
 
       // Log activity
       if (req.user) {
-        // Get site name
-        const site = await storage.getTrainingSite(Number(siteId));
-
         await logActivity(
           req.user.id,
           "create",
@@ -668,16 +659,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           course.id,
           { 
             message: `تم إنشاء دورة تدريبية: ${name}`,
-            courseData: { 
-              name, 
-              siteId, 
-              siteName: site?.name,
-              facultyId,
-              supervisorId, 
-              startDate, 
-              endDate,
-              capacity
-            }
+            courseData: { name, facultyId, majorId, description }
           },
           req.ip
         );
@@ -686,6 +668,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(course);
     } catch (error) {
       res.status(500).json({ message: "خطأ في إنشاء دورة تدريبية جديدة" });
+    }
+  });
+
+  // Training Course Groups Routes
+  app.get("/api/training-course-groups", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const courseId = req.query.courseId ? Number(req.query.courseId) : undefined;
+      const majorId = req.query.majorId ? Number(req.query.majorId) : undefined;
+      const availableOnly = req.query.availableOnly === 'true';
+
+      if (availableOnly) {
+        // Get groups with available spots for student registration
+        const groups = await storage.getTrainingCourseGroupsWithAvailableSpots(majorId);
+        res.json(groups);
+      } else if (courseId) {
+        const groups = await storage.getTrainingCourseGroupsByCourse(courseId);
+        res.json(groups);
+      } else {
+        const groups = await storage.getAllTrainingCourseGroups();
+        res.json(groups);
+      }
+    } catch (error) {
+      res.status(500).json({ message: "خطأ في استرجاع بيانات مجموعات التدريب" });
+    }
+  });
+
+  app.get("/api/training-course-groups/:id", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const group = await storage.getTrainingCourseGroup(id);
+
+      if (!group) {
+        return res.status(404).json({ message: "مجموعة التدريب غير موجودة" });
+      }
+
+      // Get assignments for this group
+      const assignments = await storage.getTrainingAssignmentsByGroup(id);
+
+      res.json({
+        ...group,
+        studentCount: assignments.length,
+        availableSpots: group.capacity - group.currentEnrollment
+      });
+    } catch (error) {
+      res.status(500).json({ message: "خطأ في استرجاع بيانات مجموعة التدريب" });
+    }
+  });
+
+  app.post("/api/training-course-groups", authMiddleware, requireRole(["admin", "supervisor"]), async (req: Request, res: Response) => {
+    try {
+      const { 
+        courseId, groupName, siteId, supervisorId, startDate, endDate, 
+        capacity, location, status 
+      } = req.body;
+
+      const group = await storage.createTrainingCourseGroup({
+        courseId: Number(courseId),
+        groupName,
+        siteId: Number(siteId),
+        supervisorId: Number(supervisorId),
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        capacity: Number(capacity),
+        currentEnrollment: 0,
+        location,
+        status: status || "active",
+        createdBy: req.user?.id
+      });
+
+      // Log activity
+      if (req.user) {
+        await logActivity(
+          req.user.id,
+          "create",
+          "training_course_group",
+          group.id,
+          { 
+            message: `تم إنشاء مجموعة تدريب: ${groupName}`,
+            groupData: { courseId, groupName, siteId, supervisorId, capacity }
+          },
+          req.ip
+        );
+      }
+
+      res.status(201).json(group);
+    } catch (error) {
+      res.status(500).json({ message: "خطأ في إنشاء مجموعة تدريب جديدة" });
     }
   });
 
@@ -740,8 +809,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         assignments = assignments.filter(assignment => assignment.studentId === studentId);
       }
 
-      if (courseId) {
-        assignments = assignments.filter(assignment => assignment.courseId === courseId);
+      const groupId = req.query.groupId ? Number(req.query.groupId) : undefined;
+      
+      if (groupId) {
+        assignments = assignments.filter(assignment => assignment.groupId === groupId);
       }
 
       // Fetch details for each assignment
@@ -768,45 +839,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/training-assignments", authMiddleware, requireRole(["admin", "supervisor"]), async (req: Request, res: Response) => {
     try {
-      const { studentId, courseId } = req.body;
+      const { studentId, groupId } = req.body;
 
-      // Check if assignment already exists
-      const existingAssignments = await storage.getTrainingAssignmentsByStudent(Number(studentId));
-      const alreadyAssigned = existingAssignments.some(a => a.courseId === Number(courseId));
-
-      if (alreadyAssigned) {
-        return res.status(400).json({ message: "الطالب مسجل بالفعل في هذه الدورة التدريبية" });
+      // Check if group has available spots
+      const group = await storage.getTrainingCourseGroup(Number(groupId));
+      if (!group) {
+        return res.status(404).json({ message: "مجموعة التدريب غير موجودة" });
       }
 
-      // Create assignment
+      if ((group.currentEnrollment || 0) >= group.capacity) {
+        return res.status(400).json({ message: "المجموعة ممتلئة" });
+      }
+
+      // Check if student is already enrolled in this group
+      const existingAssignments = await storage.getTrainingAssignmentsByStudent(Number(studentId));
+      const alreadyEnrolled = existingAssignments.some(assignment => assignment.groupId === Number(groupId));
+      
+      if (alreadyEnrolled) {
+        return res.status(400).json({ message: "الطالب مسجل بالفعل في هذه المجموعة" });
+      }
+
       const assignment = await storage.createTrainingAssignment({
         studentId: Number(studentId),
-        courseId: Number(courseId),
-        assignedBySupervisorId: req.user.role === "supervisor" ? (await storage.getSupervisorByUserId(req.user.id))?.id : undefined,
-        assignedByAdminId: req.user.role === "admin" ? req.user.id : undefined,
-        status: "pending",
-        confirmed: false
+        groupId: Number(groupId),
+        assignedBySupervisorId: req.user?.role === "supervisor" ? (await storage.getSupervisorByUserId(req.user.id))?.id : undefined,
+        assignedByAdminId: req.user?.role === "admin" ? req.user.id : undefined,
+        status: "pending"
       });
 
       // Log activity
       if (req.user) {
-        // Get student and course details
         const student = await storage.getStudent(Number(studentId));
-        const course = await storage.getTrainingCourse(Number(courseId));
         const studentUser = student ? await storage.getUser(student.userId) : null;
-
+        
         await logActivity(
           req.user.id,
           "create",
           "training_assignment",
           assignment.id,
           { 
-            message: `تم تعيين طالب في دورة تدريبية`,
+            message: `تم تعيين طالب لمجموعة التدريب`,
             assignmentData: { 
               studentId,
               studentName: studentUser?.name,
-              courseId,
-              courseName: course?.name
+              groupName: group.groupName,
+              assignedBy: req.user.name,
+              assignedByRole: req.user.role
             }
           },
           req.ip
@@ -815,7 +893,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json(assignment);
     } catch (error) {
-      res.status(500).json({ message: "خطأ في إنشاء تعيين تدريبي جديد" });
+      res.status(500).json({ message: "خطأ في إنشاء تعيين تدريبي" });
+    }
+  });
+
+  // Student self-registration endpoint
+  app.post("/api/training-assignments/register", authMiddleware, requireRole("student"), async (req: Request, res: Response) => {
+    try {
+      const { groupId } = req.body;
+
+      if (!req.user) {
+        return res.status(401).json({ message: "غير مصرح بالوصول" });
+      }
+
+      // Get current student
+      const student = await storage.getStudentByUserId(req.user.id);
+      if (!student) {
+        return res.status(404).json({ message: "لم يتم العثور على بيانات الطالب" });
+      }
+
+      // Get group details
+      const group = await storage.getTrainingCourseGroup(Number(groupId));
+      if (!group) {
+        return res.status(404).json({ message: "مجموعة التدريب غير موجودة" });
+      }
+
+      // Get course details to check major compatibility
+      const course = await storage.getTrainingCourse(group.courseId);
+      if (!course) {
+        return res.status(404).json({ message: "الدورة التدريبية غير موجودة" });
+      }
+
+      // Check if course is for student's major
+      if (course.majorId && student.majorId !== course.majorId) {
+        return res.status(403).json({ message: "هذه الدورة غير متاحة لتخصصك" });
+      }
+
+      // Check if group has available spots
+      if ((group.currentEnrollment || 0) >= group.capacity) {
+        return res.status(400).json({ message: "المجموعة ممتلئة" });
+      }
+
+      // Check if student is already enrolled in this group or any group for the same course
+      const existingAssignments = await storage.getTrainingAssignmentsByStudent(student.id);
+      const alreadyEnrolledInCourse = existingAssignments.some(assignment => {
+        // We need to check if any assignment is for the same course
+        return assignment.groupId === Number(groupId);
+      });
+      
+      if (alreadyEnrolledInCourse) {
+        return res.status(400).json({ message: "أنت مسجل بالفعل في هذه المجموعة" });
+      }
+
+      // Create assignment with student confirmation
+      const assignment = await storage.createTrainingAssignment({
+        studentId: student.id,
+        groupId: Number(groupId),
+        status: "active",
+        confirmed: true // Student is registering themselves
+      });
+
+      // Log activity
+      await logActivity(
+        req.user.id,
+        "register",
+        "training_assignment",
+        assignment.id,
+        { 
+          message: `قام الطالب بالتسجيل في مجموعة التدريب`,
+          assignmentData: { 
+            studentId: student.id,
+            studentName: req.user.name,
+            groupName: group.groupName,
+            courseName: course.name
+          }
+        },
+        req.ip
+      );
+
+      res.status(201).json({
+        ...assignment,
+        message: "تم التسجيل بنجاح في مجموعة التدريب"
+      });
+    } catch (error) {
+      res.status(500).json({ message: "خطأ في التسجيل في مجموعة التدريب" });
     }
   });
 
