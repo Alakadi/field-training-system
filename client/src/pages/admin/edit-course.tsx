@@ -37,7 +37,7 @@ const EditCourse: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // الحصول على بيانات الدورة الحالية
-  const { data: course, isLoading: isLoadingCourse } = useQuery({
+  const { data: course, isLoading: isLoadingCourse, error } = useQuery({
     queryKey: [`/api/training-courses/${id}`],
     enabled: !!id,
   });
@@ -71,15 +71,15 @@ const EditCourse: React.FC = () => {
   useEffect(() => {
     if (course) {
       form.reset({
-        name: course.name,
-        code: course.code,
+        name: course.name || "",
+        code: course.code || "",
         description: course.description || "",
-        trainingSiteId: String(course.trainingSiteId),
-        capacity: String(course.capacity),
-        startDate: course.startDate.split("T")[0], // تحويل التاريخ إلى تنسيق YYYY-MM-DD
-        endDate: course.endDate.split("T")[0],
-        supervisorId: String(course.supervisorId),
-        status: course.status,
+        trainingSiteId: course.trainingSiteId ? String(course.trainingSiteId) : "",
+        capacity: course.capacity ? String(course.capacity) : "",
+        startDate: course.startDate ? course.startDate.split("T")[0] : "", // تحويل التاريخ إلى تنسيق YYYY-MM-DD
+        endDate: course.endDate ? course.endDate.split("T")[0] : "",
+        supervisorId: course.supervisorId ? String(course.supervisorId) : "",
+        status: course.status || "",
       });
     }
   }, [course, form]);
@@ -127,6 +127,25 @@ const EditCourse: React.FC = () => {
         <div className="flex justify-center items-center h-64">
           <div className="text-center">
             <p className="text-lg font-medium text-neutral-500">جاري تحميل بيانات الدورة التدريبية...</p>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (error || !course) {
+    return (
+      <AdminLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="text-center">
+            <p className="text-lg font-medium text-red-500">خطأ في تحميل بيانات الدورة التدريبية</p>
+            <Button
+              variant="outline"
+              onClick={() => setLocation("/admin/courses")}
+              className="mt-4"
+            >
+              العودة إلى القائمة
+            </Button>
           </div>
         </div>
       </AdminLayout>
