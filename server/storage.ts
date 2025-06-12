@@ -95,19 +95,36 @@ export interface IStorage {
   getAllTrainingCourses(): Promise<TrainingCourse[]>;
   getTrainingCourse(id: number): Promise<TrainingCourse | undefined>;
   createTrainingCourse(course: InsertTrainingCourse): Promise<TrainingCourse>;
-  getTrainingCourseWithDetails(id: number): Promise<(TrainingCourse & { site: TrainingSite, faculty?: Faculty, supervisor?: Supervisor }) | undefined>;
+  getTrainingCourseWithDetails(id: number): Promise<(TrainingCourse & { faculty?: Faculty, major?: Major }) | undefined>;
   getTrainingCoursesByFaculty(facultyId: number): Promise<TrainingCourse[]>;
-  getTrainingCoursesBySupervisor(supervisorId: number): Promise<TrainingCourse[]>;
+  getTrainingCoursesByMajor(majorId: number): Promise<TrainingCourse[]>;
+
+  // Training Course Group operations
+  getAllTrainingCourseGroups(): Promise<TrainingCourseGroup[]>;
+  getTrainingCourseGroup(id: number): Promise<TrainingCourseGroup | undefined>;
+  createTrainingCourseGroup(group: InsertTrainingCourseGroup): Promise<TrainingCourseGroup>;
+  getTrainingCourseGroupsByCourse(courseId: number): Promise<TrainingCourseGroup[]>;
+  getTrainingCourseGroupsWithAvailableSpots(majorId?: number): Promise<(TrainingCourseGroup & { 
+    course: TrainingCourse, 
+    site: TrainingSite, 
+    supervisor: Supervisor & { user: User },
+    availableSpots: number 
+  })[]>;
+  updateGroupEnrollment(groupId: number, newEnrollment: number): Promise<TrainingCourseGroup | undefined>;
 
   // Training Assignment operations
   getAllTrainingAssignments(): Promise<TrainingAssignment[]>;
   getTrainingAssignment(id: number): Promise<TrainingAssignment | undefined>;
   createTrainingAssignment(assignment: InsertTrainingAssignment): Promise<TrainingAssignment>;
   getTrainingAssignmentsByStudent(studentId: number): Promise<TrainingAssignment[]>;
-  getTrainingAssignmentsByCourse(courseId: number): Promise<TrainingAssignment[]>;
+  getTrainingAssignmentsByGroup(groupId: number): Promise<TrainingAssignment[]>;
   getTrainingAssignmentWithDetails(id: number): Promise<(TrainingAssignment & { 
     student: Student & { user: User }, 
-    course: TrainingCourse & { site: TrainingSite } 
+    group: TrainingCourseGroup & { 
+      course: TrainingCourse, 
+      site: TrainingSite, 
+      supervisor: Supervisor & { user: User } 
+    } 
   }) | undefined>;
   confirmTrainingAssignment(id: number): Promise<TrainingAssignment | undefined>;
 
