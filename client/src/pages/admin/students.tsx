@@ -15,18 +15,18 @@ const AdminStudents: React.FC = () => {
   const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
+
   // Parse query parameters
   const params = new URLSearchParams(location.split("?")[1]);
   const action = params.get("action");
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [facultyFilter, setFacultyFilter] = useState("");
   const [majorFilter, setMajorFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showAddStudentForm, setShowAddStudentForm] = useState(action === "new");
   const [showImportForm, setShowImportForm] = useState(action === "import");
-  
+
   const itemsPerPage = 10;
 
   // Fetch data
@@ -54,7 +54,7 @@ const AdminStudents: React.FC = () => {
   // Filter students
   const filteredStudents = students?.filter((student: any) => {
     let matches = true;
-    
+
     // Search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -62,17 +62,17 @@ const AdminStudents: React.FC = () => {
       const idMatches = student.universityId.toLowerCase().includes(query);
       matches = nameMatches || idMatches;
     }
-    
+
     // Faculty filter
     if (facultyFilter && matches) {
       matches = student.facultyId === parseInt(facultyFilter);
     }
-    
+
     // Major filter
     if (majorFilter && matches) {
       matches = student.majorId === parseInt(majorFilter);
     }
-    
+
     return matches;
   }) || [];
 
@@ -90,16 +90,16 @@ const AdminStudents: React.FC = () => {
   const handleEditStudent = (studentId: number) => {
     setLocation(`/admin/students/edit/${studentId}`);
   };
-  
+
   const handleDeleteStudent = async (studentId: number) => {
     if (window.confirm("هل أنت متأكد من حذف هذا الطالب؟")) {
       try {
         await apiRequest("DELETE", `/api/students/${studentId}`);
-        
+
         toast({
           title: "تم حذف الطالب بنجاح",
         });
-        
+
         queryClient.invalidateQueries({ queryKey: ["/api/students"] });
       } catch (error) {
         toast({
@@ -332,7 +332,7 @@ const AdminStudents: React.FC = () => {
               </tbody>
             </table>
           </div>
-          
+
           {/* Pagination */}
           {filteredStudents.length > 0 && (
             <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-neutral-200 sm:px-6">
@@ -379,7 +379,7 @@ const AdminStudents: React.FC = () => {
                       <span className="sr-only">السابق</span>
                       <span className="material-icons text-sm">chevron_right</span>
                     </Button>
-                    
+
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       let pageNum = i + 1;
                       if (totalPages > 5 && currentPage > 3) {
@@ -399,7 +399,7 @@ const AdminStudents: React.FC = () => {
                       }
                       return null;
                     })}
-                    
+
                     <Button
                       variant="outline"
                       className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-neutral-300 text-sm font-medium"
