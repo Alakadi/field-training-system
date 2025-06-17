@@ -106,11 +106,7 @@ const ImportExcel: React.FC = () => {
             </Button>
             
             <p className="text-xs text-neutral-500 mt-4">
-              يجب أن يحتوي الملف على أعمدة: الرقم الجامعي، اسم الطالب، الكلية، التخصص، المستوى الدراسي
-              <br />
-              يمكن استخدام أسماء أو أرقام الكليات والتخصصات والمستويات
-              <br />
-              الطلاب الموجودون سيتم تحديث بياناتهم إذا تغيرت
+              يجب أن يحتوي الملف على أعمدة: الرقم الجامعي، اسم الطالب، التخصص، الكلية، المستوى الدراسي
             </p>
           </div>
         </div>
@@ -119,41 +115,24 @@ const ImportExcel: React.FC = () => {
           <div className="mt-6">
             <h4 className="font-bold mb-2">نتيجة الاستيراد:</h4>
             <div className="flex space-x-4 space-x-reverse mb-2">
-              <div className="bg-green-100 text-green-800 px-3 py-1 rounded-md text-sm font-medium">
-                ✓ نجح: {uploadResult.success}
+              <div className="bg-green-100 text-green-800 px-3 py-1 rounded-md text-sm">
+                نجاح: {uploadResult.success}
               </div>
-              {uploadResult.errors > 0 && (
-                <div className="bg-red-100 text-red-800 px-3 py-1 rounded-md text-sm font-medium">
-                  ✗ أخطاء: {uploadResult.errors}
-                </div>
-              )}
+              <div className="bg-red-100 text-red-800 px-3 py-1 rounded-md text-sm">
+                أخطاء: {uploadResult.errors}
+              </div>
             </div>
             
             {uploadResult.messages && uploadResult.messages.length > 0 && (
               <div className="mt-4">
-                <h5 className="font-medium text-sm mb-2">تفاصيل العملية:</h5>
-                <div className="bg-neutral-50 border rounded-md max-h-60 overflow-y-auto">
-                  <ul className="text-sm space-y-1 p-3">
-                    {uploadResult.messages.map((message, i) => (
-                      <li key={i} className={`flex items-start space-x-2 space-x-reverse ${
-                        message.includes("تم إنشاء") || message.includes("تم تحديث") 
-                          ? "text-green-700" 
-                          : message.includes("خطأ") || message.includes("لم يتم العثور")
-                          ? "text-red-700"
-                          : "text-blue-700"
-                      }`}>
-                        <span className="flex-shrink-0 mt-1">
-                          {message.includes("تم إنشاء") || message.includes("تم تحديث") 
-                            ? "✓" 
-                            : message.includes("خطأ") || message.includes("لم يتم العثور")
-                            ? "✗"
-                            : "ℹ"}
-                        </span>
-                        <span className="flex-1">{message}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                <h5 className="font-medium text-sm mb-1">تفاصيل:</h5>
+                <ul className="text-sm text-neutral-600 space-y-1 bg-neutral-50 p-3 rounded-md max-h-40 overflow-y-auto">
+                  {uploadResult.messages.map((message, i) => (
+                    <li key={i} className="list-disc list-inside">
+                      {message}
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
           </div>

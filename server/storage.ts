@@ -283,7 +283,7 @@ export class DatabaseStorage implements IStorage {
     }).from(supervisors)
       .leftJoin(users, eq(supervisors.userId, users.id))
       .where(eq(supervisors.id, id));
-
+    
     if (result[0] && result[0].user) {
       return {
         id: result[0].id,
@@ -508,7 +508,7 @@ export class DatabaseStorage implements IStorage {
 
   async createTrainingAssignment(assignment: InsertTrainingAssignment): Promise<TrainingAssignment> {
     const result = await db.insert(trainingAssignments).values(assignment).returning();
-
+    
     // Update group enrollment
     if (result[0]) {
       const group = await this.getTrainingCourseGroup(result[0].groupId);
@@ -516,7 +516,7 @@ export class DatabaseStorage implements IStorage {
         await this.updateGroupEnrollment(result[0].groupId, (group.currentEnrollment || 0) + 1);
       }
     }
-
+    
     return result[0];
   }
 
