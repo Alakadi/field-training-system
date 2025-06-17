@@ -803,9 +803,111 @@ export class DatabaseStorage implements IStorage {
     major: string, 
     level: string 
   }[]): Promise<{ success: number, errors: number, messages: string[] }> {
-    // Implementation would involve processing the students array
-    // This is a simplified placeholder
-    return { success: 0, errors: 0, messages: [] };
+    let successCount = 0;
+    let errorCount = 0;
+    const messages: string[] = [];
+
+    for (const studentData of students) {
+      try {
+        // التحقق من البيانات المطلوبة
+        if (!studentData.universityId || !studentData.name) {
+          errorCount++;
+          messages.push(`الطالب ${studentData.name || 'غير محدد'}: الرقم الجامعي والاسم مطلوبان`);
+          continue;
+        }
+
+        // البحث عن الكلية (بالاسم أو الرقم)
+        let faculty = null;
+        if (studentData.faculty) {
+          const facultyId = parseInt(studentData.faculty);
+          if (!isNaN(facultyId)) {
+            faculty = await this.getFaculty(facultyId);
+          } else {
+            const allFaculties = await this.getAllFaculties();
+            faculty = allFaculties.find(f => f.name === studentData.faculty);
+          }
+        }
+
+        // البحث عن التخصص (بالاسم أو الرقم)
+        let major = null;
+        if (studentData.major && faculty) {
+          const majorId = parseInt(studentData.major);
+          if (!isNaN(majorId)) {
+            major = await this.getMajor(majorId);
+          } else {
+            const facultyMajors = await this.getMajorsByFaculty(faculty.id);
+            major = facultyMajors.find(m => m.name === studentData.major);
+          }
+        }
+
+        // البحث عن المستوى (بالاسم أو الرقم)
+        let level = null;
+        if (studentData.level) {
+          const levelId = parseInt(studentData.level);
+          if (!isNaN(levelId)) {
+            level = await this.getLevel(levelId);
+          } else {
+            const allLevels = await this.getAllLevels();
+            level = allLevels.find(l => l.name === studentData.level);
+          }
+        }
+
+        // التحقق من وجود الطالب
+        const existingStudent = await this.getStudentByUniversityId(studentData.universityId);
+
+        if (existingStudent) {
+          // الطالب موجود - تحديث المستوى فقط إذا تغير
+          let needsUpdate = false;
+          const updateData: Partial<Student> = {};
+
+          if (level && existingStudent.levelId !== level.id) {
+            updateData.levelId = level.id;
+            needsUpdate = true;
+          }
+
+          if (needsUpdate) {
+            await this.updateStudent(existingStudent.id, updateData);
+            successCount++;
+            messages.push(`تم تحديث مستوى الطالب: ${studentData.name} (${studentData.universityId})`);
+          } else {
+            messages.push(`الطالب موجود بالفعل ولا يحتاج تحديث: ${studentData.name} (${studentData.universityId})`);
+          }
+        } else {
+          // طالب جديد - إنشاء حساب جديد
+          // إنشاء حساب المستخدم
+          const user = await this.createUser({
+            username: studentData.universityId,
+            password: "password", // كلمة مرور افتراضية
+            role: "student",
+            name: studentData.name,
+            active: true
+          });
+
+          // إنشاء سجل الطالب
+          await this.createStudent({
+            userId: user.id,
+            universityId: studentData.universityId,
+            facultyId: faculty?.id || null,
+            majorId: major?.id || null,
+            levelId: level?.id || null
+          });
+
+          successCount++;
+          messages.push(`تم إنشاء حساب جديد للطالب: ${studentData.name} (${studentData.universityId})`);
+        }
+
+      } catch (error) {
+        errorCount++;
+        const errorMessage = error instanceof Error ? error.message : 'خطأ غير معروف';
+        messages.push(`خطأ في معالجة الطالب ${studentData.name || 'غير محدد'}: ${errorMessage}`);
+      }
+    }
+
+    return {
+      success: successCount,
+      errors: errorCount,
+      messages: messages
+    };
   }
 }
 

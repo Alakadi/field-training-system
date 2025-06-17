@@ -105,34 +105,57 @@ const ImportExcel: React.FC = () => {
               {isUploading ? "جاري الرفع..." : "اختيار ملف"}
             </Button>
             
-            <p className="text-xs text-neutral-500 mt-4">
-              يجب أن يحتوي الملف على أعمدة: الرقم الجامعي، اسم الطالب، التخصص، الكلية، المستوى الدراسي
-            </p>
+            <div className="text-xs text-neutral-500 mt-4 space-y-2">
+              <p className="font-medium">متطلبات الملف:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>يجب أن يحتوي على عمود "الرقم الجامعي" (مطلوب)</li>
+                <li>يجب أن يحتوي على عمود "اسم الطالب" أو "الاسم" (مطلوب)</li>
+                <li>عمود "الكلية" (اختياري - يمكن أن يكون اسم أو رقم)</li>
+                <li>عمود "التخصص" (اختياري - يمكن أن يكون اسم أو رقم)</li>
+                <li>عمود "المستوى" أو "المستوى الدراسي" (اختياري - يمكن أن يكون اسم أو رقم)</li>
+              </ul>
+              <p className="text-orange-600 font-medium">
+                ملاحظة: إذا كان الطالب موجوداً، سيتم تحديث المستوى فقط عند الحاجة
+              </p>
+            </div>
           </div>
         </div>
 
         {uploadResult && (
           <div className="mt-6">
-            <h4 className="font-bold mb-2">نتيجة الاستيراد:</h4>
-            <div className="flex space-x-4 space-x-reverse mb-2">
-              <div className="bg-green-100 text-green-800 px-3 py-1 rounded-md text-sm">
-                نجاح: {uploadResult.success}
+            <h4 className="font-bold mb-3">نتيجة الاستيراد:</h4>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-green-700">{uploadResult.success}</div>
+                <div className="text-sm text-green-600">تم بنجاح</div>
               </div>
-              <div className="bg-red-100 text-red-800 px-3 py-1 rounded-md text-sm">
-                أخطاء: {uploadResult.errors}
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-red-700">{uploadResult.errors}</div>
+                <div className="text-sm text-red-600">أخطاء</div>
               </div>
             </div>
             
             {uploadResult.messages && uploadResult.messages.length > 0 && (
               <div className="mt-4">
-                <h5 className="font-medium text-sm mb-1">تفاصيل:</h5>
-                <ul className="text-sm text-neutral-600 space-y-1 bg-neutral-50 p-3 rounded-md max-h-40 overflow-y-auto">
+                <h5 className="font-medium text-sm mb-2 flex items-center">
+                  <span className="material-icons text-sm ml-1">info</span>
+                  تفاصيل العملية:
+                </h5>
+                <div className="bg-neutral-50 border rounded-lg max-h-60 overflow-y-auto">
                   {uploadResult.messages.map((message, i) => (
-                    <li key={i} className="list-disc list-inside">
+                    <div 
+                      key={i} 
+                      className={`p-2 text-sm border-b border-neutral-200 last:border-b-0 ${
+                        message.includes('خطأ') ? 'text-red-700 bg-red-50' :
+                        message.includes('تم إنشاء') ? 'text-green-700 bg-green-50' :
+                        message.includes('تم تحديث') ? 'text-blue-700 bg-blue-50' :
+                        'text-neutral-600'
+                      }`}
+                    >
                       {message}
-                    </li>
+                    </div>
                   ))}
-                </ul>
+                </div>
               </div>
             )}
           </div>

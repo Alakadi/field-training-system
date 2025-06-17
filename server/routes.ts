@@ -517,17 +517,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Prepare student data for import
       const studentsData = data.map((row: any) => {
         return {
-          universityId: String(row["الرقم الجامعي"] || row["رقم الطالب"] || ""),
-          name: String(row["اسم الطالب"] || row["الاسم"] || ""),
-          faculty: String(row["الكلية"] || ""),
-          major: String(row["التخصص"] || ""),
-          level: String(row["المستوى"] || row["المستوى الدراسي"] || "")
+          universityId: String(
+            row["الرقم الجامعي"] || 
+            row["رقم الطالب"] || 
+            row["university_id"] || 
+            row["University ID"] || 
+            ""
+          ).trim(),
+          name: String(
+            row["اسم الطالب"] || 
+            row["الاسم"] || 
+            row["name"] || 
+            row["Name"] || 
+            ""
+          ).trim(),
+          faculty: String(
+            row["الكلية"] || 
+            row["Faculty"] || 
+            row["faculty"] || 
+            row["كلية"] || 
+            ""
+          ).trim(),
+          major: String(
+            row["التخصص"] || 
+            row["Major"] || 
+            row["major"] || 
+            row["تخصص"] || 
+            ""
+          ).trim(),
+          level: String(
+            row["المستوى"] || 
+            row["المستوى الدراسي"] || 
+            row["Level"] || 
+            row["level"] || 
+            row["مستوى"] || 
+            ""
+          ).trim()
         };
       });
 
       // Import students
+      console.log(`Starting import of ${studentsData.length} students`);
       const result = await storage.importStudents(studentsData);
 
+      // Log the import activity
+      if (req.user) {
+        await logActivity(
+          req.user.id,
+          "import",
+          "students",
+          null,
+          { 
+            message: `تم استيراد بيانات الطلاب`,
+            importData: {
+              totalRecords: studentsData.length,
+              successCount: result.success,
+              errorCount: result.errors,
+              fileName: "Excel file"
+            }
+          },
+          req.ip
+        );
+      }
+
+      console.log(`Import completed: ${result.success} success, ${result.errors} errors`);
       res.json(result);
     } catch (error) {
       res.status(500).json({ 
