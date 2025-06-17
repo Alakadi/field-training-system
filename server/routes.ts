@@ -500,48 +500,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Import Students from Excel
   app.post("/api/students/import", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
-      console.log("Import request received, body keys:", Object.keys(req.body));
-      
       if (!req.body.excelData) {
-        console.error("No excelData in request body");
-        return res.status(400).json({ 
-          message: "لم يتم العثور على بيانات Excel",
-          success: 0,
-          errors: 1,
-          messages: ["لم يتم العثور على بيانات Excel في الطلب"]
-        });
+        return res.status(400).json({ message: "لم يتم العثور على بيانات Excel" });
       }
-
-      console.log("Excel data length:", req.body.excelData.length);
 
       // Parse Base64 encoded Excel data
-      let workbook, data;
-      try {
-        workbook = XLSX.read(req.body.excelData, { type: "base64" });
-        const sheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[sheetName];
-        data = XLSX.utils.sheet_to_json(worksheet);
-      } catch (parseError) {
-        console.error("Error parsing Excel file:", parseError);
-        return res.status(400).json({ 
-          message: "خطأ في قراءة ملف Excel",
-          success: 0,
-          errors: 1,
-          messages: [`خطأ في قراءة ملف Excel: ${parseError instanceof Error ? parseError.message : 'خطأ غير معروف'}`]
-        });
-      }
+      const workbook = XLSX.read(req.body.excelData, { type: "base64" });
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const data = XLSX.utils.sheet_to_json(worksheet);
 
       if (!data || data.length === 0) {
-        console.error("Excel file is empty");
-        return res.status(400).json({ 
-          message: "ملف Excel فارغ",
-          success: 0,
-          errors: 1,
-          messages: ["ملف Excel فارغ أو لا يحتوي على بيانات صالحة"]
-        });
+        return res.status(400).json({ message: "ملف Excel فارغ" });
       }
-
-      console.log(`Found ${data.length} rows in Excel file`);
 
       // Prepare student data for import
       const studentsData = data.map((row: any) => {
@@ -585,55 +556,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       });
 
-      console.log("Processed student data sample:", studentsData.slice(0, 2));
-
       // Import students
       console.log(`Starting import of ${studentsData.length} students`);
       const result = await storage.importStudents(studentsData);
 
       // Log the import activity
       if (req.user) {
-        try {
-          await logActivity(
-            req.user.id,
-            "import",
-            "students",
-            null,
-            { 
-              message: `تم استيراد بيانات الطلاب`,
-              importData: {
-                totalRecords: studentsData.length,
-                successCount: result.success,
-                errorCount: result.errors,
-                fileName: "Excel file"
-              }
-            },
-            req.ip
-          );
-        } catch (logError) {
-          console.error("Error logging import activity:", logError);
-          // Don't fail import because of logging error
-        }
+        await logActivity(
+          req.user.id,
+          "import",
+          "students",
+          null,
+          { 
+            message: `تم استيراد بيانات الطلاب`,
+            importData: {
+              totalRecords: studentsData.length,
+              successCount: result.success,
+              errorCount: result.errors,
+              fileName: "Excel file"
+            }
+          },
+          req.ip
+        );
       }
 
       console.log(`Import completed: ${result.success} success, ${result.errors} errors`);
-      
-      // Ensure we return a valid JSON response
-      res.status(200).json({
-        success: result.success || 0,
-        errors: result.errors || 0,
-        messages: result.messages || []
-      });
-      
+      res.json(result);
     } catch (error) {
-      console.error("Import error:", error);
-      
-      // Ensure we return a valid JSON response even on error
       res.status(500).json({ 
         message: "خطأ في استيراد بيانات الطلاب", 
-        success: 0,
-        errors: 1,
-        messages: [error instanceof Error ? error.message : "خطأ غير معروف في الخادم"]
+        error: error instanceof Error ? error.message : "Unknown error" 
       });
     }
   });
