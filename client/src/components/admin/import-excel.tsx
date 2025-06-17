@@ -40,24 +40,7 @@ const ImportExcel: React.FC = () => {
           excelData: base64data,
         });
 
-        // Check if response is ok
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error("Server response error:", errorText);
-          throw new Error(`خطأ في الخادم: ${response.status} - ${errorText}`);
-        }
-
-        // Check if response is JSON
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          const responseText = await response.text();
-          console.error("Non-JSON response:", responseText);
-          throw new Error("الخادم لم يرجع استجابة JSON صالحة");
-        }
-
         const result = await response.json();
-        console.log("Import result:", result);
-        
         setUploadResult(result);
 
         toast({
