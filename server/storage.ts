@@ -807,107 +807,209 @@ export class DatabaseStorage implements IStorage {
     let errorCount = 0;
     const messages: string[] = [];
 
+    // معالجة كل طالب في عملية منفصلة لضمان الاستقرار
     for (const studentData of students) {
       try {
-        // التحقق من البيانات المطلوبة
+        console.log(`Processing student: ${studentData.name} (${studentData.universityId})`);
+
         if (!studentData.universityId || !studentData.name) {
           errorCount++;
-          messages.push(`الطالب ${studentData.name || 'غير محدد'}: الرقم الجامعي والاسم مطلوبان`);
+          messages.push(`طالب مرفوض: بيانات ناقصة - ${studentData.name || 'غير محدد'}`);
           continue;
         }
 
-        // البحث عن الكلية (بالاسم أو الرقم)
-        let faculty = null;
-        if (studentData.faculty) {
-          const facultyId = parseInt(studentData.faculty);
-          if (!isNaN(facultyId)) {
-            faculty = await this.getFaculty(facultyId);
-          } else {
-            const allFaculties = await this.getAllFaculties();
-            faculty = allFaculties.find(f => f.name === studentData.faculty);
+        // بدء عملية منفصلة لكل طالب
+        await db.transaction(async (tx) => {
+          // التحقق من وجود الطالب
+          const existingStudentResult = await tx
+            .select()
+            .from(students)
+            .where(eq(students.universityId, studentData.universityId))
+            .limit(1);
+
+          const existingStudent = existingStudentResult[0];
+
+          if (existingStudent) {
+            console.log(`Student exists: ${studentData.universityId}, updating level only`);
+
+            // البحث عن المستوى
+            let levelId = null;
+            if (studentData.level) {
+              const levelByNameResult = await tx
+                .select()
+                .from(levels)
+                .where(eq(levels.name, studentData.level))
+                .limit(1);
+
+              if (levelByNameResult.length > 0) {
+                levelId = levelByNameResult[0].id;
+              } else {
+                // محاولة البحث بالرقم
+                const levelNum = parseInt(studentData.level);
+                if (!isNaN(levelNum)) {
+                  const levelByNumberResult = await tx
+                    .select()
+                    .from(levels)
+                    .where(eq(levels.id, levelNum))
+                    .limit(1);
+
+                  if (levelByNumberResult.length > 0) {
+                    levelId = levelByNumberResult[0].id;
+                  }
+                }
+              }
+            }
+
+            // تحديث المستوى فقط إذا تغير
+            if (levelId && existingStudent.levelId !== levelId) {
+              await tx
+                .update(students)
+                .set({ levelId })
+                .where(eq(students.id, existingStudent.id));
+
+              successCount++;
+              messages.push(`تم تحديث مستوى الطالب: ${studentData.name}`);
+            } else {
+              messages.push(`الطالب موجود ولا يحتاج تحديث: ${studentData.name}`);
+            }
+            return; // الخروج من العملية
           }
-        }
 
-        // البحث عن التخصص (بالاسم أو الرقم)
-        let major = null;
-        if (studentData.major && faculty) {
-          const majorId = parseInt(studentData.major);
-          if (!isNaN(majorId)) {
-            major = await this.getMajor(majorId);
-          } else {
-            const facultyMajors = await this.getMajorsByFaculty(faculty.id);
-            major = facultyMajors.find(m => m.name === studentData.major);
-          }
-        }
+          // البحث عن الكلية
+          let facultyId = null;
+          if (studentData.faculty) {
+            const facultyByNameResult = await tx
+              .select()
+              .from(faculties)
+              .where(eq(faculties.name, studentData.faculty))
+              .limit(1);
 
-        // البحث عن المستوى (بالاسم أو الرقم)
-        let level = null;
-        if (studentData.level) {
-          const levelId = parseInt(studentData.level);
-          if (!isNaN(levelId)) {
-            level = await this.getLevel(levelId);
-          } else {
-            const allLevels = await this.getAllLevels();
-            level = allLevels.find(l => l.name === studentData.level);
-          }
-        }
+            if (facultyByNameResult.length > 0) {
+              facultyId = facultyByNameResult[0].id;
+            } else {
+              // محاولة البحث بالرقم
+              const facultyNum = parseInt(studentData.faculty);
+              if (!isNaN(facultyNum)) {
+                const facultyByNumberResult = await tx
+                  .select()
+                  .from(faculties)
+                  .where(eq(faculties.id, facultyNum))
+                  .limit(1);
 
-        // التحقق من وجود الطالب
-        const existingStudent = await this.getStudentByUniversityId(studentData.universityId);
-
-        if (existingStudent) {
-          // الطالب موجود - تحديث المستوى فقط إذا تغير
-          let needsUpdate = false;
-          const updateData: Partial<Student> = {};
-
-          if (level && existingStudent.levelId !== level.id) {
-            updateData.levelId = level.id;
-            needsUpdate = true;
+                if (facultyByNumberResult.length > 0) {
+                  facultyId = facultyByNumberResult[0].id;
+                }
+              }
+            }
           }
 
-          if (needsUpdate) {
-            await this.updateStudent(existingStudent.id, updateData);
-            successCount++;
-            messages.push(`تم تحديث مستوى الطالب: ${studentData.name} (${studentData.universityId})`);
-          } else {
-            messages.push(`الطالب موجود بالفعل ولا يحتاج تحديث: ${studentData.name} (${studentData.universityId})`);
+          // البحث عن التخصص
+          let majorId = null;
+          if (studentData.major && facultyId) {
+            const majorByNameResult = await tx
+              .select()
+              .from(majors)
+              .where(and(
+                eq(majors.name, studentData.major),
+                eq(majors.facultyId, facultyId)
+              ))
+              .limit(1);
+
+            if (majorByNameResult.length > 0) {
+              majorId = majorByNameResult[0].id;
+            } else {
+              // محاولة البحث بالرقم
+              const majorNum = parseInt(studentData.major);
+              if (!isNaN(majorNum)) {
+                const majorByNumberResult = await tx
+                  .select()
+                  .from(majors)
+                  .where(and(
+                    eq(majors.id, majorNum),
+                    eq(majors.facultyId, facultyId)
+                  ))
+                  .limit(1);
+
+                if (majorByNumberResult.length > 0) {
+                  majorId = majorByNumberResult[0].id;
+                }
+              }
+            }
           }
-        } else {
-          // طالب جديد - إنشاء حساب جديد
-          // إنشاء حساب المستخدم
-          const user = await this.createUser({
-            username: studentData.universityId,
-            password: "password", // كلمة مرور افتراضية
-            role: "student",
-            name: studentData.name,
-            active: true
-          });
+
+          // البحث عن المستوى
+          let levelId = null;
+          if (studentData.level) {
+            const levelByNameResult = await tx
+              .select()
+              .from(levels)
+              .where(eq(levels.name, studentData.level))
+              .limit(1);
+
+            if (levelByNameResult.length > 0) {
+              levelId = levelByNameResult[0].id;
+            } else {
+              // محاولة البحث بالرقم
+              const levelNum = parseInt(studentData.level);
+              if (!isNaN(levelNum)) {
+                const levelByNumberResult = await tx
+                  .select()
+                  .from(levels)
+                  .where(eq(levels.id, levelNum))
+                  .limit(1);
+
+                if (levelByNumberResult.length > 0) {
+                  levelId = levelByNumberResult[0].id;
+                }
+              }
+            }
+          }
+
+          console.log(`Found data - FacultyId: ${facultyId}, MajorId: ${majorId}, LevelId: ${levelId}`);
+
+          // إنشاء المستخدم
+          const [newUser] = await tx
+            .insert(users)
+            .values({
+              username: studentData.universityId,
+              password: "password", // كلمة مرور افتراضية
+              role: "student",
+              name: studentData.name,
+              active: true
+            })
+            .returning();
 
           // إنشاء سجل الطالب
-          await this.createStudent({
-            userId: user.id,
-            universityId: studentData.universityId,
-            facultyId: faculty?.id || null,
-            majorId: major?.id || null,
-            levelId: level?.id || null
-          });
+          const [newStudent] = await tx
+            .insert(students)
+            .values({
+              userId: newUser.id,
+              universityId: studentData.universityId,
+              facultyId: facultyId,
+              majorId: majorId,
+              levelId: levelId,
+              supervisorId: null
+            })
+            .returning();
 
-          successCount++;
-          messages.push(`تم إنشاء حساب جديد للطالب: ${studentData.name} (${studentData.universityId})`);
-        }
+          console.log(`Student created: ${studentData.name} with ID: ${newStudent.id}`);
+        });
+
+        successCount++;
+        messages.push(`تم إنشاء الطالب: ${studentData.name}`);
 
       } catch (error) {
         errorCount++;
-        const errorMessage = error instanceof Error ? error.message : 'خطأ غير معروف';
-        messages.push(`خطأ في معالجة الطالب ${studentData.name || 'غير محدد'}: ${errorMessage}`);
+        console.error(`Error processing student ${studentData.name}:`, error);
+        messages.push(`خطأ في إنشاء الطالب ${studentData.name}: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`);
       }
     }
 
-    return {
-      success: successCount,
-      errors: errorCount,
-      messages: messages
-    };
+    // إضافة تأخير قصير للتأكد من commit العمليات
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    console.log(`Import summary: ${successCount} success, ${errorCount} errors`);
+    return { success: successCount, errors: errorCount, messages };
   }
 }
 
