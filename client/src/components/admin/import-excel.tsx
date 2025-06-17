@@ -40,6 +40,11 @@ const ImportExcel: React.FC = () => {
           excelData: base64data,
         });
 
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`فشل في استيراد البيانات: ${errorText}`);
+        }
+
         const result = await response.json();
         setUploadResult(result);
 
@@ -53,10 +58,24 @@ const ImportExcel: React.FC = () => {
         queryClient.invalidateQueries({ queryKey: ["/api/students"] });
       } catch (error) {
         console.error("Import failed:", error);
+        let errorMessage = "حدث خطأ أثناء استيراد البيانات";
+        
+        if (error instanceof Error) {
+          errorMessage = error.message;
+        } else if (typeof error === 'string') {
+          errorMessage = error;
+        }
+        
         toast({
           title: "فشل استيراد البيانات",
-          description: error instanceof Error ? error.message : "حدث خطأ أثناء استيراد البيانات",
+          description: errorMessage,
           variant: "destructive",
+        });
+        
+        setUploadResult({
+          success: 0,
+          errors: 1,
+          messages: [errorMessage]
         });
       } finally {
         setIsUploading(false);
