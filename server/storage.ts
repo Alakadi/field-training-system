@@ -97,6 +97,7 @@ export interface IStorage {
   getAllTrainingCourses(): Promise<TrainingCourse[]>;
   getTrainingCourse(id: number): Promise<TrainingCourse | undefined>;
   createTrainingCourse(course: InsertTrainingCourse): Promise<TrainingCourse>;
+  createTrainingCourseWithGroups(course: InsertTrainingCourse, groups: any[]): Promise<{ course: TrainingCourse, groups: TrainingCourseGroup[] }>;
   getTrainingCourseWithDetails(id: number): Promise<(TrainingCourse & { faculty?: Faculty, major?: Major }) | undefined>;
   getTrainingCoursesByFaculty(facultyId: number): Promise<TrainingCourse[]>;
   getTrainingCoursesByMajor(majorId: number): Promise<TrainingCourse[]>;
@@ -135,6 +136,12 @@ export interface IStorage {
   getEvaluation(id: number): Promise<Evaluation | undefined>;
   createEvaluation(evaluation: InsertEvaluation): Promise<Evaluation>;
   getEvaluationsByAssignment(assignmentId: number): Promise<Evaluation[]>;
+
+  // Update course status
+  updateCourseStatus(courseId: number, status: string): Promise<TrainingCourse | undefined>;
+
+  // Update course status based on dates
+  updateCourseStatusBasedOnDates(): Promise<void>;
 
   // Import/Export operations
   importStudents(students: {
@@ -283,7 +290,7 @@ export class DatabaseStorage implements IStorage {
     }).from(supervisors)
       .leftJoin(users, eq(supervisors.userId, users.id))
       .where(eq(supervisors.id, id));
-    
+
     if (result[0] && result[0].user) {
       return {
         id: result[0].id,
@@ -382,7 +389,7 @@ export class DatabaseStorage implements IStorage {
 
   async createTrainingSite(site: InsertTrainingSite): Promise<TrainingSite> {
     const result = await db.insert(trainingSites).values(site).returning();
-    return result[0];
+    return result[0]; 
   }
 
   // Training Course operations
@@ -392,13 +399,119 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTrainingCourse(id: number): Promise<TrainingCourse | undefined> {
-    const result = await db.select().from(trainingCourses).where(eq(trainingCourses.id, id));
+    console.log("Getting training course with id:", id, "type:", typeof id);
+    const course = await db.select().from(trainingCourses).where(eq(trainingCourses.id, id));
+    console.log("Found course:", course ? "yes" : "no");
+    return course[0];
+  }
+
+  async createTrainingCourse(data: InsertTrainingCourse): Promise<TrainingCourse> {
+    console.log("Creating training course with data:", data);
+
+    // التحقق من البيانات المطلوبة
+    if (!data.name || data.name.trim() === '') {
+      throw new Error("اسم الدورة مطلوب");
+    }
+
+    const result = await db.insert(trainingCourses).values(data).returning();
     return result[0];
   }
 
-  async createTrainingCourse(course: InsertTrainingCourse): Promise<TrainingCourse> {
-    const result = await db.insert(trainingCourses).values(course).returning();
-    return result[0];
+  async createTrainingCourseWithGroups(courseData: InsertTrainingCourse, groupsData: any[]): Promise<{ course: TrainingCourse, groups: TrainingCourseGroup[] }> {
+    console.log("Creating training course with groups in transaction:", { courseData, groupsCount: groupsData.length });
+
+    // التحقق من البيانات المطلوبة
+    if (!courseData.name || courseData.name.trim() === '') {
+      throw new Error("اسم الدورة مطلوب");
+    }
+
+    return await db.transaction(async (tx) => {
+      // 1. إنشاء الدورة أولاً
+      const [newCourse] = await tx.insert(trainingCourses).values(courseData).returning();
+
+      if (!newCourse) {
+        throw new Error("فشل في إنشاء الدورة");
+      }
+
+      console.log("Course created with ID:", newCourse.id);
+
+      // 2. إنشاء المجموعات
+      const createdGroups: TrainingCourseGroup[] = [];
+
+      for (let i = 0; i < groupsData.length; i++) {
+        const group = groupsData[i];
+
+        // التحقق من البيانات المطلوبة للمجموعة
+        if (!group.siteId || !group.supervisorId || !group.capacity || !group.startDate || !group.endDate) {
+          throw new Error(`بيانات المجموعة ${i + 1} غير مكتملة`);
+        }
+
+        // تحديد حالة المجموعة بناءً على التواريخ
+        const currentDate = new Date().toISOString().split('T')[0];
+        let groupStatus = 'upcoming';
+
+        if (group.startDate && group.endDate) {
+          if (currentDate >= group.startDate && currentDate <= group.endDate) {
+            groupStatus = 'active';
+          } else if (currentDate > group.endDate) {
+            groupStatus = 'completed';
+          }
+        }
+
+        const groupInsertData: InsertTrainingCourseGroup = {
+          courseId: newCourse.id,
+          groupName: group.groupName || `مجموعة ${i + 1}`,
+          siteId: Number(group.siteId),
+          supervisorId: Number(group.supervisorId),
+          startDate: group.startDate,
+          endDate: group.endDate,
+          capacity: Number(group.capacity),
+          currentEnrollment: 0,
+          location: group.location || null,
+          status: groupStatus,
+          createdBy: courseData.createdBy
+        };
+
+        const [createdGroup] = await tx.insert(trainingCourseGroups).values(groupInsertData).returning();
+
+        if (createdGroup) {
+          createdGroups.push(createdGroup);
+          console.log(`Group ${i + 1} created with ID:`, createdGroup.id);
+        }
+      }
+
+      // 3. تحديث حالة الدورة بناءً على المجموعات
+      const courseStatuses = createdGroups.map(g => {
+        if (g.startDate && g.endDate) {
+          const currentDate = new Date().toISOString().split('T')[0];
+          if (currentDate >= g.startDate && currentDate <= g.endDate) {
+            return 'active';
+          } else if (currentDate > g.endDate) {
+            return 'completed';
+          }
+        }
+        return 'upcoming';
+      });
+
+      let finalCourseStatus = 'upcoming';
+      if (courseStatuses.includes('active')) {
+        finalCourseStatus = 'active';
+      } else if (courseStatuses.every(s => s === 'completed')) {
+        finalCourseStatus = 'completed';
+      }
+
+      // تحديث حالة الدورة إذا كانت مختلفة
+      if (finalCourseStatus !== newCourse.status) {
+        const [updatedCourse] = await tx.update(trainingCourses)
+          .set({ status: finalCourseStatus })
+          .where(eq(trainingCourses.id, newCourse.id))
+          .returning();
+
+        return { course: updatedCourse, groups: createdGroups };
+      }
+
+      return { course: newCourse, groups: createdGroups };
+    });
   }
 
   async getTrainingCourseWithDetails(id: number): Promise<(TrainingCourse & { faculty?: Faculty, major?: Major }) | undefined> {
@@ -442,15 +555,28 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async createTrainingCourseGroup(group: InsertTrainingCourseGroup): Promise<TrainingCourseGroup> {
-    const result = await db.insert(trainingCourseGroups).values(group).returning();
+  async createTrainingCourseGroup(data: InsertTrainingCourseGroup): Promise<TrainingCourseGroup> {
+    console.log("Creating training course group with data:", data);
+
+    // التحقق من صحة courseId
+    if (!data.courseId || typeof data.courseId !== 'number') {
+      throw new Error(`معرف الدورة غير صالح: ${data.courseId}`);
+    }
+
+    // التحقق من وجود الدورة
+    const course = await this.getTrainingCourse(data.courseId);
+    if (!course) {
+      throw new Error(`الدورة التدريبية غير موجودة: ${data.courseId}`);
+    }
+
+    const result = await db.insert(trainingCourseGroups).values(data).returning();
     return result[0];
   }
 
   async getTrainingCourseGroupsByCourse(courseId: number): Promise<TrainingCourseGroup[]> {
     const result = await db.select().from(trainingCourseGroups).where(eq(trainingCourseGroups.courseId, courseId));
     return result;
-  }
+  }  
 
   async getTrainingCourseGroupsWithAvailableSpots(majorId?: number): Promise<(TrainingCourseGroup & { 
     course: TrainingCourse, 
@@ -508,7 +634,7 @@ export class DatabaseStorage implements IStorage {
 
   async createTrainingAssignment(assignment: InsertTrainingAssignment): Promise<TrainingAssignment> {
     const result = await db.insert(trainingAssignments).values(assignment).returning();
-    
+
     // Update group enrollment
     if (result[0]) {
       const group = await this.getTrainingCourseGroup(result[0].groupId);
@@ -516,7 +642,7 @@ export class DatabaseStorage implements IStorage {
         await this.updateGroupEnrollment(result[0].groupId, (group.currentEnrollment || 0) + 1);
       }
     }
-    
+
     return result[0];
   }
 
@@ -605,6 +731,68 @@ export class DatabaseStorage implements IStorage {
   async getEvaluationsByAssignment(assignmentId: number): Promise<Evaluation[]> {
     const result = await db.select().from(evaluations).where(eq(evaluations.assignmentId, assignmentId));
     return result;
+  }
+
+  // Update course status
+  async updateCourseStatus(courseId: number, status: string): Promise<TrainingCourse | undefined> {
+    const result = await db.update(trainingCourses)
+      .set({ status })
+      .where(eq(trainingCourses.id, courseId))
+      .returning();
+    return result[0];
+  }
+
+  // Update course status based on dates
+  async updateCourseStatusBasedOnDates(): Promise<void> {
+    try {
+      const currentDate = new Date();
+      const today = currentDate.toISOString().split('T')[0]; // Get YYYY-MM-DD format
+
+      // Get all training course groups
+      const groups = await db.select({
+        id: trainingCourseGroups.id,
+        courseId: trainingCourseGroups.courseId,
+        startDate: trainingCourseGroups.startDate,
+        endDate: trainingCourseGroups.endDate
+      }).from(trainingCourseGroups);
+
+      // Group by course ID to determine overall course status
+      const courseStatuses = new Map<number, string>();
+
+      for (const group of groups) {
+        const startDate = group.startDate;
+        const endDate = group.endDate;
+
+        let status = 'upcoming';
+
+        if (startDate && endDate) {
+          if (today >= startDate && today <= endDate) {
+            status = 'active';
+          } else if (today > endDate) {
+            status = 'completed';
+          }
+        }
+
+        // If course has multiple groups, prioritize active > upcoming > completed
+        const currentStatus = courseStatuses.get(group.courseId);
+        if (!currentStatus || 
+            (status === 'active') || 
+            (status === 'upcoming' && currentStatus === 'completed')) {
+          courseStatuses.set(group.courseId, status);
+        }
+      }
+
+      // Update course statuses
+      for (const [courseId, status] of courseStatuses) {
+        await db.update(trainingCourses)
+          .set({ status })
+          .where(eq(trainingCourses.id, courseId));
+      }
+
+      console.log(`Updated status for ${courseStatuses.size} courses based on dates`);
+    } catch (error) {
+      console.error('Error updating course statuses:', error);
+    }
   }
 
   // Import/Export operations

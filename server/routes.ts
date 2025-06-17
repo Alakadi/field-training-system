@@ -580,9 +580,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update course statuses based on dates
+  app.post("/api/training-courses/update-status", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
+    try {
+      await storage.updateCourseStatusBasedOnDates();
+
+      // Log activity
+      if (req.user) {
+        await logActivity(
+          req.user.id,
+          "update",
+          "training_course",
+          null,
+          { message: "تم تحديث حالات الدورات بناءً على التواريخ" },
+          req.ip
+        );
+      }
+
+      res.json({ message: "تم تحديث حالات الدورات بنجاح" });
+    } catch (error) {
+      res.status(500).json({ message: "خطأ في تحديث حالات الدورات" });
+    }
+  });
+
   // Training Course Routes
   app.get("/api/training-courses", authMiddleware, async (req: Request, res: Response) => {
     try {
+      // Update course statuses before fetching
+      await storage.updateCourseStatusBasedOnDates();
+
       let courses = await storage.getAllTrainingCourses();
 
       const facultyId = req.query.facultyId ? Number(req.query.facultyId) : undefined;
@@ -601,7 +627,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         courses.map(async (course) => {
           const courseDetails = await storage.getTrainingCourseWithDetails(course.id);
           const groups = await storage.getTrainingCourseGroupsByCourse(course.id);
-          
+
           // Calculate total students across all groups
           let totalStudents = 0;
           for (const group of groups) {
@@ -648,16 +674,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/training-courses", authMiddleware, requireRole(["admin", "supervisor"]), async (req: Request, res: Response) => {
     try {
-      const { name, facultyId, majorId, description, status } = req.body;
+      const { name, facultyId, majorId, description, status, groups } = req.body;
 
-      const course = await storage.createTrainingCourse({
+      console.log("Creating course with groups in single transaction:", { name, groupsCount: groups?.length });
+
+      // إنشاء الدورة والمجموعات في عملية واحدة
+      const result = await storage.createTrainingCourseWithGroups({
         name,
         facultyId: facultyId ? Number(facultyId) : undefined,
         majorId: majorId ? Number(majorId) : undefined,
         description,
         status: status || "active",
         createdBy: req.user?.id
-      });
+      }, groups || []);
 
       // Log activity
       if (req.user) {
@@ -665,17 +694,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           req.user.id,
           "create",
           "training_course",
-          course.id,
+          result.course.id,
           { 
-            message: `تم إنشاء دورة تدريبية: ${name}`,
-            courseData: { name, facultyId, majorId, description }
+            message: `تم إنشاء دورة تدريبية مع ${result.groups.length} مجموعة: ${name}`,
+            courseData: { name, facultyId, majorId, description, groupsCount: result.groups.length }
           },
           req.ip
         );
       }
 
-      res.status(201).json(course);
+      res.status(201).json(result);
     } catch (error) {
+      console.error("Error creating course with groups:", error);
       res.status(500).json({ message: "خطأ في إنشاء دورة تدريبية جديدة" });
     }
   });
@@ -732,19 +762,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
         capacity, location, status 
       } = req.body;
 
+      console.log("Received training course group data:", req.body);
+      console.log("CourseId type and value:", typeof courseId, courseId);
+
+      // Validate required fields
+      if (!courseId || !siteId || !supervisorId || !startDate || !endDate || !capacity) {
+        console.log("Missing required fields:", {
+          courseId: !courseId,
+          siteId: !siteId,
+          supervisorId: !supervisorId,
+          startDate: !startDate,
+          endDate: !endDate,
+          capacity: !capacity
+        });
+        return res.status(400).json({ 
+          message: "جميع الحقول مطلوبة",
+          missing: {
+            courseId: !courseId,
+            siteId: !siteId,
+            supervisorId: !supervisorId,
+            startDate: !startDate,
+            endDate: !endDate,
+            capacity: !capacity
+          }
+        });
+      }
+
+      // Validate numeric fields
+      const numericCourseId = Number(courseId);
+      const numericSiteId = Number(siteId);
+      const numericSupervisorId = Number(supervisorId);
+      const numericCapacity = Number(capacity);
+
+      if (isNaN(numericCourseId) || isNaN(numericSiteId) || isNaN(numericSupervisorId) || isNaN(numericCapacity)) {
+        return res.status(400).json({ 
+          message: "قيم رقمية غير صالحة",
+          values: {
+            courseId: numericCourseId,
+            siteId: numericSiteId,
+            supervisorId: numericSupervisorId,
+            capacity: numericCapacity
+          }
+        });
+      }
+
+      // Check if course exists
+      const course = await storage.getTrainingCourse(numericCourseId);
+      if (!course) {
+        return res.status(404).json({ message: "الدورة التدريبية غير موجودة" });
+      }
+
+      // Determine group status based on dates
+      const currentDate = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
+      let groupStatus = 'upcoming';
+
+      if (startDate && endDate) {
+        if (currentDate >= startDate && currentDate <= endDate) {
+          groupStatus = 'active';
+        } else if (currentDate > endDate) {
+          groupStatus = 'completed';
+        }
+      }
+
       const group = await storage.createTrainingCourseGroup({
-        courseId: Number(courseId),
-        groupName,
-        siteId: Number(siteId),
-        supervisorId: Number(supervisorId),
-        startDate: new Date(startDate),
-        endDate: new Date(endDate),
-        capacity: Number(capacity),
+        courseId: numericCourseId,
+        groupName: groupName || `مجموعة ${Date.now()}`,
+        siteId: numericSiteId,
+        supervisorId: numericSupervisorId,
+        startDate: startDate,
+        endDate: endDate,
+        capacity: numericCapacity,
         currentEnrollment: 0,
         location,
-        status: status || "active",
+        status: groupStatus,
         createdBy: req.user?.id
       });
+
+      console.log("Training course group created successfully:", group);
+
+      // Update course status based on its groups
+      const allGroups = await storage.getTrainingCourseGroupsByCourse(Number(courseId));
+      const courseStatuses = allGroups.map(g => {
+        if (g.startDate && g.endDate) {
+          if (currentDate >= g.startDate && currentDate <= g.endDate) {
+            return 'active';
+          } else if (currentDate > g.endDate) {
+            return 'completed';
+          }
+        }
+        return 'upcoming';
+      });
+
+      // Determine overall course status
+      let courseStatus = 'upcoming';
+      if (courseStatuses.includes('active')) {
+        courseStatus = 'active';
+      } else if (courseStatuses.every(s => s === 'completed')) {
+        courseStatus = 'completed';
+      }
+
+      // Update course status
+      await storage.updateCourseStatus(Number(courseId), courseStatus);
 
       // Log activity
       if (req.user) {
@@ -755,7 +873,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           group.id,
           { 
             message: `تم إنشاء مجموعة تدريب: ${groupName}`,
-            groupData: { courseId, groupName, siteId, supervisorId, capacity }
+            groupData: { courseId, groupName, siteId, supervisorId, capacity, startDate, endDate, status: groupStatus }
           },
           req.ip
         );
@@ -763,6 +881,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json(group);
     } catch (error) {
+      console.error("Error creating training course group:", error);
       res.status(500).json({ message: "خطأ في إنشاء مجموعة تدريب جديدة" });
     }
   });
@@ -819,7 +938,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const groupId = req.query.groupId ? Number(req.query.groupId) : undefined;
-      
+
       if (groupId) {
         assignments = assignments.filter(assignment => assignment.groupId === groupId);
       }
@@ -863,7 +982,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if student is already enrolled in this group
       const existingAssignments = await storage.getTrainingAssignmentsByStudent(Number(studentId));
       const alreadyEnrolled = existingAssignments.some(assignment => assignment.groupId === Number(groupId));
-      
+
       if (alreadyEnrolled) {
         return res.status(400).json({ message: "الطالب مسجل بالفعل في هذه المجموعة" });
       }
@@ -880,7 +999,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (req.user) {
         const student = await storage.getStudent(Number(studentId));
         const studentUser = student ? await storage.getUser(student.userId) : null;
-        
+
         await logActivity(
           req.user.id,
           "create",
@@ -949,7 +1068,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // We need to check if any assignment is for the same course
         return assignment.groupId === Number(groupId);
       });
-      
+
       if (alreadyEnrolledInCourse) {
         return res.status(400).json({ message: "أنت مسجل بالفعل في هذه المجموعة" });
       }
