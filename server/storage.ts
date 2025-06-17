@@ -807,7 +807,7 @@ export class DatabaseStorage implements IStorage {
     let errorCount = 0;
     const messages: string[] = [];
 
-    // معالجة كل طالب في عملية منفصلة لضمان الاستقرار
+    // معالجة كل طالب منفصل لتجنب تضارب العمليات
     for (const studentData of students) {
       try {
         console.log(`Processing student: ${studentData.name} (${studentData.universityId})`);
@@ -818,183 +818,126 @@ export class DatabaseStorage implements IStorage {
           continue;
         }
 
-        // بدء عملية منفصلة لكل طالب
-        await db.transaction(async (tx) => {
-          // التحقق من وجود الطالب
-          const existingStudentResult = await tx
-            .select()
-            .from(students)
-            .where(eq(students.universityId, studentData.universityId))
-            .limit(1);
+        // التحقق من وجود الطالب أولاً
+        const existingStudent = await this.getStudentByUniversityId(studentData.universityId);
 
-          const existingStudent = existingStudentResult[0];
+        if (existingStudent) {
+          console.log(`Student exists: ${studentData.universityId}, updating level only`);
 
-          if (existingStudent) {
-            console.log(`Student exists: ${studentData.universityId}, updating level only`);
-
-            // البحث عن المستوى
-            let levelId = null;
-            if (studentData.level) {
-              const levelByNameResult = await tx
-                .select()
-                .from(levels)
-                .where(eq(levels.name, studentData.level))
-                .limit(1);
-
-              if (levelByNameResult.length > 0) {
-                levelId = levelByNameResult[0].id;
-              } else {
-                // محاولة البحث بالرقم
-                const levelNum = parseInt(studentData.level);
-                if (!isNaN(levelNum)) {
-                  const levelByNumberResult = await tx
-                    .select()
-                    .from(levels)
-                    .where(eq(levels.id, levelNum))
-                    .limit(1);
-
-                  if (levelByNumberResult.length > 0) {
-                    levelId = levelByNumberResult[0].id;
-                  }
-                }
-              }
-            }
-
-            // تحديث المستوى فقط إذا تغير
-            if (levelId && existingStudent.levelId !== levelId) {
-              await tx
-                .update(students)
-                .set({ levelId })
-                .where(eq(students.id, existingStudent.id));
-
-              successCount++;
-              messages.push(`تم تحديث مستوى الطالب: ${studentData.name}`);
-            } else {
-              messages.push(`الطالب موجود ولا يحتاج تحديث: ${studentData.name}`);
-            }
-            return; // الخروج من العملية
-          }
-
-          // البحث عن الكلية
-          let facultyId = null;
-          if (studentData.faculty) {
-            const facultyByNameResult = await tx
-              .select()
-              .from(faculties)
-              .where(eq(faculties.name, studentData.faculty))
-              .limit(1);
-
-            if (facultyByNameResult.length > 0) {
-              facultyId = facultyByNameResult[0].id;
-            } else {
-              // محاولة البحث بالرقم
-              const facultyNum = parseInt(studentData.faculty);
-              if (!isNaN(facultyNum)) {
-                const facultyByNumberResult = await tx
-                  .select()
-                  .from(faculties)
-                  .where(eq(faculties.id, facultyNum))
-                  .limit(1);
-
-                if (facultyByNumberResult.length > 0) {
-                  facultyId = facultyByNumberResult[0].id;
-                }
-              }
-            }
-          }
-
-          // البحث عن التخصص
-          let majorId = null;
-          if (studentData.major && facultyId) {
-            const majorByNameResult = await tx
-              .select()
-              .from(majors)
-              .where(and(
-                eq(majors.name, studentData.major),
-                eq(majors.facultyId, facultyId)
-              ))
-              .limit(1);
-
-            if (majorByNameResult.length > 0) {
-              majorId = majorByNameResult[0].id;
-            } else {
-              // محاولة البحث بالرقم
-              const majorNum = parseInt(studentData.major);
-              if (!isNaN(majorNum)) {
-                const majorByNumberResult = await tx
-                  .select()
-                  .from(majors)
-                  .where(and(
-                    eq(majors.id, majorNum),
-                    eq(majors.facultyId, facultyId)
-                  ))
-                  .limit(1);
-
-                if (majorByNumberResult.length > 0) {
-                  majorId = majorByNumberResult[0].id;
-                }
-              }
-            }
-          }
-
-          // البحث عن المستوى
+          // البحث عن المستوى الجديد
           let levelId = null;
           if (studentData.level) {
-            const levelByNameResult = await tx
-              .select()
-              .from(levels)
-              .where(eq(levels.name, studentData.level))
-              .limit(1);
-
-            if (levelByNameResult.length > 0) {
-              levelId = levelByNameResult[0].id;
+            // البحث بالاسم أولاً
+            const allLevels = await this.getAllLevels();
+            const levelByName = allLevels.find(level => level.name === studentData.level);
+            
+            if (levelByName) {
+              levelId = levelByName.id;
             } else {
               // محاولة البحث بالرقم
               const levelNum = parseInt(studentData.level);
               if (!isNaN(levelNum)) {
-                const levelByNumberResult = await tx
-                  .select()
-                  .from(levels)
-                  .where(eq(levels.id, levelNum))
-                  .limit(1);
-
-                if (levelByNumberResult.length > 0) {
-                  levelId = levelByNumberResult[0].id;
+                const levelById = allLevels.find(level => level.id === levelNum);
+                if (levelById) {
+                  levelId = levelById.id;
                 }
               }
             }
           }
 
-          console.log(`Found data - FacultyId: ${facultyId}, MajorId: ${majorId}, LevelId: ${levelId}`);
+          // تحديث المستوى فقط إذا تغير
+          if (levelId && existingStudent.levelId !== levelId) {
+            await this.updateStudent(existingStudent.id, { levelId });
+            successCount++;
+            messages.push(`تم تحديث مستوى الطالب: ${studentData.name}`);
+          } else {
+            messages.push(`الطالب موجود ولا يحتاج تحديث: ${studentData.name}`);
+          }
+          continue;
+        }
 
-          // إنشاء المستخدم
-          const [newUser] = await tx
-            .insert(users)
-            .values({
-              username: studentData.universityId,
-              password: "password", // كلمة مرور افتراضية
-              role: "student",
-              name: studentData.name,
-              active: true
-            })
-            .returning();
+        // البحث عن الكلية
+        let facultyId = null;
+        if (studentData.faculty) {
+          const allFaculties = await this.getAllFaculties();
+          const facultyByName = allFaculties.find(faculty => faculty.name === studentData.faculty);
+          
+          if (facultyByName) {
+            facultyId = facultyByName.id;
+          } else {
+            // محاولة البحث بالرقم
+            const facultyNum = parseInt(studentData.faculty);
+            if (!isNaN(facultyNum)) {
+              const facultyById = allFaculties.find(faculty => faculty.id === facultyNum);
+              if (facultyById) {
+                facultyId = facultyById.id;
+              }
+            }
+          }
+        }
 
-          // إنشاء سجل الطالب
-          const [newStudent] = await tx
-            .insert(students)
-            .values({
-              userId: newUser.id,
-              universityId: studentData.universityId,
-              facultyId: facultyId,
-              majorId: majorId,
-              levelId: levelId,
-              supervisorId: null
-            })
-            .returning();
+        // البحث عن التخصص
+        let majorId = null;
+        if (studentData.major && facultyId) {
+          const majorsByFaculty = await this.getMajorsByFaculty(facultyId);
+          const majorByName = majorsByFaculty.find(major => major.name === studentData.major);
+          
+          if (majorByName) {
+            majorId = majorByName.id;
+          } else {
+            // محاولة البحث بالرقم
+            const majorNum = parseInt(studentData.major);
+            if (!isNaN(majorNum)) {
+              const majorById = majorsByFaculty.find(major => major.id === majorNum);
+              if (majorById) {
+                majorId = majorById.id;
+              }
+            }
+          }
+        }
 
-          console.log(`Student created: ${studentData.name} with ID: ${newStudent.id}`);
+        // البحث عن المستوى
+        let levelId = null;
+        if (studentData.level) {
+          const allLevels = await this.getAllLevels();
+          const levelByName = allLevels.find(level => level.name === studentData.level);
+          
+          if (levelByName) {
+            levelId = levelByName.id;
+          } else {
+            // محاولة البحث بالرقم
+            const levelNum = parseInt(studentData.level);
+            if (!isNaN(levelNum)) {
+              const levelById = allLevels.find(level => level.id === levelNum);
+              if (levelById) {
+                levelId = levelById.id;
+              }
+            }
+          }
+        }
+
+        console.log(`Found data - FacultyId: ${facultyId}, MajorId: ${majorId}, LevelId: ${levelId}`);
+
+        // إنشاء المستخدم أولاً
+        const newUser = await this.createUser({
+          username: studentData.universityId,
+          password: "password", // كلمة مرور افتراضية
+          role: "student",
+          name: studentData.name,
+          active: true
         });
 
+        // إنشاء سجل الطالب
+        const newStudent = await this.createStudent({
+          userId: newUser.id,
+          universityId: studentData.universityId,
+          facultyId: facultyId || undefined,
+          majorId: majorId || undefined,
+          levelId: levelId || undefined,
+          supervisorId: undefined
+        });
+
+        console.log(`Student created: ${studentData.name} with ID: ${newStudent.id}`);
         successCount++;
         messages.push(`تم إنشاء الطالب: ${studentData.name}`);
 
@@ -1004,9 +947,6 @@ export class DatabaseStorage implements IStorage {
         messages.push(`خطأ في إنشاء الطالب ${studentData.name}: ${error instanceof Error ? error.message : 'خطأ غير معروف'}`);
       }
     }
-
-    // إضافة تأخير قصير للتأكد من commit العمليات
-    await new Promise(resolve => setTimeout(resolve, 100));
 
     console.log(`Import summary: ${successCount} success, ${errorCount} errors`);
     return { success: successCount, errors: errorCount, messages };
