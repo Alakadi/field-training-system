@@ -1,3 +1,7 @@
+Adding null checks to access course and site data to prevent errors when these properties are undefined.
+```
+
+```replit_final_file
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -133,7 +137,7 @@ const SupervisorCourses: React.FC = () => {
       completed: { label: "مكتملة", variant: "outline" as const },
       cancelled: { label: "ملغية", variant: "destructive" as const },
     };
-    
+
     return statusMap[status as keyof typeof statusMap] || { label: status, variant: "secondary" as const };
   };
 
@@ -203,23 +207,23 @@ const SupervisorCourses: React.FC = () => {
               <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
                 <div className="flex items-start justify-between">
                   <div className="space-y-2">
-                    <CardTitle className="text-xl text-right">{group.course.name}</CardTitle>
+                    <CardTitle className="text-xl text-right">{group.course?.name || "دورة غير محددة"}</CardTitle>
                     <div className="flex items-center gap-4 text-sm text-gray-600">
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" />
-                        <span>{group.site.name}</span>
+                        <span>{group.site?.name || "موقع غير محدد"}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Users className="h-4 w-4" />
-                        <span>{group.currentEnrollment}/{group.capacity} طالب</span>
+                        <span>{group.currentEnrollment || 0}/{group.capacity || 0} طالب</span>
                       </div>
                     </div>
                   </div>
-                  <Badge variant={getStatusBadge(group.course.status).variant}>
-                    {getStatusBadge(group.course.status).label}
+                  <Badge variant={getStatusBadge(group.course?.status || 'upcoming').variant}>
+                    {getStatusBadge(group.course?.status || 'upcoming').label}
                   </Badge>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4 text-green-600" />
@@ -233,7 +237,7 @@ const SupervisorCourses: React.FC = () => {
                   </div>
                 </div>
 
-                {group.course.description && (
+                {group.course?.description && (
                   <p className="text-sm text-gray-600 mt-2 text-right">
                     {group.course.description}
                   </p>
@@ -246,7 +250,7 @@ const SupervisorCourses: React.FC = () => {
                     <TabsTrigger value="students">قائمة الطلاب ({group.students?.length || 0})</TabsTrigger>
                     <TabsTrigger value="grades">إدارة الدرجات</TabsTrigger>
                   </TabsList>
-                  
+
                   <TabsContent value="students" className="mt-4">
                     {group.students && group.students.length > 0 ? (
                       <div className="overflow-x-auto">
@@ -308,7 +312,7 @@ const SupervisorCourses: React.FC = () => {
                             يمكنك إدراج درجات الطلاب من 0 إلى 100. اضغط على زر الحفظ بعد إدخال الدرجة.
                           </p>
                         </div>
-                        
+
                         <div className="overflow-x-auto">
                           <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
