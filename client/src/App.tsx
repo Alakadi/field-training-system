@@ -34,7 +34,7 @@ import ViewStudent from "@/pages/admin/view-student";
 
 // Supervisor pages
 import SupervisorDashboard from "@/pages/supervisor/dashboard";
-import SupervisorStudents from "@/pages/supervisor/students";
+import SupervisorCourses from "@/pages/supervisor/courses";
 import SupervisorEvaluations from "@/pages/supervisor/evaluations";
 
 // Student pages
@@ -175,9 +175,9 @@ function Router() {
           <SupervisorDashboard />
         </SupervisorOnly>
       </Route>
-      <Route path="/supervisor/students">
+      <Route path="/supervisor/courses">
         <SupervisorOnly>
-          <SupervisorStudents />
+          <SupervisorCourses />
         </SupervisorOnly>
       </Route>
       <Route path="/supervisor/evaluations">
