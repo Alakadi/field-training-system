@@ -12,7 +12,7 @@ const ImportExcel: React.FC = () => {
     errors?: number;
     messages?: string[];
   } | null>(null);
-  
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -40,11 +40,6 @@ const ImportExcel: React.FC = () => {
           excelData: base64data,
         });
 
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`فشل في استيراد البيانات: ${errorText}`);
-        }
-
         const result = await response.json();
         setUploadResult(result);
 
@@ -58,24 +53,10 @@ const ImportExcel: React.FC = () => {
         queryClient.invalidateQueries({ queryKey: ["/api/students"] });
       } catch (error) {
         console.error("Import failed:", error);
-        let errorMessage = "حدث خطأ أثناء استيراد البيانات";
-        
-        if (error instanceof Error) {
-          errorMessage = error.message;
-        } else if (typeof error === 'string') {
-          errorMessage = error;
-        }
-        
         toast({
           title: "فشل استيراد البيانات",
-          description: errorMessage,
+          description: error instanceof Error ? error.message : "حدث خطأ أثناء استيراد البيانات",
           variant: "destructive",
-        });
-        
-        setUploadResult({
-          success: 0,
-          errors: 1,
-          messages: [errorMessage]
         });
       } finally {
         setIsUploading(false);
@@ -105,7 +86,7 @@ const ImportExcel: React.FC = () => {
             <span className="material-icons text-neutral-400 text-5xl mb-2">upload_file</span>
             <h3 className="text-lg font-medium mb-2">قم بتحميل ملف Excel</h3>
             <p className="text-neutral-500 mb-4">اسحب الملف هنا أو انقر لاختيار الملف</p>
-            
+
             <input 
               type="file" 
               id="excel-upload" 
@@ -114,7 +95,7 @@ const ImportExcel: React.FC = () => {
               onChange={handleFileChange}
               disabled={isUploading}
             />
-            
+
             <Button
               onClick={() => document.getElementById("excel-upload")?.click()}
               disabled={isUploading}
@@ -123,7 +104,7 @@ const ImportExcel: React.FC = () => {
               <span className="material-icons ml-1 text-sm">file_upload</span>
               {isUploading ? "جاري الرفع..." : "اختيار ملف"}
             </Button>
-            
+
             <div className="text-xs text-neutral-500 mt-4 space-y-2">
               <p className="font-medium">متطلبات الملف:</p>
               <ul className="list-disc list-inside space-y-1">
@@ -153,7 +134,7 @@ const ImportExcel: React.FC = () => {
                 <div className="text-sm text-red-600">أخطاء</div>
               </div>
             </div>
-            
+
             {uploadResult.messages && uploadResult.messages.length > 0 && (
               <div className="mt-4">
                 <h5 className="font-medium text-sm mb-2 flex items-center">
