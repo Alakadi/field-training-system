@@ -160,6 +160,7 @@ async function seedSampleData() {
     const [group1] = await db.insert(trainingCourseGroups)
       .values({
         courseId: course1.id,
+        groupName: 'المجموعة الأولى',
         siteId: site1.id,
         supervisorId: supervisor.id,
         capacity: 10,
@@ -178,6 +179,7 @@ async function seedSampleData() {
     const [group2] = await db.insert(trainingCourseGroups)
       .values({
         courseId: course2.id,
+        groupName: 'المجموعة الثانية',
         siteId: site2.id,
         supervisorId: supervisor.id,
         capacity: 8,
