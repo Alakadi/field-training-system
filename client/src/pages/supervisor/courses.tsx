@@ -1,7 +1,4 @@
-Adding null checks to access course and site data to prevent errors when these properties are undefined.
-```
 
-```replit_final_file
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
