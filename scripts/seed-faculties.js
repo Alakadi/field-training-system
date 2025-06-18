@@ -1,6 +1,6 @@
 
-const { db } = require('../server/db');
-const { faculties, majors } = require('../shared/schema');
+import { db } from '../server/db.js';
+import { faculties, majors } from '../shared/schema.js';
 
 async function seedFacultiesAndMajors() {
   try {
