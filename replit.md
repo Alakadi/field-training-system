@@ -120,6 +120,14 @@ This is a comprehensive Arabic-supported field training management system built 
 - Automated admin user creation on first deploy
 - Environment-specific connection handling
 
+## Recent Changes
+- June 18, 2025: أنشاء واجهة إدارة الكورسات للمشرف بدلاً من واجهة الطلاب
+  - تم إضافة صفحة /supervisor/courses تحتوي على المجموعات المسندة للمشرف
+  - عرض معلومات الكورس مع تواريخ البدء والانتهاء وبيانات الدورة
+  - جدول بأسماء الطلاب في كل مجموعة مع إمكانية إدراج الدرجات
+  - واجهة تقييم الطلاب مع نظام حفظ الدرجات
+  - تحديث navigation للمشرف لتشمل "إدارة الكورسات" بدلاً من "طلابي"
+
 ## Changelog
 - June 18, 2025. Initial setup
 

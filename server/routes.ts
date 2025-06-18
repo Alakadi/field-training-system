@@ -768,9 +768,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const courseId = req.query.courseId ? Number(req.query.courseId) : undefined;
       const majorId = req.query.majorId ? Number(req.query.majorId) : undefined;
+      const supervisorId = req.query.supervisorId ? Number(req.query.supervisorId) : undefined;
       const availableOnly = req.query.availableOnly === 'true';
 
-      if (availableOnly) {
+      if (supervisorId) {
+        // Get groups assigned to this supervisor with detailed information
+        const allGroups = await storage.getAllTrainingCourseGroups();
+        const supervisorGroups = allGroups.filter(group => group.supervisorId === supervisorId);
+        
+        // Enhance each group with course, site, and student data
+        const enhancedGroups = await Promise.all(
+          supervisorGroups.map(async (group) => {
+            const course = await storage.getTrainingCourse(group.courseId);
+            const site = await storage.getTrainingSite(group.siteId);
+            const supervisor = await storage.getSupervisorWithUser(group.supervisorId);
+            const assignments = await storage.getTrainingAssignmentsByGroup(group.id);
+            
+            // Get student details with their grades
+            const students = await Promise.all(
+              assignments.map(async (assignment) => {
+                const student = await storage.getStudentWithDetails(assignment.studentId);
+                const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
+                const grade = evaluations.length > 0 ? evaluations[0].grade : null;
+                
+                return {
+                  id: student?.id,
+                  universityId: student?.universityId,
+                  user: student?.user,
+                  grade: grade
+                };
+              })
+            );
+
+            return {
+              ...group,
+              course,
+              site,
+              supervisor,
+              students,
+              currentEnrollment: assignments.length
+            };
+          })
+        );
+        
+        res.json(enhancedGroups);
+      } else if (availableOnly) {
         // Get groups with available spots for student registration
         const groups = await storage.getTrainingCourseGroupsWithAvailableSpots(majorId);
         res.json(groups);
