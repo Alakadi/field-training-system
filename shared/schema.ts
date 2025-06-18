@@ -90,11 +90,9 @@ export const trainingCourseGroups = pgTable("training_course_groups", {
   status: text("status").default("active"), // "active", "full", "completed"
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: integer("created_by").references(() => users.id),
-}, (table) => {
-  return {
-    courseGroupUnique: uniqueIndex("course_group_unique").on(table.courseId, table.groupName),
-  };
-});
+}, (table) => [
+  uniqueIndex("course_group_unique").on(table.courseId, table.groupName),
+]);
 
 // Training Assignments table - ربط الطلاب بالمجموعات
 export const trainingAssignments = pgTable("training_assignments", {
@@ -106,11 +104,9 @@ export const trainingAssignments = pgTable("training_assignments", {
   status: text("status").default("pending"), // "pending", "active", "completed"
   confirmed: boolean("confirmed").default(false), // Student confirmation
   assignedAt: timestamp("assigned_at").defaultNow(),
-}, (table) => {
-  return {
-    studentGroupUnique: uniqueIndex("student_group_unique").on(table.studentId, table.groupId),
-  };
-});
+}, (table) => [
+  uniqueIndex("student_group_unique").on(table.studentId, table.groupId),
+]);
 
 // Evaluations table
 export const evaluations = pgTable("evaluations", {
