@@ -770,9 +770,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const majorId = req.query.majorId ? Number(req.query.majorId) : undefined;
       const facultyId = req.query.facultyId ? Number(req.query.facultyId) : undefined;
       const levelId = req.query.levelId ? Number(req.query.levelId) : undefined;
-      const availableOnly = req.query.availableOnly === 'true';
+      const available = req.query.available === 'true';
 
-      if (availableOnly) {
+      if (available || (facultyId && majorId && levelId)) {
         // Get groups with available spots for student registration
         const groups = await storage.getTrainingCourseGroupsWithAvailableSpots(facultyId, majorId, levelId);
         res.json(groups);
