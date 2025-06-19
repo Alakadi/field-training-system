@@ -23,7 +23,7 @@ const addStudentSchema = z.object({
   facultyId: z.string().min(1, { message: "يرجى اختيار الكلية" }),
   majorId: z.string().min(1, { message: "يرجى اختيار التخصص" }),
   levelId: z.string().min(1, { message: "يرجى اختيار المستوى الدراسي" }),
-  supervisorId: z.string().optional().or(z.literal("")),
+  supervisorId: z.string().optional().or(z.literal("")).or(z.literal("none")),
   assignedCourseGroups: z.array(z.string()).optional().default([]),
 });
 
@@ -124,7 +124,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
           facultyId: data.facultyId,
           majorId: data.majorId,
           levelId: data.levelId,
-          supervisorId: data.supervisorId,
+          supervisorId: data.supervisorId === "none" ? "" : data.supervisorId,
         }),
       });
 
@@ -382,7 +382,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="">بدون مشرف</SelectItem>
+                            <SelectItem value="none">بدون مشرف</SelectItem>
                             {Array.isArray(supervisors) && supervisors.map((supervisor: any) => (
                               <SelectItem key={supervisor.id} value={String(supervisor.id)}>
                                 {supervisor.user?.name || 'مشرف غير محدد'}
