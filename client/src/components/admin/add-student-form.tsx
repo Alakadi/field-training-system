@@ -48,7 +48,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
   });
 
   const [selectedFacultyId, setSelectedFacultyId] = useState<string>("");
-  
+
   const { data: majors, isLoading: isLoadingMajors } = useQuery({
     queryKey: ["/api/majors", selectedFacultyId],
     queryFn: async () => {
@@ -80,18 +80,18 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
     try {
       setIsSubmitting(true);
       await apiRequest("POST", "/api/students", data);
-      
+
       toast({
         title: "تم إضافة الطالب بنجاح",
         description: `تم إضافة الطالب ${data.name} بنجاح`,
       });
-      
+
       // Reset form
       form.reset();
-      
+
       // Invalidate students query to refresh the data
       queryClient.invalidateQueries({ queryKey: ["/api/students"] });
-      
+
       // Call onSuccess callback if provided
       if (onSuccess) {
         onSuccess();
@@ -141,7 +141,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="name"
@@ -155,7 +155,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="email"
@@ -169,7 +169,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="phone"
@@ -183,7 +183,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="facultyId"
@@ -211,7 +211,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="majorId"
@@ -240,7 +240,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="levelId"
@@ -268,7 +268,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="supervisorId"

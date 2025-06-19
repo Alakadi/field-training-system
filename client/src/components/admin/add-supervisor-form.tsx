@@ -55,18 +55,18 @@ const AddSupervisorForm: React.FC<AddSupervisorFormProps> = ({ onSuccess }) => {
     try {
       setIsSubmitting(true);
       await apiRequest("POST", "/api/supervisors", data);
-      
+
       toast({
         title: "تم إضافة المشرف بنجاح",
         description: `تم إضافة المشرف ${data.name} بنجاح`,
       });
-      
+
       // Reset form
       form.reset();
-      
+
       // Invalidate supervisors query to refresh the data
       queryClient.invalidateQueries({ queryKey: ["/api/supervisors"] });
-      
+
       // Call onSuccess callback if provided
       if (onSuccess) {
         onSuccess();
@@ -107,7 +107,7 @@ const AddSupervisorForm: React.FC<AddSupervisorFormProps> = ({ onSuccess }) => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="username"
@@ -121,7 +121,7 @@ const AddSupervisorForm: React.FC<AddSupervisorFormProps> = ({ onSuccess }) => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="password"
@@ -135,7 +135,7 @@ const AddSupervisorForm: React.FC<AddSupervisorFormProps> = ({ onSuccess }) => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="email"
@@ -149,7 +149,7 @@ const AddSupervisorForm: React.FC<AddSupervisorFormProps> = ({ onSuccess }) => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="phone"
@@ -163,7 +163,7 @@ const AddSupervisorForm: React.FC<AddSupervisorFormProps> = ({ onSuccess }) => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="facultyId"
@@ -192,7 +192,7 @@ const AddSupervisorForm: React.FC<AddSupervisorFormProps> = ({ onSuccess }) => {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="department"

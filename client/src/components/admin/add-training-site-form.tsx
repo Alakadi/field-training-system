@@ -53,18 +53,18 @@ const AddTrainingSiteForm: React.FC<AddTrainingSiteFormProps> = ({ onSuccess }) 
   const onSubmit = async (data: TrainingSiteFormValues) => {
     try {
       await apiRequest("POST", "/api/training-sites", data);
-      
+
       // Show success message
       toast({
         title: "تم إضافة جهة التدريب بنجاح",
       });
-      
+
       // Reset form
       form.reset();
-      
+
       // Invalidate query cache to refresh data
       queryClient.invalidateQueries({ queryKey: ["/api/training-sites"] });
-      
+
       // Call success callback
       onSuccess();
     } catch (error) {
@@ -79,7 +79,7 @@ const AddTrainingSiteForm: React.FC<AddTrainingSiteFormProps> = ({ onSuccess }) 
   return (
     <Card className="bg-white p-6 rounded-lg shadow">
       <h2 className="text-xl font-bold mb-6">إضافة جهة تدريب جديدة</h2>
-      
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <FormField
@@ -95,7 +95,7 @@ const AddTrainingSiteForm: React.FC<AddTrainingSiteFormProps> = ({ onSuccess }) 
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="address"
@@ -109,7 +109,7 @@ const AddTrainingSiteForm: React.FC<AddTrainingSiteFormProps> = ({ onSuccess }) 
               </FormItem>
             )}
           />
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <FormField
               control={form.control}
@@ -124,7 +124,7 @@ const AddTrainingSiteForm: React.FC<AddTrainingSiteFormProps> = ({ onSuccess }) 
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="contactEmail"
@@ -138,7 +138,7 @@ const AddTrainingSiteForm: React.FC<AddTrainingSiteFormProps> = ({ onSuccess }) 
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="contactPhone"
@@ -153,7 +153,7 @@ const AddTrainingSiteForm: React.FC<AddTrainingSiteFormProps> = ({ onSuccess }) 
               )}
             />
           </div>
-          
+
           <div className="flex justify-end space-x-2 space-x-reverse">
             <Button 
               type="button" 

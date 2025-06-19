@@ -4,7 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
-import Login from "@/pages/login";
+
 import AdminLogin from "@/pages/admin-login";
 import SupervisorLogin from "@/pages/supervisor-login";
 import StudentLogin from "@/pages/student-login";
@@ -25,6 +25,7 @@ import AdminReports from "@/pages/admin/reports";
 import AdminSettings from "@/pages/admin/settings";
 import AdminStudentLevels from "@/pages/admin/student-levels";
 import AdminActivityLogs from "@/pages/admin/activity-logs";
+import StudentCourseAssignments from "@/pages/admin/student-course-assignments";
 import EditCourse from "@/pages/admin/edit-course";
 import ViewCourse from "@/pages/admin/view-course";
 import EditSupervisor from "@/pages/admin/edit-supervisor";
@@ -45,7 +46,7 @@ import StudentResults from "@/pages/student/results";
 // صفحة للتحويل عند تسجيل الدخول بناءً على الدور
 const RoleRouter: React.FC = () => {
   const { user, loading } = useAuth();
-  
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -55,11 +56,11 @@ const RoleRouter: React.FC = () => {
       </div>
     );
   }
-  
+
   if (!user) {
-    return <Login />;
+    return <AdminLogin />;
   }
-  
+
   // التوجيه بناءً على دور المستخدم
   if (user.role === "admin") {
     return <AdminDashboard />;
@@ -68,7 +69,7 @@ const RoleRouter: React.FC = () => {
   } else if (user.role === "student") {
     return <StudentDashboard />;
   } else {
-    return <Login />;
+    return <AdminLogin />;
   }
 };
 
@@ -77,11 +78,11 @@ function Router() {
     <Switch>
       {/* Auth Routes */}
       <Route path="/" component={RoleRouter} />
-      <Route path="/login" component={Login} />
+      <Route path="/login" component={AdminLogin} />
       <Route path="/admin-login" component={AdminLogin} />
       <Route path="/supervisor-login" component={SupervisorLogin} />
       <Route path="/student-login" component={StudentLogin} />
-      
+
       {/* Admin Routes */}
       <Route path="/admin">
         <AdminOnly>
@@ -101,6 +102,11 @@ function Router() {
       <Route path="/admin/courses">
         <AdminOnly>
           <AdminCourses />
+        </AdminOnly>
+      </Route>
+      <Route path="/admin/student-assignments">
+        <AdminOnly>
+          <StudentCourseAssignments />
         </AdminOnly>
       </Route>
       <Route path="/admin/courses/edit/:id">
@@ -163,7 +169,7 @@ function Router() {
           <AdminActivityLogs />
         </AdminOnly>
       </Route>
-      
+
       {/* Supervisor Routes */}
       <Route path="/supervisor">
         <SupervisorOnly>
@@ -185,7 +191,7 @@ function Router() {
           <SupervisorEvaluations />
         </SupervisorOnly>
       </Route>
-      
+
       {/* Student Routes */}
       <Route path="/student">
         <StudentOnly>
@@ -207,7 +213,7 @@ function Router() {
           <StudentResults />
         </StudentOnly>
       </Route>
-      
+
       {/* Fallback to 404 */}
       <Route component={NotFound} />
     </Switch>

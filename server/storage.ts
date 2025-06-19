@@ -578,13 +578,14 @@ export class DatabaseStorage implements IStorage {
     return result;
   }  
 
-  async getTrainingCourseGroupsWithAvailableSpots(majorId?: number): Promise<(TrainingCourseGroup & { 
+  async getTrainingCourseGroupsWithAvailableSpots(facultyId?: number, majorId?: number, levelId?: number): Promise<(TrainingCourseGroup & { 
     course: TrainingCourse, 
     site: TrainingSite, 
     supervisor: Supervisor & { user: User },
-    availableSpots: number 
+    availableSpots: number,
+    _count: { assignments: number }
   })[]> {
-    const query = db.select({
+    let query = db.select({
       group: trainingCourseGroups,
       course: trainingCourses,
       site: trainingSites,
@@ -597,20 +598,48 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(users, eq(supervisors.userId, users.id))
       .where(eq(trainingCourseGroups.status, 'active'));
 
-    const result = majorId 
-      ? await query.where(eq(trainingCourses.majorId, majorId))
-      : await query;
+    // Apply filters if provided
+    if (facultyId) {
+      query = query.where(eq(trainingCourses.facultyId, facultyId));
+    }
+    if (majorId) {
+      query = query.where(eq(trainingCourses.majorId, majorId));
+    }
+    if (levelId) {
+      query = query.where(eq(trainingCourses.levelId, levelId));
+    }
 
-    return result.map((row: any) => ({
-      ...row.group,
-      course: row.course!,
-      site: row.site!,
-      supervisor: {
-        ...row.supervisor!,
-        user: row.supervisorUser!
-      },
-      availableSpots: (row.group.capacity || 0) - (row.group.currentEnrollment || 0)
-    })).filter((group: any) => group.availableSpots > 0);
+    const result = await query;
+
+    // Get assignment counts for each group
+    const groupIds = result.map(row => row.group.id);
+    const assignmentCounts = await Promise.all(
+      groupIds.map(async (groupId) => {
+        const count = await db.select({ count: sql<number>`count(*)::int` })
+          .from(trainingAssignments)
+          .where(eq(trainingAssignments.groupId, groupId));
+        return { groupId, count: count[0]?.count || 0 };
+      })
+    );
+
+    const assignmentCountMap = new Map(
+      assignmentCounts.map(item => [item.groupId, item.count])
+    );
+
+    return result.map((row: any) => {
+      const assignmentCount = assignmentCountMap.get(row.group.id) || 0;
+      return {
+        ...row.group,
+        course: row.course!,
+        site: row.site!,
+        supervisor: {
+          ...row.supervisor!,
+          user: row.supervisorUser!
+        },
+        availableSpots: (row.group.capacity || 0) - assignmentCount,
+        _count: { assignments: assignmentCount }
+      };
+    }).filter((group: any) => group.availableSpots > 0);
   }
 
   async updateGroupEnrollment(groupId: number, newEnrollment: number): Promise<TrainingCourseGroup | undefined> {

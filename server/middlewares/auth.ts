@@ -46,16 +46,16 @@ export const authMiddleware = async (
 // Middleware to check user role
 export const requireRole = (roles: string | string[]) => {
   const allowedRoles = Array.isArray(roles) ? roles : [roles];
-  
+
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
       return res.status(401).json({ message: "غير مصرح بالوصول" });
     }
-    
+
     if (!allowedRoles.includes(req.user.role)) {
       return res.status(403).json({ message: "غير مصرح لك بالوصول إلى هذه الصفحة" });
     }
-    
+
     next();
   };
 };

@@ -50,7 +50,7 @@ export const students = pgTable("students", {
   facultyId: integer("faculty_id").references(() => faculties.id),
   majorId: integer("major_id").references(() => majors.id),
   levelId: integer("level_id").references(() => levels.id),
-  supervisorId: integer("supervisor_id").references(() => supervisors.id),
+  // تم إزالة supervisorId - الطلاب سيتم تعيينهم للكورسات مباشرة
 });
 
 // Training Sites table
@@ -69,8 +69,10 @@ export const trainingCourses = pgTable("training_courses", {
   name: text("name").notNull(),
   facultyId: integer("faculty_id").references(() => faculties.id),
   majorId: integer("major_id").references(() => majors.id), // ربط الدورة بتخصص معين
+  levelId: integer("level_id").references(() => levels.id), // ربط الدورة بمستوى دراسي معين
   description: text("description"),
-  status: text("status").default("active"), // "active", "upcoming", "completed"
+  location: text("location"),
+  status: text("status").default("upcoming"), // "upcoming", "active", "completed", "cancelled"
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: integer("created_by").references(() => users.id),
 });
