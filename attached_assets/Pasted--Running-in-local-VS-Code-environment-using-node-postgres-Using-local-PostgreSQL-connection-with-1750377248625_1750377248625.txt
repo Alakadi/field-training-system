@@ -1,0 +1,179 @@
+
+Running in local VS Code environment - using node-postgres
+Using local PostgreSQL connection with URL: postgresql://po...
+2:40:45 AM [express] serving on port 8080
+2:41:09 AM [express] GET /api/auth/me 401 in 5ms :: {"message":"غير مصرح بالوصول"}
+Login attempt: { username: 'admin', password: 'password' }
+Login successful for: admin
+2:41:12 AM [express] POST /api/auth/login 200 in 180ms :: {"id":26,"username":"admin","name":"Admin …
+2:41:13 AM [express] GET /api/auth/me 304 in 6ms :: {"id":26,"username":"admin","name":"Admin User",…
+Error fetching students: error: syntax error at or near "="
+    at C:\Users\DELL\Desktop\UniversityInternship\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async <anonymous> (C:\Users\DELL\Desktop\UniversityInternship\node_modules\src\node-postgres\session.ts:104:19)
+    at async DatabaseStorage.getStudentWithDetails (C:\Users\DELL\Desktop\UniversityInternship\server\storage.ts:341:20)
+    at async <anonymous> (C:\Users\DELL\Desktop\UniversityInternship\server\routes.ts:355:18)
+    at async Promise.all (index 0)
+    at async <anonymous> (C:\Users\DELL\Desktop\UniversityInternship\server\routes.ts:353:22) {
+  length: 91,
+  severity: 'ERROR',
+  code: '42601',
+  detail: undefined,
+  hint: undefined,
+  position: '820',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'scan.l',
+  line: '1248',
+  routine: 'scanner_yyerror'
+}
+2:41:13 AM [express] GET /api/students 500 in 51ms :: {"message":"خطأ في استرجاع بيانات الطلاب"}
+2:41:13 AM [express] GET /api/training-sites 304 in 144ms :: [{"id":2,"name":"جامعة تعز","address":"…
+2:41:13 AM [express] GET /api/supervisors 304 in 165ms :: [{"id":5,"userId":28,"facultyId":null,"dep…
+Updated status for 8 courses based on dates
+2:41:13 AM [express] GET /api/training-courses 500 in 177ms :: {"message":"خطأ في استرجاع بيانات الد…
+Error fetching students: error: syntax error at or near "="
+    at C:\Users\DELL\Desktop\UniversityInternship\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async <anonymous> (C:\Users\DELL\Desktop\UniversityInternship\node_modules\src\node-postgres\session.ts:104:19)
+    at async DatabaseStorage.getStudentWithDetails (C:\Users\DELL\Desktop\UniversityInternship\server\storage.ts:341:20)
+    at async <anonymous> (C:\Users\DELL\Desktop\UniversityInternship\server\routes.ts:355:18)
+    at async Promise.all (index 0)
+    at async <anonymous> (C:\Users\DELL\Desktop\UniversityInternship\server\routes.ts:353:22) {
+  length: 91,
+  severity: 'ERROR',
+  code: '42601',
+  detail: undefined,
+  hint: undefined,
+  position: '820',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'scan.l',
+  line: '1248',
+  routine: 'scanner_yyerror'
+}
+2:41:15 AM [express] GET /api/students 500 in 22ms :: {"message":"خطأ في استرجاع بيانات الطلاب"}
+2:41:15 AM [express] GET /api/faculties 304 in 199ms :: [{"id":1,"name":"الهندسة وتقنية المعلومات"},…
+2:41:25 AM [express] GET /api/training-course-groups 304 in 79ms :: [{"id":1,"courseId":12,"groupNam…
+Updated status for 8 courses based on dates
+2:41:25 AM [express] GET /api/training-courses 500 in 131ms :: {"message":"خطأ في استرجاع بيانات الد…
+Error fetching students: error: syntax error at or near "="
+    at C:\Users\DELL\Desktop\UniversityInternship\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async <anonymous> (C:\Users\DELL\Desktop\UniversityInternship\node_modules\src\node-postgres\session.ts:104:19)
+    at async DatabaseStorage.getStudentWithDetails (C:\Users\DELL\Desktop\UniversityInternship\server\storage.ts:341:20)
+    at async <anonymous> (C:\Users\DELL\Desktop\UniversityInternship\server\routes.ts:355:18)
+    at async Promise.all (index 0)
+    at async <anonymous> (C:\Users\DELL\Desktop\UniversityInternship\server\routes.ts:353:22) {
+  length: 91,
+  severity: 'ERROR',
+  code: '42601',
+  detail: undefined,
+  hint: undefined,
+  position: '820',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'scan.l',
+  line: '1248',
+  routine: 'scanner_yyerror'
+}
+2:41:27 AM [express] GET /api/students 500 in 26ms :: {"message":"خطأ في استرجاع بيانات الطلاب"}
+Error fetching students: error: syntax error at or near "="
+    at C:\Users\DELL\Desktop\UniversityInternship\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async <anonymous> (C:\Users\DELL\Desktop\UniversityInternship\node_modules\src\node-postgres\session.ts:104:19)
+    at async DatabaseStorage.getStudentWithDetails (C:\Users\DELL\Desktop\UniversityInternship\server\storage.ts:341:20)
+    at async <anonymous> (C:\Users\DELL\Desktop\UniversityInternship\server\routes.ts:355:18)
+    at async Promise.all (index 0)
+    at async <anonymous> (C:\Users\DELL\Desktop\UniversityInternship\server\routes.ts:353:22) {
+  length: 91,
+  severity: 'ERROR',
+  code: '42601',
+  detail: undefined,
+  hint: undefined,
+  position: '820',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'scan.l',
+  line: '1248',
+  routine: 'scanner_yyerror'
+}
+2:41:31 AM [express] GET /api/students 500 in 77ms :: {"message":"خطأ في استرجاع بيانات الطلاب"}
+Error fetching students: error: syntax error at or near "="
+    at C:\Users\DELL\Desktop\UniversityInternship\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async <anonymous> (C:\Users\DELL\Desktop\UniversityInternship\node_modules\src\node-postgres\session.ts:104:19)
+    at async DatabaseStorage.getStudentWithDetails (C:\Users\DELL\Desktop\UniversityInternship\server\storage.ts:341:20)
+    at async <anonymous> (C:\Users\DELL\Desktop\UniversityInternship\server\routes.ts:355:18)
+    at async Promise.all (index 0)
+    at async <anonymous> (C:\Users\DELL\Desktop\UniversityInternship\server\routes.ts:353:22) {
+  length: 91,
+  severity: 'ERROR',
+  code: '42601',
+  detail: undefined,
+  hint: undefined,
+  position: '820',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'scan.l',
+  line: '1248',
+  routine: 'scanner_yyerror'
+}
+2:44:32 AM [express] GET /api/students 500 in 105ms :: {"message":"خطأ في استرجاع بيانات الطلاب"}
+Error fetching students: error: syntax error at or near "="
+    at C:\Users\DELL\Desktop\UniversityInternship\node_modules\pg-pool\index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async <anonymous> (C:\Users\DELL\Desktop\UniversityInternship\node_modules\src\node-postgres\session.ts:104:19)
+    at async DatabaseStorage.getStudentWithDetails (C:\Users\DELL\Desktop\UniversityInternship\server\storage.ts:341:20)
+    at async <anonymous> (C:\Users\DELL\Desktop\UniversityInternship\server\routes.ts:355:18)
+    at async Promise.all (index 0)
+    at async <anonymous> (C:\Users\DELL\Desktop\UniversityInternship\server\routes.ts:353:22) {
+  length: 91,
+  severity: 'ERROR',
+  code: '42601',
+  detail: undefined,
+  hint: undefined,
+  position: '820',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'scan.l',
+  line: '1248',
+  routine: 'scanner_yyerror'
+}
+2:52:15 AM [express] GET /api/students 500 in 124ms :: {"message":"خطأ في استرجاع بيانات الطلاب"}
