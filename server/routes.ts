@@ -129,6 +129,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/auth/me", authMiddleware, async (req: Request, res: Response) => {
     const user = req.user;
+    if (!user) {
+      return res.status(401).json({ error: "غير مخول" });
+    }
     res.json({
       id: user.id,
       username: user.username,
@@ -331,14 +334,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let students = await storage.getAllStudents();
 
       const facultyId = req.query.facultyId ? Number(req.query.facultyId) : undefined;
-      const supervisorId = req.query.supervisorId ? Number(req.query.supervisorId) : undefined;
+      const majorId = req.query.majorId ? Number(req.query.majorId) : undefined;
+      const levelId = req.query.levelId ? Number(req.query.levelId) : undefined;
 
       if (facultyId) {
         students = students.filter(student => student.facultyId === facultyId);
       }
 
-      if (supervisorId) {
-        students = students.filter(student => student.supervisorId === supervisorId);
+      if (majorId) {
+        students = students.filter(student => student.majorId === majorId);
+      }
+
+      if (levelId) {
+        students = students.filter(student => student.levelId === levelId);
       }
 
       // Fetch details for each student
@@ -348,8 +356,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
 
-      res.json(result);
+      // Filter out any null results
+      const validResults = result.filter(student => student !== undefined);
+
+      res.json(validResults);
     } catch (error) {
+      console.error("Error fetching students:", error);
       res.status(500).json({ message: "خطأ في استرجاع بيانات الطلاب" });
     }
   });
@@ -395,7 +407,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/students/:id", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
       const id = Number(req.params.id);
-      const { name, email, phone, facultyId, majorId, levelId, supervisorId, gpa, active } = req.body;
+      const { name, email, phone, facultyId, majorId, levelId, active } = req.body;
 
       // تحقق من وجود الطالب
       const student = await storage.getStudent(id);
@@ -409,10 +421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         {
           facultyId: facultyId ? Number(facultyId) : student.facultyId,
           majorId: majorId ? Number(majorId) : student.majorId,
-          levelId: levelId ? Number(levelId) : student.levelId,
-          supervisorId: supervisorId === null ? null : 
-                        supervisorId ? Number(supervisorId) : student.supervisorId,
-          gpa: gpa !== undefined ? Number(gpa) : student.gpa
+          levelId: levelId ? Number(levelId) : student.levelId
         },
         {
           name: name || undefined,
@@ -430,8 +439,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "student",
           id,
           { 
-            message: `تم تحديث بيانات الطالب: ${name || student.user?.name}`,
-            studentData: { name, email, phone, facultyId, majorId, levelId, supervisorId }
+            message: `تم تحديث بيانات الطالب: ${name || 'غير محدد'}`,
+            studentData: { name, email, phone, facultyId, majorId, levelId }
           },
           req.ip
         );
@@ -473,7 +482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         facultyId: facultyId ? Number(facultyId) : undefined,
         majorId: majorId ? Number(majorId) : undefined,
         levelId: levelId ? Number(levelId) : undefined,
-        supervisorId: supervisorId ? Number(supervisorId) : undefined
+
       });
 
       // Log activity
@@ -803,7 +812,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         ...group,
         studentCount: assignments.length,
-        availableSpots: group.capacity - group.currentEnrollment
+        availableSpots: group.capacity - (group.currentEnrollment || 0)
       });
     } catch (error) {
       res.status(500).json({ message: "خطأ في استرجاع بيانات مجموعة التدريب" });
@@ -1173,6 +1182,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get student id from logged in user
+      if (!req.user) {
+        return res.status(401).json({ message: "غير مخول" });
+      }
       const student = await storage.getStudentByUserId(req.user.id);
 
       if (!student || student.id !== assignment.studentId) {
@@ -1183,26 +1195,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Log activity
       if (req.user && student) {
-        const course = assignment.courseId ? await storage.getTrainingCourse(assignment.courseId) : null;
         const studentUser = await storage.getUser(student.userId);
 
-        await logActivity(
-          req.user.id,
-          "confirm",
-          "training_assignment",
-          assignment.id,
-          { 
-            message: `تم تأكيد التسجيل في الدورة التدريبية`,
-            confirmationData: { 
-              assignmentId: assignment.id,
-              studentId: student.id,
-              studentName: studentUser.name,
-              courseId: course?.id,
-              courseName: course?.name
-            }
-          },
-          req.ip
-        );
+        if (studentUser) {
+          await logActivity(
+            req.user.id,
+            "confirm",
+            "training_assignment",
+            assignment.id,
+            { 
+              message: `تم تأكيد التسجيل في الدورة التدريبية`,
+              confirmationData: { 
+                assignmentId: assignment.id,
+                studentId: student.id,
+                studentName: studentUser.name
+              }
+            },
+            req.ip
+          );
+        }
       }
 
       res.json(updatedAssignment);
@@ -1237,7 +1248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         score: Number(score),
         comments,
         evaluatorName,
-        createdBy: req.user.id
+        createdBy: req.user?.id || 0
       });
 
       // Log activity
@@ -1246,7 +1257,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const assignment = await storage.getTrainingAssignment(Number(assignmentId));
         if (assignment) {
           const student = assignment.studentId ? await storage.getStudent(assignment.studentId) : null;
-          const course = assignment.courseId ? await storage.getTrainingCourse(assignment.courseId) : null;
           const studentUser = student ? await storage.getUser(student.userId) : null;
 
           await logActivity(
