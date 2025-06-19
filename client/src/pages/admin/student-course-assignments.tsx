@@ -244,7 +244,7 @@ const StudentCourseAssignments: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">جميع الكليات</SelectItem>
-                {(faculties as any[])?.map((faculty: any) => (
+                {faculties && Array.isArray(faculties) && faculties.map((faculty: any) => (
                   <SelectItem key={faculty.id} value={faculty.id.toString()}>
                     {faculty.name}
                   </SelectItem>
@@ -272,7 +272,7 @@ const StudentCourseAssignments: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">جميع المستويات</SelectItem>
-                {(levels as any[])?.map((level: any) => (
+                {levels && Array.isArray(levels) && levels.map((level: any) => (
                   <SelectItem key={level.id} value={level.id.toString()}>
                     {level.name}
                   </SelectItem>

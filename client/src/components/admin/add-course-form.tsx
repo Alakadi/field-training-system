@@ -260,11 +260,11 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {(faculties as any[])?.map((faculty: any) => (
+                          {Array.isArray(faculties) ? faculties.map((faculty: any) => (
                             <SelectItem key={faculty.id} value={faculty.id.toString()}>
                               {faculty.name}
                             </SelectItem>
-                          ))}
+                          )) : null}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -289,7 +289,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {(majors as any[])?.map((major: any) => (
+                          {majors && Array.isArray(majors) && majors.map((major: any) => (
                             <SelectItem key={major.id} value={major.id.toString()}>
                               {major.name}
                             </SelectItem>
@@ -314,7 +314,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {(levels as any[])?.map((level: any) => (
+                          {levels && Array.isArray(levels) && levels.map((level: any) => (
                             <SelectItem key={level.id} value={level.id.toString()}>
                               {level.name}
                             </SelectItem>
@@ -417,7 +417,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                               <SelectValue placeholder="اختر جهة التدريب" />
                             </SelectTrigger>
                             <SelectContent>
-                              {(trainingSites as any[])?.map((site: any) => (
+                              {trainingSites && Array.isArray(trainingSites) && trainingSites.map((site: any) => (
                                 <SelectItem key={site.id} value={site.id.toString()}>
                                   {site.name}
                                 </SelectItem>
@@ -436,7 +436,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                               <SelectValue placeholder="اختر المشرف" />
                             </SelectTrigger>
                             <SelectContent>
-                              {(supervisors as any[])?.map((supervisor: any) => (
+                              {supervisors && Array.isArray(supervisors) && supervisors.map((supervisor: any) => (
                                 <SelectItem key={supervisor.id} value={supervisor.id.toString()}>
                                   {supervisor.user?.name || supervisor.name}
                                 </SelectItem>
