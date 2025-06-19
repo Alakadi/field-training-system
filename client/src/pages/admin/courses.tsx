@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import AddCourseForm from "@/components/admin/add-course-form";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +28,10 @@ const AdminCourses: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showAddCourseForm, setShowAddCourseForm] = useState(action === "new");
+  const [selectedCourse, setSelectedCourse] = useState<any>(null);
+  const [showAddStudentsModal, setShowAddStudentsModal] = useState(false);
+  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+  const [isAddingStudents, setIsAddingStudents] = useState(false);
 
   const itemsPerPage = 10;
 
@@ -41,8 +48,27 @@ const AdminCourses: React.FC = () => {
     queryKey: ["/api/training-course-groups"]
   });
 
+  // Fetch eligible students for the selected course
+  const { data: eligibleStudents = [], isLoading: isLoadingStudents } = useQuery({
+    queryKey: ["/api/students", "eligible", selectedCourse?.facultyId, selectedCourse?.majorId, selectedCourse?.levelId],
+    queryFn: async () => {
+      if (!selectedCourse?.facultyId || !selectedCourse?.majorId || !selectedCourse?.levelId) return [];
+      const params = new URLSearchParams({
+        facultyId: selectedCourse.facultyId.toString(),
+        majorId: selectedCourse.majorId.toString(),
+        levelId: selectedCourse.levelId.toString(),
+      });
+      const res = await fetch(`/api/students?${params}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch students");
+      return res.json();
+    },
+    enabled: !!(selectedCourse?.facultyId && selectedCourse?.majorId && selectedCourse?.levelId),
+  });
+
   // Filter courses
-  const filteredCourses = (courses || []).filter((course: any) => {
+  const filteredCourses = Array.isArray(courses) ? courses.filter((course: any) => {
     let matches = true;
 
     // Search query
@@ -64,7 +90,7 @@ const AdminCourses: React.FC = () => {
     }
 
     return matches;
-  }) || [];
+  }) : [];
 
   // Pagination
   const totalPages = Math.ceil(filteredCourses.length / itemsPerPage);
@@ -98,6 +124,82 @@ const AdminCourses: React.FC = () => {
           variant: "destructive",
         });
       }
+    }
+  };
+
+  const handleAddStudentsToCourse = (course: any) => {
+    setSelectedCourse(course);
+    setSelectedStudents([]);
+    setShowAddStudentsModal(true);
+  };
+
+  const handleStudentSelection = (studentId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedStudents(prev => [...prev, studentId]);
+    } else {
+      setSelectedStudents(prev => prev.filter(id => id !== studentId));
+    }
+  };
+
+  const handleSubmitStudents = async () => {
+    if (!selectedCourse || selectedStudents.length === 0) return;
+
+    setIsAddingStudents(true);
+    try {
+      // Get course groups for assignment
+      const groups = Array.isArray(courseGroups) ? courseGroups.filter((group: any) => group.courseId === selectedCourse.id) : [];
+      
+      if (groups.length === 0) {
+        toast({
+          title: "لا توجد مجموعات",
+          description: "لا توجد مجموعات متاحة لهذه الدورة",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Assign students to the first available group with capacity
+      const availableGroup = groups.find((group: any) => 
+        (group.currentEnrollment || 0) < group.capacity
+      );
+
+      if (!availableGroup) {
+        toast({
+          title: "لا توجد أماكن متاحة",
+          description: "جميع مجموعات الدورة ممتلئة",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Add students to the course group
+      for (const studentId of selectedStudents) {
+        await apiRequest("POST", "/api/training-assignments", {
+          studentId: parseInt(studentId),
+          groupId: availableGroup.id,
+        });
+      }
+
+      toast({
+        title: "تم إضافة الطلاب بنجاح",
+        description: `تم إضافة ${selectedStudents.length} طالب للدورة`,
+      });
+
+      // Refresh data and close modal
+      queryClient.invalidateQueries({ queryKey: ["/api/training-courses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/training-assignments"] });
+      setShowAddStudentsModal(false);
+      setSelectedStudents([]);
+      setSelectedCourse(null);
+
+    } catch (error) {
+      toast({
+        title: "فشل إضافة الطلاب",
+        description: error instanceof Error ? error.message : "حدث خطأ أثناء إضافة الطلاب",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingStudents(false);
     }
   };
 
@@ -152,7 +254,7 @@ const AdminCourses: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">كل الكليات</SelectItem>
-                  {(faculties || []).map((faculty: any) => (
+                  {Array.isArray(faculties) && faculties.map((faculty: any) => (
                     <SelectItem key={faculty.id} value={String(faculty.id)}>
                       {faculty.name}
                     </SelectItem>
@@ -254,14 +356,25 @@ const AdminCourses: React.FC = () => {
                             size="sm" 
                             className="text-primary hover:text-primary-dark"
                             onClick={() => handleEditCourse(course.id)}
+                            title="تعديل الدورة"
                           >
                             <span className="material-icons text-sm">edit</span>
                           </Button>
                           <Button 
                             variant="ghost" 
                             size="sm" 
+                            className="text-green-600 hover:text-green-800"
+                            onClick={() => handleAddStudentsToCourse(course)}
+                            title="إضافة طلاب للدورة"
+                          >
+                            <span className="material-icons text-sm">person_add</span>
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
                             className="text-neutral-600 hover:text-neutral-900"
                             onClick={() => handleViewCourse(course.id)}
+                            title="عرض الدورة"
                           >
                             <span className="material-icons text-sm">visibility</span>
                           </Button>
@@ -270,6 +383,7 @@ const AdminCourses: React.FC = () => {
                             size="sm"
                             className="text-error hover:text-red-700"
                             onClick={() => handleDeleteCourse(course.id)}
+                            title="حذف الدورة"
                           >
                             <span className="material-icons text-sm">delete</span>
                           </Button>
@@ -364,6 +478,116 @@ const AdminCourses: React.FC = () => {
             </div>
           )}
         </div>
+
+        {/* Add Students Modal */}
+        <Dialog open={showAddStudentsModal} onOpenChange={setShowAddStudentsModal}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>إضافة طلاب للدورة</DialogTitle>
+              <DialogDescription>
+                {selectedCourse && (
+                  <div className="space-y-2">
+                    <p>دورة: <span className="font-medium">{selectedCourse.name}</span></p>
+                    <div className="flex gap-2">
+                      <Badge variant="outline">{selectedCourse.faculty?.name}</Badge>
+                      <Badge variant="outline">{selectedCourse.major?.name}</Badge>
+                      <Badge variant="outline">{selectedCourse.level?.name}</Badge>
+                    </div>
+                  </div>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {isLoadingStudents ? (
+                <div className="text-center py-4">جاري تحميل الطلاب المؤهلين...</div>
+              ) : eligibleStudents.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground">
+                  لا يوجد طلاب مؤهلين لهذه الدورة حالياً
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">
+                      الطلاب المؤهلين ({eligibleStudents.length} طالب)
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const allSelected = eligibleStudents.every((student: any) =>
+                          selectedStudents.includes(String(student.id))
+                        );
+                        if (allSelected) {
+                          setSelectedStudents([]);
+                        } else {
+                          setSelectedStudents(eligibleStudents.map((student: any) => String(student.id)));
+                        }
+                      }}
+                    >
+                      {eligibleStudents.every((student: any) =>
+                        selectedStudents.includes(String(student.id))
+                      ) ? 'إلغاء تحديد الكل' : 'تحديد الكل'}
+                    </Button>
+                  </div>
+                  
+                  <div className="max-h-60 overflow-y-auto space-y-2 border rounded-md p-3">
+                    {eligibleStudents.map((student: any) => (
+                      <div
+                        key={student.id}
+                        className="flex items-center space-x-2 space-x-reverse p-2 hover:bg-gray-50 rounded"
+                      >
+                        <Checkbox
+                          id={`student-${student.id}`}
+                          checked={selectedStudents.includes(String(student.id))}
+                          onCheckedChange={(checked) =>
+                            handleStudentSelection(String(student.id), checked as boolean)
+                          }
+                        />
+                        <div className="flex-1">
+                          <label
+                            htmlFor={`student-${student.id}`}
+                            className="text-sm font-medium cursor-pointer"
+                          >
+                            {student.user?.name || student.name}
+                          </label>
+                          <p className="text-xs text-muted-foreground">
+                            {student.universityId} - {student.faculty?.name} - {student.major?.name}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {selectedStudents.length > 0 && (
+                    <div className="text-sm text-muted-foreground">
+                      تم تحديد {selectedStudents.length} طالب
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowAddStudentsModal(false);
+                  setSelectedStudents([]);
+                  setSelectedCourse(null);
+                }}
+              >
+                إلغاء
+              </Button>
+              <Button
+                onClick={handleSubmitStudents}
+                disabled={selectedStudents.length === 0 || isAddingStudents}
+              >
+                {isAddingStudents ? 'جاري الإضافة...' : `إضافة ${selectedStudents.length} طالب`}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AdminLayout>
   );
