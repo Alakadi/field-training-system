@@ -1,6 +1,6 @@
 
-import { db } from '../server/db.js';
-import { faculties, majors } from '../shared/schema.js';
+import { db } from '../server/db.ts';
+import { faculties, majors } from '../shared/schema.ts';
 
 async function seedFacultiesAndMajors() {
   try {
