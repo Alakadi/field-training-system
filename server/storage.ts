@@ -603,7 +603,7 @@ export class DatabaseStorage implements IStorage {
     availableSpots: number,
     _count: { assignments: number }
   })[]> {
-    const result = await db.select({
+    let query = db.select({
       group: trainingCourseGroups,
       course: trainingCourses,
       site: trainingSites,
@@ -614,6 +614,28 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(trainingSites, eq(trainingCourseGroups.siteId, trainingSites.id))
       .leftJoin(supervisors, eq(trainingCourseGroups.supervisorId, supervisors.id))
       .leftJoin(users, eq(supervisors.userId, users.id));
+
+    // Apply filters based on parameters
+    const whereConditions = [];
+    
+    if (facultyId) {
+      whereConditions.push(eq(trainingCourses.facultyId, facultyId));
+    }
+    
+    if (majorId) {
+      whereConditions.push(eq(trainingCourses.majorId, majorId));
+    }
+    
+    if (levelId) {
+      whereConditions.push(eq(trainingCourses.levelId, levelId));
+    }
+
+    // Apply where conditions if any exist
+    if (whereConditions.length > 0) {
+      query = query.where(and(...whereConditions));
+    }
+
+    const result = await query;
 
     // Get assignment counts for each group
     const groupIds = result.map(row => row.group.id);

@@ -777,7 +777,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/training-courses", authMiddleware, requireRole(["admin", "supervisor"]), async (req: Request, res: Response) => {
     try {
-      const { name, facultyId, majorId, description, status, groups } = req.body;
+      const { name, facultyId, majorId, levelId, description, status, groups } = req.body;
 
       console.log("Creating course with groups in single transaction:", { name, groupsCount: groups?.length });
 
@@ -786,6 +786,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         name,
         facultyId: facultyId ? Number(facultyId) : undefined,
         majorId: majorId ? Number(majorId) : undefined,
+        levelId: levelId ? Number(levelId) : undefined,
         description,
         status: status || "active",
         createdBy: req.user?.id
@@ -800,7 +801,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           result.course.id,
           { 
             message: `تم إنشاء دورة تدريبية مع ${result.groups.length} مجموعة: ${name}`,
-            courseData: { name, facultyId, majorId, description, groupsCount: result.groups.length }
+            courseData: { name, facultyId, majorId, levelId, description, groupsCount: result.groups.length }
           },
           req.ip
         );

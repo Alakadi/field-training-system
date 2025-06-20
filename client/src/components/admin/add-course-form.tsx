@@ -128,40 +128,27 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
         };
       });
 
-      // Create the course
+      // Create the course with groups
       const courseResponse = await fetch("/api/training-courses", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          groups: validatedGroups,
+        }),
       });
 
       if (!courseResponse.ok) {
         throw new Error("فشل في إنشاء الدورة");
       }
 
-      const course = await courseResponse.json();
-
-      // Create groups for the course
-      for (const group of validatedGroups) {
-        const groupResponse = await fetch("/api/training-course-groups", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({
-            courseId: course.id,
-            ...group,
-          }),
-        });
-
-        if (!groupResponse.ok) {
-          throw new Error("فشل في إنشاء مجموعة الدورة");
-        }
-      }
+      const courseResult = await courseResponse.json();
+      
+      // Extract course from result (the API returns { course, groups })
+      const course = courseResult.course || courseResult;
 
       toast({
         title: "تم بنجاح",
@@ -316,7 +303,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                         <SelectContent>
                           {levels && Array.isArray(levels) && levels.map((level: any) => (
                             <SelectItem key={level.id} value={level.id.toString()}>
-                              {level.name}
+                              <span>{level.name}</span>
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -419,7 +406,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                             <SelectContent>
                               {trainingSites && Array.isArray(trainingSites) && trainingSites.map((site: any) => (
                                 <SelectItem key={site.id} value={site.id.toString()}>
-                                  {site.name}
+                                  <span>{site.name}</span>
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -438,7 +425,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                             <SelectContent>
                               {supervisors && Array.isArray(supervisors) && supervisors.map((supervisor: any) => (
                                 <SelectItem key={supervisor.id} value={supervisor.id.toString()}>
-                                  {supervisor.user?.name || supervisor.name}
+                                  <span>{supervisor.user?.name || supervisor.name}</span>
                                 </SelectItem>
                               ))}
                             </SelectContent>
