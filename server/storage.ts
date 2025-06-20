@@ -114,6 +114,12 @@ export interface IStorage {
     availableSpots: number 
   })[]>;
   updateGroupEnrollment(groupId: number, newEnrollment: number): Promise<TrainingCourseGroup | undefined>;
+  getTrainingCourseGroupWithStudents(groupId: number): Promise<(TrainingCourseGroup & {
+    course: TrainingCourse,
+    site: TrainingSite,
+    supervisor: Supervisor & { user: User },
+    students: (Student & { user: User })[]
+  }) | undefined>;
 
   // Training Assignment operations
   getAllTrainingAssignments(): Promise<TrainingAssignment[]>;
@@ -674,6 +680,64 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async getTrainingCourseGroupWithStudents(groupId: number): Promise<(TrainingCourseGroup & {
+    course: TrainingCourse,
+    site: TrainingSite,
+    supervisor: Supervisor & { user: User },
+    students: (Student & { user: User })[]
+  }) | undefined> {
+    // Get group details
+    const groupResult = await db.select({
+      group: trainingCourseGroups,
+      course: trainingCourses,
+      site: trainingSites,
+      supervisor: supervisors
+    }).from(trainingCourseGroups)
+      .leftJoin(trainingCourses, eq(trainingCourseGroups.courseId, trainingCourses.id))
+      .leftJoin(trainingSites, eq(trainingCourseGroups.siteId, trainingSites.id))
+      .leftJoin(supervisors, eq(trainingCourseGroups.supervisorId, supervisors.id))
+      .where(eq(trainingCourseGroups.id, groupId));
+
+    if (!groupResult[0]) {
+      return undefined;
+    }
+
+    // Get supervisor user
+    const supervisorUser = groupResult[0].supervisor ?
+      await db.select().from(users).where(eq(users.id, groupResult[0].supervisor.userId)).then(r => r[0]) : null;
+
+    // Get students in this group
+    const assignments = await db.select({
+      assignment: trainingAssignments,
+      student: students
+    }).from(trainingAssignments)
+      .leftJoin(students, eq(trainingAssignments.studentId, students.id))
+      .where(eq(trainingAssignments.groupId, groupId));
+
+    // Get student users
+    const studentsWithUsers = await Promise.all(
+      assignments.map(async (assignment) => {
+        if (!assignment.student) return null;
+        const studentUser = await db.select().from(users).where(eq(users.id, assignment.student.userId)).then(r => r[0]);
+        return {
+          ...assignment.student,
+          user: studentUser
+        };
+      })
+    );
+
+    return {
+      ...groupResult[0].group,
+      course: groupResult[0].course!,
+      site: groupResult[0].site!,
+      supervisor: {
+        ...groupResult[0].supervisor!,
+        user: supervisorUser!
+      },
+      students: studentsWithUsers.filter(s => s !== null) as (Student & { user: User })[]
+    };
+  }
+
   // Training Assignment operations
   async getAllTrainingAssignments(): Promise<TrainingAssignment[]> {
     const result = await db.select().from(trainingAssignments);
@@ -717,24 +781,44 @@ export class DatabaseStorage implements IStorage {
       supervisor: Supervisor & { user: User } 
     } 
   }) | undefined> {
-    const result = await db.select({
+    // First get the assignment with student and group info
+    const assignmentResult = await db.select({
       assignment: trainingAssignments,
       student: students,
-      studentUser: users,
       group: trainingCourseGroups,
       course: trainingCourses,
       site: trainingSites,
-      supervisor: supervisors,
-      supervisorUser: users
+      supervisor: supervisors
     }).from(trainingAssignments)
       .leftJoin(students, eq(trainingAssignments.studentId, students.id))
-      .leftJoin(users, eq(students.userId, users.id))
       .leftJoin(trainingCourseGroups, eq(trainingAssignments.groupId, trainingCourseGroups.id))
       .leftJoin(trainingCourses, eq(trainingCourseGroups.courseId, trainingCourses.id))
       .leftJoin(trainingSites, eq(trainingCourseGroups.siteId, trainingSites.id))
       .leftJoin(supervisors, eq(trainingCourseGroups.supervisorId, supervisors.id))
-      .leftJoin(users, eq(supervisors.userId, users.id))
       .where(eq(trainingAssignments.id, id));
+
+    if (!assignmentResult[0]) {
+      return undefined;
+    }
+
+    // Get student user separately
+    const studentUser = assignmentResult[0].student ? 
+      await db.select().from(users).where(eq(users.id, assignmentResult[0].student.userId)).then(r => r[0]) : null;
+
+    // Get supervisor user separately  
+    const supervisorUser = assignmentResult[0].supervisor ?
+      await db.select().from(users).where(eq(users.id, assignmentResult[0].supervisor.userId)).then(r => r[0]) : null;
+
+    const result = [{
+      assignment: assignmentResult[0].assignment,
+      student: assignmentResult[0].student,
+      studentUser,
+      group: assignmentResult[0].group,
+      course: assignmentResult[0].course,
+      site: assignmentResult[0].site,
+      supervisor: assignmentResult[0].supervisor,
+      supervisorUser
+    }];
 
     if (result[0] && result[0].student && result[0].studentUser) {
       return {

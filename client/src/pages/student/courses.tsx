@@ -54,25 +54,32 @@ const StudentCourses: React.FC = () => {
     enabled: !!studentData?.id,
   });
 
-  // Fetch available courses for enrollment
-  const { data: availableCourses, isLoading: isLoadingCourses } = useQuery({
-    queryKey: ["/api/training-courses/available"],
+  // Fetch available course groups for enrollment based on student's profile
+  const { data: availableCourseGroups, isLoading: isLoadingCourses } = useQuery({
+    queryKey: ["/api/training-course-groups/available", studentData?.facultyId, studentData?.majorId, studentData?.levelId],
     queryFn: async () => {
-      if (!studentData?.id) return [];
-      // In a real app, this would filter by faculty and other eligibility criteria
-      const res = await fetch(`/api/training-courses?status=upcoming`, {
+      if (!studentData?.facultyId || !studentData?.majorId || !studentData?.levelId) return [];
+      
+      const params = new URLSearchParams({
+        facultyId: studentData.facultyId.toString(),
+        majorId: studentData.majorId.toString(),
+        levelId: studentData.levelId.toString(),
+        available: "true"
+      });
+      
+      const res = await fetch(`/api/training-course-groups?${params}`, {
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to fetch available courses");
+      if (!res.ok) throw new Error("Failed to fetch available course groups");
       return res.json();
     },
-    enabled: !!studentData?.id,
+    enabled: !!studentData?.facultyId && !!studentData?.majorId && !!studentData?.levelId,
   });
 
-  // Filter available courses
-  const filteredCourses = availableCourses?.filter((course: any) => {
-    // First, exclude courses student is already enrolled in
-    const alreadyEnrolled = myAssignments?.some((a: any) => a.courseId === course.id);
+  // Filter available course groups
+  const filteredCourseGroups = availableCourseGroups?.filter((group: any) => {
+    // First, exclude groups student is already enrolled in
+    const alreadyEnrolled = myAssignments?.some((a: any) => a.groupId === group.id);
     if (alreadyEnrolled) return false;
     
     let matches = true;
@@ -80,13 +87,13 @@ const StudentCourses: React.FC = () => {
     // Search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      matches = course.name.toLowerCase().includes(query) || 
-                course.site.name.toLowerCase().includes(query);
+      matches = group.course.name.toLowerCase().includes(query) || 
+                group.site.name.toLowerCase().includes(query);
     }
     
     // Faculty filter
     if (facultyFilter && matches) {
-      matches = course.facultyId === parseInt(facultyFilter);
+      matches = group.course.facultyId === parseInt(facultyFilter);
     }
     
     return matches;
@@ -242,7 +249,7 @@ const StudentCourses: React.FC = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">كل الكليات</SelectItem>
-                  {faculties?.map((faculty: any) => (
+                  {faculties && Array.isArray(faculties) && faculties.map((faculty: any) => (
                     <SelectItem key={faculty.id} value={String(faculty.id)}>
                       {faculty.name}
                     </SelectItem>
@@ -256,18 +263,31 @@ const StudentCourses: React.FC = () => {
             <div className="text-center p-12 bg-white rounded-lg shadow">
               جاري تحميل الدورات المتاحة...
             </div>
-          ) : filteredCourses.length === 0 ? (
+          ) : filteredCourseGroups.length === 0 ? (
             <div className="text-center p-12 bg-white rounded-lg shadow">
               لا توجد دورات متاحة للتسجيل حالياً
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCourses.map((course: any) => (
-                <CourseCard 
-                  key={course.id}
-                  course={course}
-                  onEnroll={() => handleEnrollCourse(course.id)}
-                />
+              {filteredCourseGroups.map((group: any) => (
+                <div key={group.id} className="bg-white rounded-lg shadow p-6">
+                  <h3 className="text-lg font-semibold mb-2">{group.course.name}</h3>
+                  <p className="text-gray-600 mb-3">{group.course.description}</p>
+                  <div className="space-y-2 text-sm">
+                    <p><span className="font-medium">المجموعة:</span> {group.groupName}</p>
+                    <p><span className="font-medium">جهة التدريب:</span> {group.site.name}</p>
+                    <p><span className="font-medium">المشرف:</span> {group.supervisor.user.name}</p>
+                    <p><span className="font-medium">الأماكن المتاحة:</span> {group.availableSpots} من {group.capacity}</p>
+                    <p><span className="font-medium">تاريخ البدء:</span> {new Date(group.startDate).toLocaleDateString('ar-SA')}</p>
+                    <p><span className="font-medium">تاريخ الانتهاء:</span> {new Date(group.endDate).toLocaleDateString('ar-SA')}</p>
+                  </div>
+                  <button
+                    onClick={() => handleEnrollCourse(group.id)}
+                    className="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+                  >
+                    التسجيل في الدورة
+                  </button>
+                </div>
               ))}
             </div>
           )}

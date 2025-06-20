@@ -19,6 +19,12 @@ const ViewCourse: React.FC = () => {
     enabled: !!id,
   });
 
+  // الحصول على بيانات مجموعات الدورة
+  const { data: courseGroups, isLoading: isLoadingGroups } = useQuery({
+    queryKey: [`/api/training-course-groups?courseId=${id}`],
+    enabled: !!id,
+  });
+
   // الحصول على بيانات الطلاب المسجلين في الدورة
   const { data: courseStudents, isLoading: isLoadingStudents } = useQuery({
     queryKey: [`/api/training-courses/${id}/students`],
@@ -120,34 +126,25 @@ const ViewCourse: React.FC = () => {
                     <p className="text-sm font-medium text-neutral-500">اسم الدورة</p>
                     <p className="text-lg font-semibold">{course?.name}</p>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-neutral-500">الرمز</p>
-                    <p>{course?.code}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-neutral-500">جهة التدريب</p>
-                    <p>{course?.trainingSite?.name || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-neutral-500">المشرف</p>
-                    <p>{course?.supervisor?.user?.name || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-neutral-500">تاريخ البدء</p>
-                    <p>{new Date(course?.startDate).toLocaleDateString('ar-SA')}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-neutral-500">تاريخ الانتهاء</p>
-                    <p>{new Date(course?.endDate).toLocaleDateString('ar-SA')}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-neutral-500">عدد الطلاب المسجلين</p>
-                    <div className="flex items-center space-x-2 space-x-reverse">
-                      <p>{course?.studentCount} / {course?.capacity}</p>
-                      <div className="flex-1">
-                        <Progress value={occupancyRate} className="h-2" />
-                      </div>
+                  {(course as any)?.faculty && (
+                    <div>
+                      <p className="text-sm font-medium text-neutral-500">الكلية</p>
+                      <p>{(course as any).faculty.name}</p>
                     </div>
+                  )}
+                  {(course as any)?.location && (
+                    <div>
+                      <p className="text-sm font-medium text-neutral-500">الموقع</p>
+                      <p>{(course as any).location}</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-neutral-500">عدد المجموعات</p>
+                    <p>{(courseGroups as any[])?.length || 0} مجموعة</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-neutral-500">إجمالي الطلاب المسجلين</p>
+                    <p>{(courseStudents as any[])?.length || 0} طالب</p>
                   </div>
                   {course?.description && (
                     <div>
@@ -161,12 +158,75 @@ const ViewCourse: React.FC = () => {
           </div>
 
           <div className="md:col-span-2">
-            <Tabs defaultValue="students">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="students">الطلاب المسجلين ({courseStudents?.length || 0})</TabsTrigger>
-                <TabsTrigger value="evaluations">التقييمات ({courseEvaluations?.length || 0})</TabsTrigger>
+            <Tabs defaultValue="groups">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="groups">المجموعات ({(courseGroups as any[])?.length || 0})</TabsTrigger>
+                <TabsTrigger value="students">الطلاب المسجلين ({(courseStudents as any[])?.length || 0})</TabsTrigger>
+                <TabsTrigger value="evaluations">التقييمات ({(courseEvaluations as any[])?.length || 0})</TabsTrigger>
               </TabsList>
-              
+
+              <TabsContent value="groups" className="mt-4">
+                <Card>
+                  <CardContent className="p-4">
+                    {isLoadingGroups ? (
+                      <div className="space-y-2 py-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" />
+                      </div>
+                    ) : (courseGroups as any[])?.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-neutral-500">لا توجد مجموعات لهذه الدورة التدريبية</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {(courseGroups as any[])?.map((group: any, index: number) => (
+                          <Card key={group.id} className="border-l-4 border-l-blue-500">
+                            <CardHeader className="pb-3">
+                              <CardTitle className="text-lg">المجموعة {index + 1}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div>
+                                  <p className="text-sm font-medium text-neutral-500">جهة التدريب</p>
+                                  <p className="text-lg">{group.site?.name }</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-neutral-500">المشرف الأكاديمي</p>
+                                  <p className="text-lg">{group.supervisorId?.user?.name || "غير محدد"}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-neutral-500">عدد الطلاب</p>
+                                  <p className="text-lg">{group.currentEnrollment || 0} / {group.capacity}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-neutral-500">تاريخ البداية</p>
+                                  <p className="text-lg">
+                                    {group.startDate ? new Date(group.startDate).toLocaleDateString('ar-SA') : "غير محدد"}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-neutral-500">تاريخ النهاية</p>
+                                  <p className="text-lg">
+                                    {group.endDate ? new Date(group.endDate).toLocaleDateString('ar-SA') : "غير محدد"}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium text-neutral-500">المقاعد المتاحة</p>
+                                  <p className="text-lg font-semibold text-green-600">
+                                    {group.capacity - (group.currentEnrollment || 0)}
+                                  </p>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
               <TabsContent value="students" className="mt-4">
                 <Card>
                   <CardContent className="p-4">
@@ -239,7 +299,7 @@ const ViewCourse: React.FC = () => {
                   </CardContent>
                 </Card>
               </TabsContent>
-              
+
               <TabsContent value="evaluations" className="mt-4">
                 <Card>
                   <CardContent className="p-4">

@@ -842,21 +842,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/training-course-groups/:id", authMiddleware, async (req: Request, res: Response) => {
     try {
       const id = Number(req.params.id);
-      const group = await storage.getTrainingCourseGroup(id);
+      const groupWithStudents = await storage.getTrainingCourseGroupWithStudents(id);
 
-      if (!group) {
+      if (!groupWithStudents) {
         return res.status(404).json({ message: "مجموعة التدريب غير موجودة" });
       }
 
-      // Get assignments for this group
-      const assignments = await storage.getTrainingAssignmentsByGroup(id);
-
       res.json({
-        ...group,
-        studentCount: assignments.length,
-        availableSpots: group.capacity - (group.currentEnrollment || 0)
+        ...groupWithStudents,
+        studentCount: groupWithStudents.students.length,
+        availableSpots: groupWithStudents.capacity - groupWithStudents.students.length
       });
     } catch (error) {
+      console.error("Error fetching group with students:", error);
       res.status(500).json({ message: "خطأ في استرجاع بيانات مجموعة التدريب" });
     }
   });
@@ -1312,8 +1310,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 assignmentId,
                 studentId: student?.id,
                 studentName: studentUser?.name,
-                courseId: course?.id,
-                courseName: course?.name,
+                courseId: assignment ? assignment.groupId : null,
+                courseName: "تقييم دورة تدريبية",
                 score
               }
             },
@@ -1328,30 +1326,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Add helper methods to storage for MemStorage compatibility
-  if (!storage.getSupervisorByUserId) {
-    storage.getSupervisorByUserId = async (userId: number): Promise<Supervisor | undefined> => {
-      if ('supervisors' in storage) {
-        return Array.from((storage as any).supervisors.values()).find(
-          (supervisor) => supervisor.userId === userId
-        );
-      }
-      // For DatabaseStorage, this method is already implemented
-      return undefined;
-    };
-  }
+  // Get course students with complete details
+  app.get("/api/training-courses/:id/students", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const courseId = Number(req.params.id);
+      
+      // Get all groups for this course
+      const groups = await storage.getTrainingCourseGroupsByCourse(courseId);
+      const courseStudents = [];
 
-  if (!storage.getStudentByUserId) {
-    storage.getStudentByUserId = async (userId: number): Promise<Student | undefined> => {
-      if ('students' in storage) {
-        return Array.from((storage as any).students.values()).find(
-          (student) => student.userId === userId
-        );
+      for (const group of groups) {
+        const groupWithStudents = await storage.getTrainingCourseGroupWithStudents(group.id);
+        if (groupWithStudents) {
+          groupWithStudents.students.forEach(student => {
+            courseStudents.push({
+              student: student,
+              group: {
+                id: group.id,
+                name: group.groupName
+              }
+            });
+          });
+        }
       }
-      // For DatabaseStorage, this method is already implemented
-      return undefined;
-    };
-  }
+
+      res.json(courseStudents);
+    } catch (error) {
+      console.error("Error fetching course students:", error);
+      res.status(500).json({ message: "خطأ في استرجاع بيانات طلاب الدورة" });
+    }
+  });
+
+  // Get course evaluations
+  app.get("/api/training-courses/:id/evaluations", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const courseId = Number(req.params.id);
+      
+      // Get all groups for this course
+      const groups = await storage.getTrainingCourseGroupsByCourse(courseId);
+      const courseEvaluations = [];
+
+      for (const group of groups) {
+        const assignments = await storage.getTrainingAssignmentsByGroup(group.id);
+        for (const assignment of assignments) {
+          const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
+          courseEvaluations.push(...evaluations);
+        }
+      }
+
+      res.json(courseEvaluations);
+    } catch (error) {
+      console.error("Error fetching course evaluations:", error);
+      res.status(500).json({ message: "خطأ في استرجاع بيانات تقييمات الدورة" });
+    }
+  });
+
+  // Helper methods are already implemented in DatabaseStorage
 
   const httpServer = createServer(app);
   return httpServer;
