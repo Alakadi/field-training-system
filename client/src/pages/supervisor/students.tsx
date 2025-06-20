@@ -33,12 +33,12 @@ const SupervisorStudents: React.FC = () => {
     },
   });
 
-  // Fetch students under supervision
+  // Fetch students under supervision through training groups
   const { data: students, isLoading: isLoadingStudents } = useQuery({
-    queryKey: ["/api/students", supervisorData?.id],
+    queryKey: ["/api/supervisors", supervisorData?.id, "students"],
     queryFn: async () => {
       if (!supervisorData?.id) return [];
-      const res = await fetch(`/api/students?supervisorId=${supervisorData.id}`, {
+      const res = await fetch(`/api/supervisors/${supervisorData.id}/students`, {
         credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to fetch students");

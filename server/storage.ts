@@ -84,9 +84,9 @@ export interface IStorage {
   getStudentByUserId(userId: number): Promise<Student | undefined>;
   createStudent(student: InsertStudent): Promise<Student>;
   updateStudent(id: number, student: Partial<Student>, userData?: Partial<User>): Promise<Student | undefined>;
-  getStudentWithDetails(id: number): Promise<(Student & { user: User, faculty?: Faculty, major?: Major, level?: Level, supervisor?: Supervisor }) | undefined>;
+  getStudentWithDetails(id: number): Promise<(Student & { user: User, faculty?: Faculty, major?: Major, level?: Level }) | undefined>;
   getStudentsByFaculty(facultyId: number): Promise<Student[]>;
-  getStudentsBySupervisor(supervisorId: number): Promise<Student[]>;
+  getStudentsBySupervisorThroughGroups(supervisorId: number): Promise<(Student & { user: User, faculty?: Faculty, major?: Major, level?: Level })[]>;
 
   // Training Site operations
   getAllTrainingSites(): Promise<TrainingSite[]>;
@@ -337,20 +337,18 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getStudentWithDetails(id: number): Promise<(Student & { user: User, faculty?: Faculty, major?: Major, level?: Level, supervisor?: Supervisor }) | undefined> {
+  async getStudentWithDetails(id: number): Promise<(Student & { user: User, faculty?: Faculty, major?: Major, level?: Level }) | undefined> {
     const result = await db.select({
       student: students,
       user: users,
       faculty: faculties,
       major: majors,
-      level: levels,
-      supervisor: supervisors
+      level: levels
     }).from(students)
       .leftJoin(users, eq(students.userId, users.id))
       .leftJoin(faculties, eq(students.facultyId, faculties.id))
       .leftJoin(majors, eq(students.majorId, majors.id))
       .leftJoin(levels, eq(students.levelId, levels.id))
-      .leftJoin(supervisors, eq(students.supervisorId, supervisors.id))
       .where(eq(students.id, id));
 
     if (result[0] && result[0].user) {
@@ -359,8 +357,7 @@ export class DatabaseStorage implements IStorage {
         user: result[0].user,
         faculty: result[0].faculty || undefined,
         major: result[0].major || undefined,
-        level: result[0].level || undefined,
-        supervisor: result[0].supervisor || undefined
+        level: result[0].level || undefined
       };
     }
     return undefined;
@@ -371,9 +368,30 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async getStudentsBySupervisor(supervisorId: number): Promise<Student[]> {
-    const result = await db.select().from(students).where(eq(students.supervisorId, supervisorId));
-    return result;
+  // Get students assigned to a supervisor through training groups
+  async getStudentsBySupervisorThroughGroups(supervisorId: number): Promise<(Student & { user: User, faculty?: Faculty, major?: Major, level?: Level })[]> {
+    const result = await db.select({
+      student: students,
+      user: users,
+      faculty: faculties,
+      major: majors,
+      level: levels
+    }).from(students)
+      .leftJoin(users, eq(students.userId, users.id))
+      .leftJoin(faculties, eq(students.facultyId, faculties.id))
+      .leftJoin(majors, eq(students.majorId, majors.id))
+      .leftJoin(levels, eq(students.levelId, levels.id))
+      .innerJoin(trainingAssignments, eq(students.id, trainingAssignments.studentId))
+      .innerJoin(trainingCourseGroups, eq(trainingAssignments.groupId, trainingCourseGroups.id))
+      .where(eq(trainingCourseGroups.supervisorId, supervisorId));
+
+    return result.map(row => ({
+      ...row.student,
+      user: row.user!,
+      faculty: row.faculty || undefined,
+      major: row.major || undefined,
+      level: row.level || undefined
+    }));
   }
 
   // Training Site operations

@@ -217,6 +217,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get students assigned to supervisor through training groups
+  app.get("/api/supervisors/:id/students", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const supervisorId = Number(req.params.id);
+      
+      // Check if user has access to view this supervisor's students
+      if (req.user?.role !== "admin") {
+        if (req.user?.role !== "supervisor") {
+          return res.status(403).json({ message: "غير مصرح بالوصول" });
+        }
+        
+        // Supervisor can only view their own students
+        const supervisor = await storage.getSupervisorByUserId(req.user.id);
+        if (!supervisor || supervisor.id !== supervisorId) {
+          return res.status(403).json({ message: "غير مصرح بالوصول" });
+        }
+      }
+
+      const students = await storage.getStudentsBySupervisorThroughGroups(supervisorId);
+      res.json(students);
+    } catch (error) {
+      console.error("Error fetching supervisor students:", error);
+      res.status(500).json({ message: "خطأ في استرجاع بيانات طلاب المشرف" });
+    }
+  });
+
   app.get("/api/supervisors/:id", authMiddleware, async (req: Request, res: Response) => {
     try {
       const id = Number(req.params.id);
@@ -456,7 +482,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/students", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
-      const { name, universityId, email, phone, facultyId, majorId, levelId, supervisorId } = req.body;
+      const { name, universityId, email, phone, facultyId, majorId, levelId } = req.body;
 
       // Check if student with this university ID already exists
       const existingStudent = await storage.getStudentByUniversityId(universityId);
@@ -481,8 +507,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         universityId,
         facultyId: facultyId ? Number(facultyId) : undefined,
         majorId: majorId ? Number(majorId) : undefined,
-        levelId: levelId ? Number(levelId) : undefined,
-
+        levelId: levelId ? Number(levelId) : undefined
       });
 
       // Log activity
@@ -494,7 +519,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           student.id,
           { 
             message: `تم إنشاء حساب طالب: ${name}`,
-            studentData: { name, universityId, facultyId, majorId, levelId, supervisorId }
+            studentData: { name, universityId, facultyId, majorId, levelId }
           },
           req.ip
         );

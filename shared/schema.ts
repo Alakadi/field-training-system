@@ -50,7 +50,6 @@ export const students = pgTable("students", {
   facultyId: integer("faculty_id").references(() => faculties.id),
   majorId: integer("major_id").references(() => majors.id),
   levelId: integer("level_id").references(() => levels.id),
-  // تم إزالة supervisorId - الطلاب سيتم تعيينهم للكورسات مباشرة
 });
 
 // Training Sites table

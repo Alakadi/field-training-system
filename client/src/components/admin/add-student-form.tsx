@@ -23,7 +23,6 @@ const addStudentSchema = z.object({
   facultyId: z.string().min(1, { message: "يرجى اختيار الكلية" }),
   majorId: z.string().min(1, { message: "يرجى اختيار التخصص" }),
   levelId: z.string().min(1, { message: "يرجى اختيار المستوى الدراسي" }),
-  supervisorId: z.string().optional().or(z.literal("")).or(z.literal("none")),
   assignedCourseGroups: z.array(z.string()).optional().default([]),
 });
 
@@ -50,10 +49,6 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
 
   const { data: levels = [], isLoading: isLoadingLevels } = useQuery<any[]>({
     queryKey: ["/api/levels"],
-  });
-
-  const { data: supervisors = [], isLoading: isLoadingSupervisors } = useQuery<any[]>({
-    queryKey: ["/api/supervisors"],
   });
 
   // Fetch majors based on selected faculty
@@ -100,7 +95,6 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
       facultyId: "",
       majorId: "",
       levelId: "",
-      supervisorId: "",
       assignedCourseGroups: [],
     },
   });
@@ -124,7 +118,6 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
           facultyId: data.facultyId,
           majorId: data.majorId,
           levelId: data.levelId,
-          supervisorId: data.supervisorId === "none" ? "" : data.supervisorId,
         }),
       });
 
@@ -200,7 +193,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
     form.setValue("assignedCourseGroups", []);
   };
 
-  const isLoading = isLoadingFaculties || isLoadingLevels || isLoadingSupervisors;
+  const isLoading = isLoadingFaculties || isLoadingLevels;
 
   return (
     <Card>
@@ -366,34 +359,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="supervisorId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>المشرف الأكاديمي (اختياري)</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="اختر المشرف الأكاديمي" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="none">بدون مشرف</SelectItem>
-                            {Array.isArray(supervisors) && supervisors.map((supervisor: any) => (
-                              <SelectItem key={supervisor.id} value={String(supervisor.id)}>
-                                {supervisor.user?.name || 'مشرف غير محدد'}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  
                 </div>
               </div>
 
