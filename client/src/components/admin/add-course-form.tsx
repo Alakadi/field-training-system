@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,18 +17,18 @@ const addCourseSchema = z.object({
   name: z.string().min(1, "اسم الدورة مطلوب"),
   facultyId: z.string().min(1, "الكلية مطلوبة"),
   majorId: z.string().min(1, "التخصص مطلوب"),
+  levelId: z.string().min(1, "المستوى مطلوب"),
+  location: z.string().min(1, "الموقع مطلوب"),
   description: z.string().optional(),
   status: z.enum(["upcoming", "active", "completed", "cancelled"]),
 });
 
 const courseGroupSchema = z.object({
-  groupName: z.string().min(1, "اسم المجموعة مطلوب"),
   siteId: z.string().min(1, "جهة التدريب مطلوبة"),
   supervisorId: z.string().min(1, "المشرف مطلوب"),
   capacity: z.string().min(1, "السعة مطلوبة"),
   startDate: z.string().min(1, "تاريخ البدء مطلوب"),
   endDate: z.string().min(1, "تاريخ الانتهاء مطلوب"),
-  location: z.string().optional(),
 });
 
 type AddCourseFormValues = z.infer<typeof addCourseSchema>;
@@ -44,13 +43,11 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [groups, setGroups] = useState<CourseGroup[]>([
     { 
-      groupName: "المجموعة الأولى",
       siteId: "", 
       supervisorId: "", 
       capacity: "20", 
       startDate: "", 
-      endDate: "",
-      location: ""
+      endDate: "" 
     }
   ]);
   const [selectedFacultyId, setSelectedFacultyId] = useState<string>("");
@@ -68,18 +65,16 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
     queryKey: ["/api/supervisors"],
   });
 
+  // Fetch levels
+  const { data: levels } = useQuery({
+    queryKey: ["/api/levels"],
+  });
+
   // Fetch majors based on selected faculty
   const { data: majors, isLoading: isLoadingMajors } = useQuery({
     queryKey: ["/api/majors", selectedFacultyId],
-    queryFn: async () => {
-      if (!selectedFacultyId) return [];
-      const res = await fetch(`/api/majors?facultyId=${selectedFacultyId}`, {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to fetch majors");
-      return res.json();
-    },
-    enabled: !!selectedFacultyId && selectedFacultyId !== "",
+    queryFn: () => fetch(`/api/majors?facultyId=${selectedFacultyId}`).then(res => res.json()),
+    enabled: !!selectedFacultyId && selectedFacultyId !== "none",
   });
 
   const form = useForm<AddCourseFormValues>({
@@ -88,6 +83,8 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
       name: "",
       facultyId: "",
       majorId: "",
+      levelId: "",
+      location: "",
       description: "",
       status: "upcoming",
     },
@@ -95,13 +92,11 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
 
   const addGroup = () => {
     setGroups([...groups, { 
-      groupName: `المجموعة ${groups.length + 1}`,
       siteId: "", 
       supervisorId: "", 
       capacity: "20", 
       startDate: "", 
-      endDate: "",
-      location: ""
+      endDate: "" 
     }]);
   };
 
@@ -122,10 +117,10 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
     
     try {
       // Validate groups
-      const validatedGroups = groups.map((group, index) => {
+      const validatedGroups = groups.map(group => {
         const result = courseGroupSchema.safeParse(group);
         if (!result.success) {
-          throw new Error(`بيانات المجموعة ${index + 1} غير مكتملة`);
+          throw new Error("جميع بيانات المجموعات مطلوبة");
         }
         return {
           ...result.data,
@@ -133,43 +128,55 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
         };
       });
 
-      // إنشاء الكورس مع المجموعات في عملية واحدة
-      const response = await fetch("/api/training-courses", {
+      // Create the course
+      const courseResponse = await fetch("/api/training-courses", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({
-          ...data,
-          groups: validatedGroups
-        }),
+        body: JSON.stringify(data),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "فشل في إنشاء الدورة");
+      if (!courseResponse.ok) {
+        throw new Error("فشل في إنشاء الدورة");
       }
 
-      const result = await response.json();
+      const course = await courseResponse.json();
+
+      // Create groups for the course
+      for (const group of validatedGroups) {
+        const groupResponse = await fetch("/api/training-course-groups", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            courseId: course.id,
+            ...group,
+          }),
+        });
+
+        if (!groupResponse.ok) {
+          throw new Error("فشل في إنشاء مجموعة الدورة");
+        }
+      }
 
       toast({
         title: "تم بنجاح",
-        description: `تم إنشاء الدورة التدريبية "${data.name}" مع ${groups.length} مجموعة بنجاح`,
+        description: "تم إنشاء الدورة التدريبية والمجموعات بنجاح",
       });
 
       // Reset form
       form.reset();
       setGroups([{ 
-        groupName: "المجموعة الأولى",
         siteId: "", 
         supervisorId: "", 
         capacity: "20", 
         startDate: "", 
-        endDate: "",
-        location: ""
+        endDate: "" 
       }]);
-      setSelectedFacultyId("");
 
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["/api/training-courses"] });
@@ -218,23 +225,13 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
 
                 <FormField
                   control={form.control}
-                  name="status"
+                  name="location"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>حالة الدورة</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="اختر حالة الدورة" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="upcoming">قادمة</SelectItem>
-                          <SelectItem value="active">نشطة</SelectItem>
-                          <SelectItem value="completed">مكتملة</SelectItem>
-                          <SelectItem value="cancelled">ملغية</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormLabel>الموقع</FormLabel>
+                      <FormControl>
+                        <Input placeholder="أدخل موقع الدورة" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -242,7 +239,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
               </div>
 
               {/* Academic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="facultyId"
@@ -281,11 +278,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>التخصص</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        value={field.value}
-                        disabled={!selectedFacultyId || isLoadingMajors}
-                      >
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder={
@@ -307,26 +300,77 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="levelId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>المستوى</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="اختر المستوى" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {levels && Array.isArray(levels) && levels.map((level: any) => (
+                            <SelectItem key={level.id} value={level.id.toString()}>
+                              {level.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
-              {/* Description */}
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>وصف الدورة</FormLabel>
-                    <FormControl>
-                      <Textarea 
-                        placeholder="أدخل وصفاً تفصيلياً للدورة التدريبية"
-                        className="h-32"
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Status and Description */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>حالة الدورة</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="اختر حالة الدورة" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="upcoming">قادمة</SelectItem>
+                          <SelectItem value="active">نشطة</SelectItem>
+                          <SelectItem value="completed">مكتملة</SelectItem>
+                          <SelectItem value="cancelled">ملغية</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>وصف الدورة</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder="أدخل وصفاً تفصيلياً للدورة التدريبية"
+                          className="h-32"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               {/* Course Groups */}
               <div className="space-y-4">
@@ -363,15 +407,6 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="text-sm font-medium">اسم المجموعة</label>
-                          <Input
-                            value={group.groupName}
-                            onChange={(e) => updateGroup(index, "groupName", e.target.value)}
-                            placeholder="اسم المجموعة"
-                          />
-                        </div>
-
                         <div>
                           <label className="text-sm font-medium">جهة التدريب</label>
                           <Select 
@@ -421,15 +456,6 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                         </div>
 
                         <div>
-                          <label className="text-sm font-medium">موقع التدريب</label>
-                          <Input
-                            placeholder="موقع التدريب"
-                            value={group.location}
-                            onChange={(e) => updateGroup(index, "location", e.target.value)}
-                          />
-                        </div>
-
-                        <div>
                           <label className="text-sm font-medium">تاريخ البدء</label>
                           <Input
                             type="date"
@@ -465,15 +491,12 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                   onClick={() => {
                     form.reset();
                     setGroups([{ 
-                      groupName: "المجموعة الأولى",
                       siteId: "", 
                       supervisorId: "", 
                       capacity: "20", 
                       startDate: "", 
-                      endDate: "",
-                      location: ""
+                      endDate: "" 
                     }]);
-                    setSelectedFacultyId("");
                     if (onSuccess) onSuccess();
                   }}
                 >
