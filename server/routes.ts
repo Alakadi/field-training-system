@@ -221,13 +221,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/supervisors/:id/students", authMiddleware, async (req: Request, res: Response) => {
     try {
       const supervisorId = Number(req.params.id);
-      
+
       // Check if user has access to view this supervisor's students
       if (req.user?.role !== "admin") {
         if (req.user?.role !== "supervisor") {
           return res.status(403).json({ message: "غير مصرح بالوصول" });
         }
-        
+
         // Supervisor can only view their own students
         const supervisor = await storage.getSupervisorByUserId(req.user.id);
         if (!supervisor || supervisor.id !== supervisorId) {
@@ -712,25 +712,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Fetch details for each course including groups and student counts
       const result = await Promise.all(
         courses.map(async (course) => {
-          const courseDetails = await storage.getTrainingCourseWithDetails(course.id);
-          const groups = await storage.getTrainingCourseGroupsByCourse(course.id);
+          try {
+            const courseDetails = await storage.getTrainingCourseWithDetails(course.id);
+            if (!courseDetails) {
+              console.error(`Course details not found for ID ${course.id}`);
+              return null;
+            }
 
-          // Calculate total students across all groups
-          let totalStudents = 0;
-          for (const group of groups) {
-            const assignments = await storage.getTrainingAssignmentsByGroup(group.id);
-            totalStudents += assignments.length;
+            const groups = await storage.getTrainingCourseGroupsByCourse(course.id);
+
+            // Calculate total students across all groups
+            let totalStudents = 0;
+            for (const group of groups) {
+              try {
+                const assignments = await storage.getTrainingAssignmentsByGroup(group.id);
+                totalStudents += assignments.length;
+              } catch (error) {
+                console.error(`Error fetching assignments for group ${group.id}:`, error);
+              }
+            }
+
+            return {
+              ...courseDetails,
+              groups: groups,
+              totalStudents: totalStudents
+            };
+          } catch (error) {
+            console.error(`Error fetching course details for ID ${course.id}:`, error);
+            return null;
           }
-
-          return {
-            ...courseDetails,
-            groups: groups,
-            totalStudents: totalStudents
-          };
         })
       );
 
-      res.json(result);
+      const validResults = result.filter(course => course !== null);
+
+      res.json(validResults);
     } catch (error) {
       res.status(500).json({ message: "خطأ في استرجاع بيانات الدورات التدريبية" });
     }

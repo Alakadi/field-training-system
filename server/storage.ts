@@ -37,7 +37,7 @@ import {
   type InsertActivityLog,
   LoginData
 } from "@shared/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, sql } from "drizzle-orm";
 import { db } from "./db";
 
 export interface IStorage {
@@ -603,7 +603,7 @@ export class DatabaseStorage implements IStorage {
     availableSpots: number,
     _count: { assignments: number }
   })[]> {
-    let query = db.select({
+    const result = await db.select({
       group: trainingCourseGroups,
       course: trainingCourses,
       site: trainingSites,
@@ -613,30 +613,14 @@ export class DatabaseStorage implements IStorage {
       .leftJoin(trainingCourses, eq(trainingCourseGroups.courseId, trainingCourses.id))
       .leftJoin(trainingSites, eq(trainingCourseGroups.siteId, trainingSites.id))
       .leftJoin(supervisors, eq(trainingCourseGroups.supervisorId, supervisors.id))
-      .leftJoin(users, eq(supervisors.userId, users.id))
-      .where(eq(trainingCourseGroups.status, 'active'));
-
-    // Apply filters if provided
-    if (facultyId) {
-      query = query.where(eq(trainingCourses.facultyId, facultyId));
-    }
-    if (majorId) {
-      query = query.where(eq(trainingCourses.majorId, majorId));
-    }
-    if (levelId) {
-      query = query.where(eq(trainingCourses.levelId, levelId));
-    }
-
-    const result = await query;
+      .leftJoin(users, eq(supervisors.userId, users.id));
 
     // Get assignment counts for each group
     const groupIds = result.map(row => row.group.id);
     const assignmentCounts = await Promise.all(
       groupIds.map(async (groupId) => {
-        const count = await db.select({ count: sql<number>`count(*)::int` })
-          .from(trainingAssignments)
-          .where(eq(trainingAssignments.groupId, groupId));
-        return { groupId, count: count[0]?.count || 0 };
+        const assignments = await db.select().from(trainingAssignments).where(eq(trainingAssignments.groupId, groupId));
+        return { groupId, count: assignments.length };
       })
     );
 
