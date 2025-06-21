@@ -822,8 +822,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const facultyId = req.query.facultyId ? Number(req.query.facultyId) : undefined;
       const levelId = req.query.levelId ? Number(req.query.levelId) : undefined;
       const available = req.query.available === 'true';
+      const supervisorId = req.query.supervisorId ? Number(req.query.supervisorId) : undefined;
 
-      if (available || (facultyId && majorId && levelId)) {
+      if (supervisorId) {
+        // Get groups assigned to this supervisor with full details
+        const allGroups = await storage.getAllTrainingCourseGroups();
+        const supervisorGroups = allGroups.filter(group => group.supervisorId === supervisorId);
+        
+        // Fetch complete details for each group
+        const result = await Promise.all(
+          supervisorGroups.map(async (group) => {
+            try {
+              // Get course details
+              const course = await storage.getTrainingCourseWithDetails(group.courseId);
+              if (!course) return null;
+
+              // Get site details
+              const site = await storage.getTrainingSite(group.siteId);
+
+              // Get supervisor details
+              const supervisor = await storage.getSupervisorWithUser(group.supervisorId);
+
+              // Get students in this group
+              const assignments = await storage.getTrainingAssignmentsByGroup(group.id);
+              const students = await Promise.all(
+                assignments.map(async (assignment) => {
+                  const student = await storage.getStudentWithDetails(assignment.studentId);
+                  const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
+                  const evaluation = evaluations.length > 0 ? evaluations[0] : null;
+                  return {
+                    ...student,
+                    grade: evaluation?.score || null
+                  };
+                })
+              );
+
+              return {
+                id: group.id,
+                courseId: group.courseId,
+                groupName: group.groupName,
+                siteId: group.siteId,
+                supervisorId: group.supervisorId,
+                startDate: group.startDate,
+                endDate: group.endDate,
+                capacity: group.capacity,
+                currentEnrollment: assignments.length,
+                location: group.location,
+                status: group.status,
+                course: course || { name: "دورة غير محددة", status: "unknown" },
+                site: site || { name: "موقع غير محدد" },
+                supervisor: supervisor,
+                students: students.filter(s => s !== null)
+              };
+            } catch (error) {
+              console.error(`Failed to fetch details for group ${group.id}:`, error);
+              return null;
+            }
+          })
+        );
+
+        const validGroups = result.filter(group => group !== null);
+        res.json(validGroups);
+      } else if (available || (facultyId && majorId && levelId)) {
         // Get groups with available spots for student registration
         const groups = await storage.getTrainingCourseGroupsWithAvailableSpots(facultyId, majorId, levelId);
         res.json(groups);
@@ -835,6 +895,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         res.json(groups);
       }
     } catch (error) {
+      console.error("Error in /api/training-course-groups:", error);
       res.status(500).json({ message: "خطأ في استرجاع بيانات مجموعات التدريب" });
     }
   });
@@ -1007,12 +1068,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get assignments for current student
       const assignments = await storage.getTrainingAssignmentsByStudent(student.id);
 
-      // Fetch details for each assignment
+      // Fetch complete details for each assignment including course data
       const result = await Promise.all(
         assignments.map(async (assignment) => {
           try {
-            const details = await storage.getTrainingAssignmentWithDetails(assignment.id);
-            return details || null;
+            // Get group details with course and site information
+            const group = await storage.getTrainingCourseGroup(assignment.groupId);
+            if (!group) return null;
+
+            // Get course details
+            const course = await storage.getTrainingCourseWithDetails(group.courseId);
+            if (!course) return null;
+
+            // Get site details
+            const site = await storage.getTrainingSite(group.siteId);
+
+            // Get supervisor details
+            const supervisor = group.supervisorId ? await storage.getSupervisorWithUser(group.supervisorId) : null;
+
+            // Get evaluation if exists
+            const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
+            const evaluation = evaluations.length > 0 ? evaluations[0] : null;
+
+            return {
+              id: assignment.id,
+              studentId: assignment.studentId,
+              groupId: assignment.groupId,
+              status: assignment.status,
+              confirmed: assignment.confirmed,
+              assignedDate: assignment.assignedDate,
+              course: {
+                id: course.id,
+                name: course.name,
+                description: course.description,
+                startDate: group.startDate,
+                endDate: group.endDate,
+                location: group.location,
+                status: course.status,
+                site: site || { name: "غير محدد" },
+                supervisor: supervisor || null
+              },
+              evaluation: evaluation
+            };
           } catch (error) {
             console.error(`Failed to fetch details for assignment ${assignment.id}:`, error);
             return null;
@@ -1047,11 +1144,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
         assignments = assignments.filter(assignment => assignment.groupId === groupId);
       }
 
-      // Fetch details for each assignment
+      // Fetch complete details for each assignment
       const result = await Promise.all(
         assignments.map(async (assignment) => {
           try {
-            return await storage.getTrainingAssignmentWithDetails(assignment.id);
+            // Get group details with course and site information
+            const group = await storage.getTrainingCourseGroup(assignment.groupId);
+            if (!group) return null;
+
+            // Get course details
+            const course = await storage.getTrainingCourseWithDetails(group.courseId);
+            if (!course) return null;
+
+            // Get site details
+            const site = await storage.getTrainingSite(group.siteId);
+
+            // Get supervisor details
+            const supervisor = group.supervisorId ? await storage.getSupervisorWithUser(group.supervisorId) : null;
+
+            // Get evaluation if exists
+            const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
+            const evaluation = evaluations.length > 0 ? evaluations[0] : null;
+
+            return {
+              id: assignment.id,
+              studentId: assignment.studentId,
+              groupId: assignment.groupId,
+              status: assignment.status,
+              confirmed: assignment.confirmed,
+              assignedDate: assignment.assignedDate,
+              course: {
+                id: course.id,
+                name: course.name,
+                description: course.description,
+                startDate: group.startDate,
+                endDate: group.endDate,
+                location: group.location,
+                status: course.status,
+                site: site || { name: "غير محدد" },
+                supervisor: supervisor || null
+              },
+              evaluation: evaluation
+            };
           } catch (error) {
             console.error(`Failed to fetch details for assignment ${assignment.id}:`, error);
             return null;
