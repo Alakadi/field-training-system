@@ -9,30 +9,30 @@ import {
 } from "./popover";
 import { Bell, BellRing, Users } from "lucide-react";
 
-interface Assignment {
+interface SupervisorAssignment {
   id: number;
-  student: {
+  supervisorId: number;
+  course: {
     name: string;
-    universityId: string;
+    faculty: string;
+    major: string;
   };
-  group: {
-    course: {
-      name: string;
-    };
-    groupName: string;
+  groupName: string;
+  site: {
+    name: string;
   };
-  status: string;
   assignedAt: string;
+  assignedBy: string;
 }
 
 export const SupervisorNotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Fetch supervisor's group assignments (students assigned to supervisor's groups)
+  // Fetch supervisor's course assignments (when admin assigns supervisor to courses)
   const { data: assignments, isLoading } = useQuery({
-    queryKey: ["/api/supervisor/assignments"],
+    queryKey: ["/api/supervisor/course-assignments"],
     queryFn: async () => {
-      const res = await fetch("/api/supervisor/assignments", {
+      const res = await fetch("/api/supervisor/course-assignments", {
         credentials: "include",
       });
       if (!res.ok) return [];
@@ -41,17 +41,12 @@ export const SupervisorNotificationBell: React.FC = () => {
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 
-  // Filter for new assignments (last 24 hours) and ensure student data exists
-  const newAssignments = assignments?.filter((assignment: Assignment) => 
-    assignment.student && (
-      assignment.status === 'pending' || 
-      new Date(assignment.assignedAt) > new Date(Date.now() - 24 * 60 * 60 * 1000)
-    )
+  // Filter for new course assignments (last 7 days)
+  const newAssignments = assignments?.filter((assignment: SupervisorAssignment) => 
+    new Date(assignment.assignedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
   ).slice(0, 10) || [];
 
-  const unreadCount = newAssignments.filter((assignment: Assignment) => 
-    assignment.status === 'pending'
-  ).length;
+  const unreadCount = newAssignments.length;
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -74,7 +69,7 @@ export const SupervisorNotificationBell: React.FC = () => {
       </PopoverTrigger>
       <PopoverContent className="w-96" align="end">
         <div className="space-y-2">
-          <h3 className="font-semibold text-right">التعيينات الجديدة</h3>
+          <h3 className="font-semibold text-right">تعييناتك الجديدة كمشرف</h3>
           <div className="max-h-96 overflow-y-auto space-y-2">
             {isLoading ? (
               <div className="text-center py-4 text-sm text-gray-500">
@@ -82,31 +77,28 @@ export const SupervisorNotificationBell: React.FC = () => {
               </div>
             ) : newAssignments.length === 0 ? (
               <div className="text-center py-4 text-sm text-gray-500">
-                لا توجد تعيينات جديدة
+                لا توجد تعيينات جديدة كمشرف
               </div>
             ) : (
-              newAssignments.map((assignment: Assignment) => (
+              newAssignments.map((assignment: SupervisorAssignment) => (
                 <div 
                   key={assignment.id} 
-                  className={`p-3 border rounded-lg ${
-                    assignment.status === 'pending' 
-                      ? 'bg-yellow-50 border-yellow-200' 
-                      : 'bg-blue-50 border-blue-200'
-                  }`}
+                  className="p-3 border rounded-lg bg-green-50 border-green-200"
                 >
                   <div className="flex items-start gap-2">
-                    <Users className="h-4 w-4 mt-1 text-blue-600" />
+                    <Users className="h-4 w-4 mt-1 text-green-600" />
                     <div className="flex-1">
                       <div className="text-sm font-medium text-right mb-1">
-                        طالب جديد في مجموعتك
+                        تم تعيينك كمشرف لكورس جديد
                       </div>
                       <div className="text-xs text-gray-700 text-right space-y-1">
-                        <div>الطالب: {assignment.student?.name || 'غير محدد'}</div>
-                        <div>الرقم الجامعي: {assignment.student?.universityId || 'غير محدد'}</div>
-                        <div>الكورس: {assignment.group?.course?.name || 'غير محدد'}</div>
-                        <div>المجموعة: {assignment.group?.groupName || 'غير محدد'}</div>
+                        <div>الكورس: {assignment.course?.name || 'غير محدد'}</div>
+                        <div>المجموعة: {assignment.groupName || 'غير محدد'}</div>
+                        <div>موقع التدريب: {assignment.site?.name || 'غير محدد'}</div>
+                        <div>الكلية: {assignment.course?.faculty || 'غير محدد'}</div>
+                        <div>التخصص: {assignment.course?.major || 'غير محدد'}</div>
                         <div className="flex items-center justify-between">
-                          <span>الحالة: {assignment.status === 'pending' ? 'في الانتظار' : 'نشط'}</span>
+                          <span>تم التعيين بواسطة: {assignment.assignedBy || 'المسؤول'}</span>
                           <span>{new Date(assignment.assignedAt).toLocaleDateString('ar-SA')}</span>
                         </div>
                       </div>

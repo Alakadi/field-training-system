@@ -1640,8 +1640,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get supervisor's student assignments (students assigned to supervisor's groups)
-  app.get("/api/supervisor/assignments", authMiddleware, requireRole("supervisor"), async (req: Request, res: Response) => {
+  // Get supervisor's course assignments (when admin assigns supervisor to courses/groups)
+  app.get("/api/supervisor/course-assignments", authMiddleware, requireRole("supervisor"), async (req: Request, res: Response) => {
     try {
       // Get supervisor info
       const supervisor = await storage.getSupervisorByUserId(req.user!.id);
@@ -1649,28 +1649,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "غير مصرح بالوصول" });
       }
 
-      // Get all groups managed by this supervisor
+      // Get all groups assigned to this supervisor with course and site details
       const allGroups = await storage.getAllTrainingCourseGroups();
       const supervisorGroups = allGroups.filter(group => group.supervisorId === supervisor.id);
 
-      // Get assignments for all supervisor's groups
-      const allAssignments = [];
+      const courseAssignments = [];
       for (const group of supervisorGroups) {
-        const groupAssignments = await storage.getTrainingAssignmentsByGroup(group.id);
-        
-        for (const assignment of groupAssignments) {
-          // Get full assignment details with student and group info
-          const assignmentDetails = await storage.getTrainingAssignmentWithDetails(assignment.id);
-          if (assignmentDetails) {
-            allAssignments.push(assignmentDetails);
-          }
+        // Get full group details with course and site
+        const groupWithDetails = await storage.getTrainingCourseGroupWithStudents(group.id);
+        if (groupWithDetails) {
+          // Get course details
+          const courseDetails = await storage.getTrainingCourseWithDetails(groupWithDetails.courseId);
+          
+          courseAssignments.push({
+            id: group.id,
+            supervisorId: supervisor.id,
+            course: {
+              name: groupWithDetails.course.name,
+              faculty: courseDetails?.faculty?.name || 'غير محدد',
+              major: courseDetails?.major?.name || 'غير محدد'
+            },
+            groupName: group.groupName,
+            site: {
+              name: groupWithDetails.site.name
+            },
+            assignedAt: group.createdAt || new Date().toISOString(),
+            assignedBy: 'المسؤول'
+          });
         }
       }
 
-      res.json(allAssignments);
+      res.json(courseAssignments);
     } catch (error) {
-      console.error("Error fetching supervisor assignments:", error);
-      res.status(500).json({ message: "خطأ في استرجاع تعيينات المشرف" });
+      console.error("Error fetching supervisor course assignments:", error);
+      res.status(500).json({ message: "خطأ في استرجاع تعيينات المشرف للكورسات" });
     }
   });
 
