@@ -23,9 +23,7 @@ import AdminSupervisors from "@/pages/admin/supervisors";
 import AdminTrainingSites from "@/pages/admin/training-sites";
 import AdminReports from "@/pages/admin/reports";
 import AdminSettings from "@/pages/admin/settings";
-import AdminStudentLevels from "@/pages/admin/student-levels";
 import AdminActivityLogs from "@/pages/admin/activity-logs";
-import StudentCourseAssignments from "@/pages/admin/student-course-assignments";
 import EditCourse from "@/pages/admin/edit-course";
 import ViewCourse from "@/pages/admin/view-course";
 import EditSupervisor from "@/pages/admin/edit-supervisor";
@@ -104,11 +102,7 @@ function Router() {
           <AdminCourses />
         </AdminOnly>
       </Route>
-      <Route path="/admin/student-assignments">
-        <AdminOnly>
-          <StudentCourseAssignments />
-        </AdminOnly>
-      </Route>
+
       <Route path="/admin/courses/edit/:id">
         <AdminOnly>
           <EditCourse />
@@ -149,11 +143,7 @@ function Router() {
           <AdminTrainingSites />
         </AdminOnly>
       </Route>
-      <Route path="/admin/student-levels">
-        <AdminOnly>
-          <AdminStudentLevels />
-        </AdminOnly>
-      </Route>
+
       <Route path="/admin/reports">
         <AdminOnly>
           <AdminReports />

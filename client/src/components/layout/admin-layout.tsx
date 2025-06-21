@@ -17,11 +17,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const adminLinks: SidebarLink[] = [
     { href: "/admin/dashboard", icon: "dashboard", text: "الرئيسية" },
     { href: "/admin/students", icon: "groups", text: "الطلاب" },
-    { href: "/admin/student-assignments", icon: "assignment", text: "تعيين الكورسات" },
     { href: "/admin/supervisors", icon: "supervisor_account", text: "المشرفون" },
     { href: "/admin/courses", icon: "school", text: "الدورات التدريبية" },
     { href: "/admin/training-sites", icon: "location_on", text: "جهات التدريب" },
-    { href: "/admin/student-levels", icon: "trending_up", text: "مستويات الطلاب" },
     { href: "/admin/reports", icon: "assessment", text: "التقارير" },
     { href: "/admin/activity-logs", icon: "history", text: "سجل النشاطات" },
     { href: "/admin/settings", icon: "settings", text: "الإعدادات" },
