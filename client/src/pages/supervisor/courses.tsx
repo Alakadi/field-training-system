@@ -17,6 +17,15 @@ interface Student {
   user: {
     name: string;
   };
+  faculty?: {
+    name: string;
+  };
+  major?: {
+    name: string;
+  };
+  level?: {
+    name: string;
+  };
   grade?: number;
 }
 
@@ -261,6 +270,12 @@ const SupervisorCourses: React.FC = () => {
                                 اسم الطالب
                               </th>
                               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                الكلية
+                              </th>
+                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                التخصص
+                              </th>
+                              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 الدرجة الحالية
                               </th>
                             </tr>
@@ -277,6 +292,12 @@ const SupervisorCourses: React.FC = () => {
                                   <div className="text-sm text-gray-900">
                                     {student.user.name}
                                   </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                  {student.faculty?.name || "-"}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                  {student.major?.name || "-"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className="text-sm text-gray-900">
@@ -321,6 +342,12 @@ const SupervisorCourses: React.FC = () => {
                                   اسم الطالب
                                 </th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  الكلية
+                                </th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  التخصص
+                                </th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                   الدرجة الحالية
                                 </th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -343,6 +370,27 @@ const SupervisorCourses: React.FC = () => {
                                     <div className="text-sm text-gray-900">
                                       {student.user.name}
                                     </div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    {student.faculty?.name || "-"}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    {student.major?.name || "-"}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap">
+                                    <div className="text-sm text-gray-900">
+                                      {student.grade ? (
+                                        <Badge variant="secondary">{student.grade}/100</Badge>
+                                      ) : (
+                                        <span className="text-gray-400">لم يتم التقييم</span>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    {student.faculty?.name || "-"}
+                                  </td>
+                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    {student.major?.name || "-"}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="text-sm text-gray-900">
