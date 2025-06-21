@@ -28,11 +28,11 @@ interface Assignment {
 export const SupervisorNotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
-  // Fetch supervisor's assignments
+  // Fetch supervisor's group assignments (students assigned to supervisor's groups)
   const { data: assignments, isLoading } = useQuery({
-    queryKey: ["/api/training-assignments"],
+    queryKey: ["/api/supervisor/assignments"],
     queryFn: async () => {
-      const res = await fetch("/api/training-assignments", {
+      const res = await fetch("/api/supervisor/assignments", {
         credentials: "include",
       });
       if (!res.ok) return [];
@@ -41,10 +41,12 @@ export const SupervisorNotificationBell: React.FC = () => {
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 
-  // Filter for new assignments (last 24 hours)
+  // Filter for new assignments (last 24 hours) and ensure student data exists
   const newAssignments = assignments?.filter((assignment: Assignment) => 
-    assignment.status === 'pending' || 
-    new Date(assignment.assignedAt) > new Date(Date.now() - 24 * 60 * 60 * 1000)
+    assignment.student && (
+      assignment.status === 'pending' || 
+      new Date(assignment.assignedAt) > new Date(Date.now() - 24 * 60 * 60 * 1000)
+    )
   ).slice(0, 10) || [];
 
   const unreadCount = newAssignments.filter((assignment: Assignment) => 
@@ -96,13 +98,13 @@ export const SupervisorNotificationBell: React.FC = () => {
                     <Users className="h-4 w-4 mt-1 text-blue-600" />
                     <div className="flex-1">
                       <div className="text-sm font-medium text-right mb-1">
-                        تعيين طالب جديد
+                        طالب جديد في مجموعتك
                       </div>
                       <div className="text-xs text-gray-700 text-right space-y-1">
-                        <div>الطالب: {assignment.student.name}</div>
-                        <div>الرقم الجامعي: {assignment.student.universityId}</div>
-                        <div>الكورس: {assignment.group.course.name}</div>
-                        <div>المجموعة: {assignment.group.groupName}</div>
+                        <div>الطالب: {assignment.student?.name || 'غير محدد'}</div>
+                        <div>الرقم الجامعي: {assignment.student?.universityId || 'غير محدد'}</div>
+                        <div>الكورس: {assignment.group?.course?.name || 'غير محدد'}</div>
+                        <div>المجموعة: {assignment.group?.groupName || 'غير محدد'}</div>
                         <div className="flex items-center justify-between">
                           <span>الحالة: {assignment.status === 'pending' ? 'في الانتظار' : 'نشط'}</span>
                           <span>{new Date(assignment.assignedAt).toLocaleDateString('ar-SA')}</span>

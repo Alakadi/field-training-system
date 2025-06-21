@@ -1640,6 +1640,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get supervisor's student assignments (students assigned to supervisor's groups)
+  app.get("/api/supervisor/assignments", authMiddleware, requireRole("supervisor"), async (req: Request, res: Response) => {
+    try {
+      // Get supervisor info
+      const supervisor = await storage.getSupervisorByUserId(req.user!.id);
+      if (!supervisor) {
+        return res.status(403).json({ message: "غير مصرح بالوصول" });
+      }
+
+      // Get all groups managed by this supervisor
+      const allGroups = await storage.getAllTrainingCourseGroups();
+      const supervisorGroups = allGroups.filter(group => group.supervisorId === supervisor.id);
+
+      // Get assignments for all supervisor's groups
+      const allAssignments = [];
+      for (const group of supervisorGroups) {
+        const groupAssignments = await storage.getTrainingAssignmentsByGroup(group.id);
+        
+        for (const assignment of groupAssignments) {
+          // Get full assignment details with student and group info
+          const assignmentDetails = await storage.getTrainingAssignmentWithDetails(assignment.id);
+          if (assignmentDetails) {
+            allAssignments.push(assignmentDetails);
+          }
+        }
+      }
+
+      res.json(allAssignments);
+    } catch (error) {
+      console.error("Error fetching supervisor assignments:", error);
+      res.status(500).json({ message: "خطأ في استرجاع تعيينات المشرف" });
+    }
+  });
+
   // Mark notifications as read
   app.post("/api/notifications/mark-read", authMiddleware, async (req: Request, res: Response) => {
     try {
