@@ -87,34 +87,37 @@ const SupervisorCourses: React.FC = () => {
 
   // Update student grade mutation
   const updateGradeMutation = useMutation({
-    mutationFn: async ({ assignmentId, grade }: { assignmentId: number; grade: number }) => {
-      const response = await fetch("/api/evaluations", {
+    mutationFn: async ({ studentId, groupId, grade }: { studentId: number; groupId: number; grade: number }) => {
+      const response = await fetch("/api/students/grade", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         credentials: "include",
         body: JSON.stringify({
-          assignmentId,
+          studentId,
+          groupId,
           grade,
-          feedback: `درجة الطالب: ${grade}`,
         }),
       });
-      if (!response.ok) throw new Error("Failed to save grade");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to save grade");
+      }
       return response.json();
     },
     onSuccess: () => {
       toast({
         title: "تم الحفظ",
-        description: "تم حفظ الدرجة بنجاح",
+        description: "تم حفظ الدرجة بنجاح وإرسال إشعار للمسؤول",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/training-course-groups"] });
       setEditingGrades({});
     },
-    onError: () => {
+    onError: (error: any) => {
       toast({
         title: "خطأ",
-        description: "حدث خطأ أثناء حفظ الدرجة",
+        description: error.message || "حدث خطأ أثناء حفظ الدرجة",
         variant: "destructive",
       });
     },
@@ -127,11 +130,11 @@ const SupervisorCourses: React.FC = () => {
     }
   };
 
-  const saveGrade = async (studentId: number, assignmentId: number) => {
+  const saveGrade = async (studentId: number, groupId: number) => {
     const grade = editingGrades[studentId];
-    if (grade !== undefined) {
+    if (grade !== undefined && grade >= 0 && grade <= 100) {
       setSavingGrades(true);
-      await updateGradeMutation.mutateAsync({ assignmentId, grade });
+      await updateGradeMutation.mutateAsync({ studentId, groupId, grade });
       setSavingGrades(false);
     }
   };
@@ -336,22 +339,10 @@ const SupervisorCourses: React.FC = () => {
                             <thead className="bg-gray-50">
                               <tr>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  الرقم الجامعي
-                                </th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                   اسم الطالب
                                 </th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  الكلية
-                                </th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  التخصص
-                                </th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  الدرجة الحالية
-                                </th>
-                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  الدرجة الجديدة
+                                  الدرجة (من 100)
                                 </th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                   العمليات
@@ -363,42 +354,10 @@ const SupervisorCourses: React.FC = () => {
                                 <tr key={student.id} className="hover:bg-gray-50">
                                   <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="text-sm font-medium text-gray-900">
-                                      {student.universityId}
-                                    </div>
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm text-gray-900">
                                       {student.user.name}
                                     </div>
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                    {student.faculty?.name || "-"}
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                    {student.major?.name || "-"}
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm text-gray-900">
-                                      {student.grade ? (
-                                        <Badge variant="secondary">{student.grade}/100</Badge>
-                                      ) : (
-                                        <span className="text-gray-400">لم يتم التقييم</span>
-                                      )}
-                                    </div>
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                    {student.faculty?.name || "-"}
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                    {student.major?.name || "-"}
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm text-gray-900">
-                                      {student.grade ? (
-                                        <Badge variant="secondary">{student.grade}/100</Badge>
-                                      ) : (
-                                        <span className="text-gray-400">لم يتم التقييم</span>
-                                      )}
+                                    <div className="text-xs text-gray-500">
+                                      {student.universityId}
                                     </div>
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap">
@@ -408,9 +367,9 @@ const SupervisorCourses: React.FC = () => {
                                         min="0"
                                         max="100"
                                         step="0.5"
-                                        placeholder="الدرجة"
-                                        className="w-20 text-center"
-                                        value={editingGrades[student.id] || ''}
+                                        placeholder={student.grade ? student.grade.toString() : "أدخل الدرجة"}
+                                        className="w-24 text-center"
+                                        value={editingGrades[student.id] !== undefined ? editingGrades[student.id] : (student.grade || '')}
                                         onChange={(e) => handleGradeChange(student.id, e.target.value)}
                                       />
                                       <span className="text-sm text-gray-500">/100</span>
@@ -419,7 +378,7 @@ const SupervisorCourses: React.FC = () => {
                                   <td className="px-6 py-4 whitespace-nowrap">
                                     <Button
                                       size="sm"
-                                      onClick={() => saveGrade(student.id, student.id)}
+                                      onClick={() => saveGrade(student.id, group.id)}
                                       disabled={editingGrades[student.id] === undefined || savingGrades}
                                       className="flex items-center gap-2"
                                     >
