@@ -1515,6 +1515,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API endpoint to save student grades
+  app.post("/api/students/grade", authMiddleware, requireRole("supervisor"), async (req: Request, res: Response) => {
+    try {
+      const { studentId, groupId, grade } = req.body;
+
+      if (!studentId || !groupId || grade === undefined || grade < 0 || grade > 100) {
+        return res.status(400).json({ message: "بيانات غير صحيحة" });
+      }
+
+      // Get supervisor info
+      const supervisor = await storage.getSupervisorByUserId(req.user!.id);
+      if (!supervisor) {
+        return res.status(403).json({ message: "غير مصرح بالوصول" });
+      }
+
+      // Get group and course details
+      const group = await storage.getTrainingCourseGroupWithStudents(groupId);
+      if (!group) {
+        return res.status(404).json({ message: "المجموعة غير موجودة" });
+      }
+
+      // Check if supervisor is assigned to this group
+      if (group.supervisorId !== supervisor.id) {
+        return res.status(403).json({ message: "غير مصرح بالوصول لهذه المجموعة" });
+      }
+
+      // Check if student is in this group
+      const studentInGroup = group.students.find(s => s.id === studentId);
+      if (!studentInGroup) {
+        return res.status(404).json({ message: "الطالب غير موجود في هذه المجموعة" });
+      }
+
+      // Get student details with academic info
+      const student = await storage.getStudentWithDetails(studentId);
+      if (!student) {
+        return res.status(404).json({ message: "الطالب غير موجود" });
+      }
+
+      // Find assignment for this student and group
+      const assignments = await storage.getTrainingAssignmentsByGroup(groupId);
+      const assignment = assignments.find(a => a.studentId === studentId);
+      
+      if (!assignment) {
+        return res.status(404).json({ message: "لا يوجد تعيين للطالب في هذه المجموعة" });
+      }
+
+      // Get supervisor details
+      const supervisorWithUser = await storage.getSupervisorWithUser(supervisor.id);
+
+      // Create or update evaluation
+      const evaluation = await storage.createEvaluation({
+        assignmentId: assignment.id,
+        score: Math.round(grade),
+        comments: `درجة الطالب: ${grade}/100`,
+        evaluatorName: supervisorWithUser?.user?.name || 'المشرف',
+        evaluationDate: new Date(),
+        createdBy: req.user!.id
+      });
+
+      // Send notification to admin
+      await logActivity(
+        req.user!.id,
+        "grade_entry",
+        "evaluation",
+        evaluation.id,
+        {
+          message: `المشرف ${supervisorWithUser?.user?.name || 'غير محدد'} قد أدخل درجات الكورس "${group.course.name}" - ${group.groupName}`,
+          details: {
+            supervisorName: supervisorWithUser?.user?.name || 'غير محدد',
+            courseName: group.course.name,
+            groupName: group.groupName,
+            studentName: student.user.name,
+            studentId: student.universityId,
+            grade: grade,
+            faculty: student.faculty?.name || 'غير محدد',
+            major: student.major?.name || 'غير محدد',
+            level: student.level?.name || 'غير محدد'
+          }
+        },
+        req.ip
+      );
+
+      res.json({
+        message: "تم حفظ الدرجة بنجاح وإرسال إشعار للمسؤول",
+        evaluation
+      });
+
+    } catch (error) {
+      console.error("Error saving grade:", error);
+      res.status(500).json({ message: "خطأ في حفظ الدرجة" });
+    }
+  });
+
   // Helper methods are already implemented in DatabaseStorage
 
   const httpServer = createServer(app);

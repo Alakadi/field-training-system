@@ -100,11 +100,25 @@ const SupervisorCourses: React.FC = () => {
           grade,
         }),
       });
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to save grade");
+        let errorMessage = "Failed to save grade";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          // If response is not JSON, use the status text
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
-      return response.json();
+      
+      try {
+        return await response.json();
+      } catch (e) {
+        // If response is not JSON but status is ok, return success
+        return { message: "تم حفظ الدرجة بنجاح" };
+      }
     },
     onSuccess: () => {
       toast({
@@ -115,6 +129,7 @@ const SupervisorCourses: React.FC = () => {
       setEditingGrades({});
     },
     onError: (error: any) => {
+      console.error("Grade save error:", error);
       toast({
         title: "خطأ",
         description: error.message || "حدث خطأ أثناء حفظ الدرجة",
@@ -134,8 +149,13 @@ const SupervisorCourses: React.FC = () => {
     const grade = editingGrades[studentId];
     if (grade !== undefined && grade >= 0 && grade <= 100) {
       setSavingGrades(true);
-      await updateGradeMutation.mutateAsync({ studentId, groupId, grade });
-      setSavingGrades(false);
+      try {
+        await updateGradeMutation.mutateAsync({ studentId, groupId, grade });
+      } catch (error) {
+        console.error("Error saving grade:", error);
+      } finally {
+        setSavingGrades(false);
+      }
     }
   };
 
