@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { getUserAvatarUrl } from "@/lib/utils";
+import { NotificationBell } from "@/components/ui/notification-bell";
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -46,14 +47,11 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
         </div>
         
         <div className="flex items-center space-x-4 space-x-reverse">
-          <div className="relative">
-            <button className="text-neutral-700 focus:outline-none">
-              <span className="material-icons">notifications</span>
-              <span className="absolute -top-1 -right-1 bg-accent text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                3
-              </span>
-            </button>
-          </div>
+          {user?.role === 'admin' && (
+            <div className="relative">
+              <NotificationBell />
+            </div>
+          )}
           
           {user && (
             <div className="flex items-center space-x-2 space-x-reverse">
