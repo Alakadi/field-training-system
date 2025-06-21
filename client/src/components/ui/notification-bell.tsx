@@ -21,6 +21,18 @@ interface Notification {
 export const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
+  const markAsRead = async () => {
+    // Mark notifications as read when bell is clicked
+    try {
+      await fetch("/api/notifications/mark-read", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.error("Error marking notifications as read:", error);
+    }
+  };
+
   // Fetch activity logs as notifications
   const { data: notifications, isLoading } = useQuery({
     queryKey: ["/api/activity-logs"],
@@ -44,7 +56,10 @@ export const NotificationBell: React.FC = () => {
   ).length;
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover open={isOpen} onOpenChange={(open) => {
+      setIsOpen(open);
+      if (open) markAsRead();
+    }}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" className="relative">
           {unreadCount > 0 ? (

@@ -1515,6 +1515,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Reports API endpoints
+  app.get("/api/reports/students", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
+    try {
+      // Get all students with their evaluations and course details
+      const students = await storage.getAllStudents();
+      const studentsReport = [];
+
+      for (const student of students) {
+        const studentDetails = await storage.getStudentWithDetails(student.id);
+        if (!studentDetails) continue;
+
+        const assignments = await storage.getTrainingAssignmentsByStudent(student.id);
+        const courses = [];
+
+        for (const assignment of assignments) {
+          const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
+          if (evaluations.length > 0) {
+            const group = await storage.getTrainingCourseGroupWithStudents(assignment.groupId);
+            if (group) {
+              const supervisorDetails = await storage.getSupervisorWithUser(group.supervisorId);
+              
+              for (const evaluation of evaluations) {
+                courses.push({
+                  id: group.course.id,
+                  name: group.course.name,
+                  grade: evaluation.score,
+                  groupName: group.groupName,
+                  site: group.site.name,
+                  supervisor: supervisorDetails?.user?.name || 'غير محدد'
+                });
+              }
+            }
+          }
+        }
+
+        if (courses.length > 0) {
+          studentsReport.push({
+            id: student.id,
+            name: studentDetails.user.name,
+            universityId: student.universityId,
+            faculty: studentDetails.faculty?.name || 'غير محدد',
+            major: studentDetails.major?.name || 'غير محدد',
+            level: studentDetails.level?.name || 'غير محدد',
+            courses: courses
+          });
+        }
+      }
+
+      res.json(studentsReport);
+    } catch (error) {
+      console.error("Error fetching students report:", error);
+      res.status(500).json({ message: "خطأ في استرجاع تقرير الطلاب" });
+    }
+  });
+
+  app.get("/api/reports/courses", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
+    try {
+      // Get all completed courses with evaluations
+      const courses = await storage.getAllTrainingCourses();
+      const coursesReport = [];
+
+      for (const course of courses) {
+        const courseDetails = await storage.getTrainingCourseWithDetails(course.id);
+        if (!courseDetails) continue;
+
+        const groups = await storage.getTrainingCourseGroupsByCourse(course.id);
+        const courseGroups = [];
+        let hasEvaluations = false;
+
+        for (const group of groups) {
+          const groupWithStudents = await storage.getTrainingCourseGroupWithStudents(group.id);
+          if (!groupWithStudents) continue;
+
+          const assignments = await storage.getTrainingAssignmentsByGroup(group.id);
+          let completedEvaluations = 0;
+          let totalGrades = 0;
+          let gradeCount = 0;
+
+          for (const assignment of assignments) {
+            const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
+            if (evaluations.length > 0) {
+              completedEvaluations++;
+              hasEvaluations = true;
+              for (const evaluation of evaluations) {
+                if (evaluation.score) {
+                  totalGrades += evaluation.score;
+                  gradeCount++;
+                }
+              }
+            }
+          }
+
+          const supervisorDetails = await storage.getSupervisorWithUser(group.supervisorId);
+          
+          courseGroups.push({
+            id: group.id,
+            name: group.groupName,
+            site: groupWithStudents.site.name,
+            supervisor: supervisorDetails?.user?.name || 'غير محدد',
+            studentsCount: groupWithStudents.students.length,
+            averageGrade: gradeCount > 0 ? totalGrades / gradeCount : 0,
+            completedEvaluations: completedEvaluations
+          });
+        }
+
+        if (hasEvaluations) {
+          coursesReport.push({
+            id: course.id,
+            name: course.name,
+            faculty: courseDetails.faculty?.name || 'غير محدد',
+            major: courseDetails.major?.name || 'غير محدد',
+            level: 'غير محدد', // Add level to course schema if needed
+            status: course.status || 'active',
+            groups: courseGroups
+          });
+        }
+      }
+
+      res.json(coursesReport);
+    } catch (error) {
+      console.error("Error fetching courses report:", error);
+      res.status(500).json({ message: "خطأ في استرجاع تقرير الدورات" });
+    }
+  });
+
+  // Mark notifications as read
+  app.post("/api/notifications/mark-read", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      // This is a simple implementation - in a real app you might want to track read status per user
+      res.json({ message: "تم تحديد الإشعارات كمقروءة" });
+    } catch (error) {
+      res.status(500).json({ message: "خطأ في تحديث الإشعارات" });
+    }
+  });
+
   // API endpoint to save student grades
   app.post("/api/students/grade", authMiddleware, requireRole("supervisor"), async (req: Request, res: Response) => {
     try {

@@ -109,10 +109,10 @@ const StudentDashboard: React.FC = () => {
                       <p className="text-sm text-neutral-500 mb-1">المستوى</p>
                       <p className="font-medium">{studentData.level?.name || "-"}</p>
                     </div>
-                    <div>
+                    {/* <div>
                       <p className="text-sm text-neutral-500 mb-1">المشرف</p>
                       <p className="font-medium">{studentData.supervisor?.user.name || "-"}</p>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
                 

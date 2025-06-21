@@ -3,6 +3,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { getUserAvatarUrl } from "@/lib/utils";
 import { NotificationBell } from "@/components/ui/notification-bell";
+import { SupervisorNotificationBell } from "@/components/ui/supervisor-notification-bell";
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -50,6 +51,11 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
           {user?.role === 'admin' && (
             <div className="relative">
               <NotificationBell />
+            </div>
+          )}
+          {user?.role === 'supervisor' && (
+            <div className="relative">
+              <SupervisorNotificationBell />
             </div>
           )}
           
