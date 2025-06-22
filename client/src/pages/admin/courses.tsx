@@ -544,32 +544,53 @@ const AdminCourses: React.FC = () => {
                     {eligibleStudents.map((student: any) => (
                       <div
                         key={student.id}
-                        className="flex items-center space-x-2 space-x-reverse p-2 hover:bg-gray-50 rounded"
+                        className={`flex items-center space-x-2 space-x-reverse p-3 rounded-lg border ${
+                          student.isEnrolled 
+                            ? 'bg-green-50 border-green-200' 
+                            : 'hover:bg-gray-50 border-gray-200'
+                        }`}
                       >
-                        <Checkbox
-                          id={`student-${student.id}`}
-                          checked={selectedStudents.includes(String(student.id))}
-                          onCheckedChange={(checked) =>
-                            handleStudentSelection(String(student.id), checked as boolean)
-                          }
-                          disabled={student.isEnrolled}
-                        />
-                        <div className="flex-1">
-                          <label
-                            htmlFor={`student-${student.id}`}
-                            className="text-sm font-medium cursor-pointer"
-                          >
-                            {student.user?.name || student.name}
-                          </label>
-                           {student.isEnrolled && (
-                              <Badge className="mr-2" variant="secondary">
-                                  مسجل بالفعل
-                              </Badge>
-                          )}
-                          <p className="text-xs text-muted-foreground">
-                            {student.universityId} - {student.faculty?.name} - {student.major?.name}
-                          </p>
-                        </div>
+                        {student.isEnrolled ? (
+                          <div className="flex items-center space-x-2 space-x-reverse flex-1">
+                            <div className="flex items-center justify-center w-5 h-5 bg-green-500 rounded-full">
+                              <span className="text-white text-xs">✅</span>
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2 space-x-reverse">
+                                <span className="text-sm font-medium text-green-800">
+                                  {student.user?.name || student.name}
+                                </span>
+                                <Badge className="bg-green-100 text-green-800 border-green-300">
+                                  مسجل
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-green-600">
+                                {student.universityId} - {student.faculty?.name} - {student.major?.name}
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <Checkbox
+                              id={`student-${student.id}`}
+                              checked={selectedStudents.includes(String(student.id))}
+                              onCheckedChange={(checked) =>
+                                handleStudentSelection(String(student.id), checked as boolean)
+                              }
+                            />
+                            <div className="flex-1">
+                              <label
+                                htmlFor={`student-${student.id}`}
+                                className="text-sm font-medium cursor-pointer"
+                              >
+                                {student.user?.name || student.name}
+                              </label>
+                              <p className="text-xs text-muted-foreground">
+                                {student.universityId} - {student.faculty?.name} - {student.major?.name}
+                              </p>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>
