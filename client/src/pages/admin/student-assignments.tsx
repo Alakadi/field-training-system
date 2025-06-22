@@ -418,6 +418,136 @@ export default function AdminStudentAssignments() {
             </div>
           </div>
 
+          {/* Students List for Selected Course */}
+          {selectedCourse && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">الطلاب المتاحون للكورس: {selectedCourse.name}</h2>
+                <Badge variant="secondary">
+                  {filteredStudents.length} طالب
+                </Badge>
+              </div>
+              
+              <div className="grid gap-3">
+                {filteredStudents.map((student: Student) => {
+                  const isAssigned = isStudentAssignedToCourse(student.id, selectedCourse.id);
+                  const assignedGroup = isAssigned 
+                    ? assignments?.find((a: Assignment) => 
+                        a.student.id === student.id && 
+                        selectedCourse.groups.some(g => g.id === a.group.id)
+                      )?.group
+                    : null;
+
+                  return (
+                    <Card key={student.id} className={`${isAssigned ? 'bg-gray-50 border-gray-300' : 'hover:shadow-md'}`}>
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-center">
+                          <div className="text-right flex-1">
+                            <div className="font-medium">{student.user.name}</div>
+                            <div className="text-sm text-gray-600">
+                              {student.universityId} - {student.faculty.name} - {student.major.name}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {student.level.name}
+                            </div>
+                            {isAssigned && assignedGroup && (
+                              <div className="text-sm text-blue-600 mt-1">
+                                مُسجل في: {assignedGroup.groupName}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {isAssigned ? (
+                              <Badge variant="secondary" className="flex items-center gap-1">
+                                <span>✓</span>
+                                مُسجل
+                              </Badge>
+                            ) : (
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button 
+                                    size="sm" 
+                                    className="flex items-center gap-2"
+                                    onClick={() => form.setValue('studentId', student.id)}
+                                  >
+                                    <UserPlus className="h-4 w-4" />
+                                    إضافة
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-md">
+                                  <DialogHeader>
+                                    <DialogTitle className="text-right">تعيين الطالب للمجموعة</DialogTitle>
+                                    <DialogDescription className="text-right">
+                                      اختر المجموعة لتعيين الطالب: {student.user.name}
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  
+                                  <Form {...form}>
+                                    <form onSubmit={form.handleSubmit(handleAssign)} className="space-y-4">
+                                      <FormField
+                                        control={form.control}
+                                        name="groupId"
+                                        render={({ field }) => (
+                                          <FormItem>
+                                            <FormLabel className="text-right">المجموعة</FormLabel>
+                                            <Select 
+                                              onValueChange={(value) => field.onChange(parseInt(value))}
+                                              value={field.value?.toString()}
+                                            >
+                                              <FormControl>
+                                                <SelectTrigger>
+                                                  <SelectValue placeholder="اختر المجموعة" />
+                                                </SelectTrigger>
+                                              </FormControl>
+                                              <SelectContent>
+                                                {selectedCourse.groups?.map((group: any) => (
+                                                  <SelectItem 
+                                                    key={group.id} 
+                                                    value={group.id.toString()}
+                                                    disabled={group.currentStudents >= group.capacity}
+                                                  >
+                                                    {group.groupName} - {group.site.name} 
+                                                    ({group.currentStudents}/{group.capacity})
+                                                    {group.currentStudents >= group.capacity && " - ممتلئة"}
+                                                  </SelectItem>
+                                                ))}
+                                              </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                          </FormItem>
+                                        )}
+                                      />
+
+                                      <div className="flex justify-end gap-2">
+                                        <Button 
+                                          type="button" 
+                                          variant="outline" 
+                                          onClick={() => setIsAssignDialogOpen(false)}
+                                        >
+                                          إلغاء
+                                        </Button>
+                                        <Button 
+                                          type="submit" 
+                                          disabled={assignMutation.isPending}
+                                        >
+                                          {assignMutation.isPending ? "جاري التعيين..." : "تعيين الطالب"}
+                                        </Button>
+                                      </div>
+                                    </form>
+                                  </Form>
+                                </DialogContent>
+                              </Dialog>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Current Assignments */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">

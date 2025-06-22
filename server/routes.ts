@@ -1686,6 +1686,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get students for a specific course with enrollment status
+  app.get("/api/students/for-course/:courseId", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
+    try {
+      const courseId = parseInt(req.params.courseId);
+      
+      // Get course details to filter students by faculty, major, and level
+      const course = await storage.getTrainingCourseWithDetails(courseId);
+      if (!course) {
+        return res.status(404).json({ message: "الكورس غير موجود" });
+      }
+
+      // Get all students that match the course criteria
+      const allStudents = await storage.getAllStudents();
+      const matchingStudents = [];
+
+      for (const student of allStudents) {
+        const studentDetails = await storage.getStudentWithDetails(student.id);
+        if (!studentDetails) continue;
+
+        // Check if student matches course criteria
+        if (studentDetails.faculty?.id === course.facultyId && 
+            studentDetails.major?.id === course.majorId) {
+          
+          // Check if student is already enrolled in this course
+          const assignments = await storage.getTrainingAssignmentsByStudent(student.id);
+          let isEnrolled = false;
+          let enrollmentDetails = null;
+
+          for (const assignment of assignments) {
+            const group = await storage.getTrainingCourseGroupWithStudents(assignment.groupId);
+            if (group && group.courseId === courseId) {
+              isEnrolled = true;
+              const supervisorDetails = await storage.getSupervisorWithUser(group.supervisorId);
+              enrollmentDetails = {
+                groupName: group.groupName,
+                trainingSite: group.site.name,
+                supervisor: supervisorDetails?.user?.name || 'غير محدد'
+              };
+              break;
+            }
+          }
+
+          matchingStudents.push({
+            id: student.id,
+            universityId: student.universityId,
+            user: studentDetails.user,
+            faculty: studentDetails.faculty,
+            major: studentDetails.major,
+            level: studentDetails.level,
+            isEnrolled,
+            enrolledGroup: enrollmentDetails?.groupName,
+            trainingSite: enrollmentDetails?.trainingSite,
+            supervisor: enrollmentDetails?.supervisor
+          });
+        }
+      }
+
+      res.json(matchingStudents);
+    } catch (error) {
+      console.error("Error fetching students for course:", error);
+      res.status(500).json({ message: "خطأ في استرجاع الطلاب للكورس" });
+    }
+  });
+
   // Mark notifications as read
   app.post("/api/notifications/mark-read", authMiddleware, async (req: Request, res: Response) => {
     try {

@@ -48,23 +48,18 @@ const AdminCourses: React.FC = () => {
     queryKey: ["/api/training-course-groups"]
   });
 
-  // Fetch eligible students for the selected course
+  // Fetch all students for the selected course with enrollment status
   const { data: eligibleStudents = [], isLoading: isLoadingStudents } = useQuery({
-    queryKey: ["/api/students", "eligible", selectedCourse?.facultyId, selectedCourse?.majorId, selectedCourse?.levelId],
+    queryKey: ["/api/students", "for-course", selectedCourse?.id],
     queryFn: async () => {
-      if (!selectedCourse?.facultyId || !selectedCourse?.majorId || !selectedCourse?.levelId) return [];
-      const params = new URLSearchParams({
-        facultyId: selectedCourse.facultyId.toString(),
-        majorId: selectedCourse.majorId.toString(),
-        levelId: selectedCourse.levelId.toString(),
-      });
-      const res = await fetch(`/api/students?${params}`, {
+      if (!selectedCourse?.id) return [];
+      const res = await fetch(`/api/students/for-course/${selectedCourse.id}`, {
         credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to fetch students");
       return res.json();
     },
-    enabled: !!(selectedCourse?.facultyId && selectedCourse?.majorId && selectedCourse?.levelId),
+    enabled: !!selectedCourse?.id,
   });
 
   // Filter courses
@@ -518,25 +513,32 @@ const AdminCourses: React.FC = () => {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="text-sm font-medium">
-                      الطلاب المؤهلين ({eligibleStudents.length} طالب)
+                      الطلاب المؤهلين ({eligibleStudents.length} طالب) 
+                      <span className="text-green-600 mx-2">
+                        • {eligibleStudents.filter((s: any) => s.isEnrolled).length} مُسجل
+                      </span>
+                      <span className="text-blue-600">
+                        • {eligibleStudents.filter((s: any) => !s.isEnrolled).length} متاح
+                      </span>
                     </p>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        const allSelected = eligibleStudents.every((student: any) =>
+                        const availableStudents = eligibleStudents.filter((student: any) => !student.isEnrolled);
+                        const allAvailableSelected = availableStudents.every((student: any) =>
                           selectedStudents.includes(String(student.id))
                         );
-                        if (allSelected) {
+                        if (allAvailableSelected) {
                           setSelectedStudents([]);
                         } else {
-                          setSelectedStudents(eligibleStudents.map((student: any) => String(student.id)));
+                          setSelectedStudents(availableStudents.map((student: any) => String(student.id)));
                         }
                       }}
                     >
-                      {eligibleStudents.every((student: any) =>
+                      {eligibleStudents.filter((student: any) => !student.isEnrolled).every((student: any) =>
                         selectedStudents.includes(String(student.id))
-                      ) ? 'إلغاء تحديد الكل' : 'تحديد الكل'}
+                      ) ? 'إلغاء تحديد الكل' : 'تحديد المتاحين'}
                     </Button>
                   </div>
 
@@ -544,31 +546,51 @@ const AdminCourses: React.FC = () => {
                     {eligibleStudents.map((student: any) => (
                       <div
                         key={student.id}
-                        className="flex items-center space-x-2 space-x-reverse p-2 hover:bg-gray-50 rounded"
+                        className={`flex items-center space-x-2 space-x-reverse p-3 rounded-lg border transition-colors ${
+                          student.isEnrolled 
+                            ? 'bg-green-50 border-green-200' 
+                            : 'hover:bg-gray-50 border-gray-200'
+                        }`}
                       >
-                        <Checkbox
-                          id={`student-${student.id}`}
-                          checked={selectedStudents.includes(String(student.id))}
-                          onCheckedChange={(checked) =>
-                            handleStudentSelection(String(student.id), checked as boolean)
-                          }
-                          disabled={student.isEnrolled}
-                        />
-                        <div className="flex-1">
-                          <label
-                            htmlFor={`student-${student.id}`}
-                            className="text-sm font-medium cursor-pointer"
-                          >
-                            {student.user?.name || student.name}
-                          </label>
-                           {student.isEnrolled && (
-                              <Badge className="mr-2" variant="secondary">
-                                  مسجل بالفعل
-                              </Badge>
+                        <div className="flex items-center space-x-2 space-x-reverse">
+                          {student.isEnrolled ? (
+                            <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                              <span className="text-white text-xs">✓</span>
+                            </div>
+                          ) : (
+                            <Checkbox
+                              id={`student-${student.id}`}
+                              checked={selectedStudents.includes(String(student.id))}
+                              onCheckedChange={(checked) =>
+                                handleStudentSelection(String(student.id), checked as boolean)
+                              }
+                            />
                           )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <label
+                              htmlFor={`student-${student.id}`}
+                              className={`text-sm font-medium ${
+                                student.isEnrolled ? 'cursor-default' : 'cursor-pointer'
+                              }`}
+                            >
+                              {student.user?.name || student.name}
+                            </label>
+                            {student.isEnrolled && (
+                              <Badge variant="secondary" className="bg-green-100 text-green-800">
+                                مُسجل في: {student.enrolledGroup}
+                              </Badge>
+                            )}
+                          </div>
                           <p className="text-xs text-muted-foreground">
                             {student.universityId} - {student.faculty?.name} - {student.major?.name}
                           </p>
+                          {student.isEnrolled && (
+                            <p className="text-xs text-green-600 mt-1">
+                              موقع التدريب: {student.trainingSite} | المشرف: {student.supervisor}
+                            </p>
+                          )}
                         </div>
                       </div>
                     ))}
