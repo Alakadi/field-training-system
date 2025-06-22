@@ -31,6 +31,7 @@ const AdminCourses: React.FC = () => {
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   const [showAddStudentsModal, setShowAddStudentsModal] = useState(false);
   const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>("");
   const [isAddingStudents, setIsAddingStudents] = useState(false);
 
   const itemsPerPage = 10;
@@ -46,6 +47,20 @@ const AdminCourses: React.FC = () => {
 
   const { data: courseGroups } = useQuery({
     queryKey: ["/api/training-course-groups"]
+  });
+
+  // Fetch groups for selected course
+  const { data: availableCourseGroups = [] } = useQuery({
+    queryKey: ["/api/training-course-groups", "course", selectedCourse?.id],
+    queryFn: async () => {
+      if (!selectedCourse?.id) return [];
+      const res = await fetch(`/api/training-course-groups?courseId=${selectedCourse.id}&available=true`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch course groups");
+      return res.json();
+    },
+    enabled: !!selectedCourse?.id,
   });
 
   // Fetch all students for the selected course with enrollment status
@@ -125,6 +140,7 @@ const AdminCourses: React.FC = () => {
   const handleAddStudentsToCourse = (course: any) => {
     setSelectedCourse(course);
     setSelectedStudents([]);
+    setSelectedGroupId("");
     setShowAddStudentsModal(true);
   };
 
@@ -141,37 +157,41 @@ const AdminCourses: React.FC = () => {
   };
 
   const handleSubmitStudents = async () => {
-    if (!selectedCourse || selectedStudents.length === 0) return;
+    if (!selectedCourse || selectedStudents.length === 0 || !selectedGroupId) {
+      toast({
+        title: "بيانات ناقصة",
+        description: "يرجى اختيار مجموعة وطلاب لإضافتهم",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsAddingStudents(true);
     try {
-      // Get course groups for assignment
-      const groups = Array.isArray(courseGroups) ? courseGroups.filter((group: any) => group.courseId === selectedCourse.id) : [];
-
-      if (groups.length === 0) {
+      // العثور على المجموعة المحددة
+      const selectedGroup = availableCourseGroups.find((group: any) => String(group.id) === selectedGroupId);
+      
+      if (!selectedGroup) {
         toast({
-          title: "لا توجد مجموعات",
-          description: "لا توجد مجموعات متاحة لهذه الدورة",
+          title: "خطأ في المجموعة",
+          description: "المجموعة المحددة غير موجودة",
           variant: "destructive",
         });
         return;
       }
 
-      // Assign students to the first available group with capacity
-      const availableGroup = groups.find((group: any) => 
-        (group.currentEnrollment || 0) < group.capacity
-      );
-
-      if (!availableGroup) {
+      // التحقق من السعة المتاحة
+      const availableSpots = selectedGroup.capacity - (selectedGroup.currentEnrollment || 0);
+      if (selectedStudents.length > availableSpots) {
         toast({
-          title: "لا توجد أماكن متاحة",
-          description: "جميع مجموعات الدورة ممتلئة",
+          title: "تجاوز السعة المتاحة",
+          description: `المجموعة تحتوي على ${availableSpots} مقعد متاح فقط`,
           variant: "destructive",
         });
         return;
       }
 
-      // إضافة الطلاب المحددين للدورة (استبعاد المسجلين بالفعل)
+      // إضافة الطلاب المحددين للمجموعة (استبعاد المسجلين بالفعل)
       const studentsToAdd = selectedStudents.filter(studentId => {
         const student = eligibleStudents.find((s: any) => String(s.id) === studentId);
         return !student?.isEnrolled;
@@ -180,7 +200,7 @@ const AdminCourses: React.FC = () => {
       for (const studentId of studentsToAdd) {
         await apiRequest("POST", "/api/training-assignments", {
           studentId: parseInt(studentId),
-          groupId: availableGroup.id,
+          groupId: parseInt(selectedGroupId),
         });
       }
 
@@ -192,8 +212,10 @@ const AdminCourses: React.FC = () => {
       // Refresh data and close modal
       queryClient.invalidateQueries({ queryKey: ["/api/training-courses"] });
       queryClient.invalidateQueries({ queryKey: ["/api/training-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/training-course-groups"] });
       setShowAddStudentsModal(false);
       setSelectedStudents([]);
+      setSelectedGroupId("");
       setSelectedCourse(null);
 
     } catch (error) {
@@ -490,12 +512,49 @@ const AdminCourses: React.FC = () => {
               <DialogTitle>إضافة طلاب للدورة</DialogTitle>
               <DialogDescription>
                 {selectedCourse && (
-                  <div className="space-y-2">
-                    <p>دورة: <span className="font-medium">{selectedCourse.name}</span></p>
-                    <div className="flex gap-2">
-                      <Badge variant="outline">{selectedCourse.faculty?.name}</Badge>
-                      <Badge variant="outline">{selectedCourse.major?.name}</Badge>
-                      <Badge variant="outline">{selectedCourse.level?.name}</Badge>
+                  <div className="space-y-3">
+                    <div>
+                      <p>دورة: <span className="font-medium">{selectedCourse.name}</span></p>
+                      <div className="flex gap-2 mt-1">
+                        <Badge variant="outline">{selectedCourse.faculty?.name}</Badge>
+                        <Badge variant="outline">{selectedCourse.major?.name}</Badge>
+                        <Badge variant="outline">{selectedCourse.level?.name}</Badge>
+                      </div>
+                    </div>
+                    
+                    {/* Group Selection */}
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">اختيار المجموعة:</label>
+                      <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="اختر المجموعة لإضافة الطلاب إليها" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableCourseGroups.map((group: any) => {
+                            const availableSpots = group.capacity - (group.currentEnrollment || 0);
+                            return (
+                              <SelectItem 
+                                key={group.id} 
+                                value={String(group.id)}
+                                disabled={availableSpots <= 0}
+                              >
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{group.groupName}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    {group.site?.name} - المشرف: {group.supervisor?.user?.name}
+                                  </span>
+                                  <span className={`text-xs ${availableSpots > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    متاح: {availableSpots} من {group.capacity} مقعد
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                      {availableCourseGroups.length === 0 && (
+                        <p className="text-sm text-red-600">لا توجد مجموعات متاحة لهذه الدورة</p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -596,9 +655,9 @@ const AdminCourses: React.FC = () => {
                     ))}
                   </div>
 
-                  {selectedStudents.length > 0 && (
+                  {selectedStudents.length > 0 && selectedGroupId && (
                     <div className="text-sm text-muted-foreground">
-                      تم تحديد {selectedStudents.length} طالب
+                      تم تحديد {selectedStudents.length} طالب لإضافتهم للمجموعة
                     </div>
                   )}
                 </div>
@@ -611,6 +670,7 @@ const AdminCourses: React.FC = () => {
                 onClick={() => {
                   setShowAddStudentsModal(false);
                   setSelectedStudents([]);
+                  setSelectedGroupId("");
                   setSelectedCourse(null);
                 }}
               >
@@ -618,9 +678,11 @@ const AdminCourses: React.FC = () => {
               </Button>
               <Button
                 onClick={handleSubmitStudents}
-                disabled={selectedStudents.length === 0 || isAddingStudents}
+                disabled={selectedStudents.length === 0 || !selectedGroupId || isAddingStudents}
               >
-                {isAddingStudents ? 'جاري الإضافة...' : `إضافة ${selectedStudents.length} طالب`}
+                {isAddingStudents ? 'جاري الإضافة...' : 
+                 selectedGroupId ? `إضافة ${selectedStudents.length} طالب للمجموعة` : 
+                 'اختر مجموعة أولاً'}
               </Button>
             </DialogFooter>
           </DialogContent>
