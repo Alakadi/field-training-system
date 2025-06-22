@@ -19,6 +19,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { href: "/admin/students", icon: "groups", text: "الطلاب" },
     { href: "/admin/supervisors", icon: "supervisor_account", text: "المشرفون" },
     { href: "/admin/courses", icon: "school", text: "الدورات التدريبية" },
+    { href: "/admin/student-group-assignments", icon: "assignment", text: "تعيين الطلاب للمجموعات" },
     { href: "/admin/training-sites", icon: "location_on", text: "جهات التدريب" },
     { href: "/admin/reports", icon: "assessment", text: "التقارير" },
     { href: "/admin/activity-logs", icon: "history", text: "سجل النشاطات" },

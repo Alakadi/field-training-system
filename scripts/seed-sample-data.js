@@ -133,8 +133,11 @@ async function seedSampleData() {
         description: 'دورة تدريبية في تطوير تطبيقات الويب باستخدام React و Node.js',
         facultyId: 1,
         majorId: 1,
+        levelId: 1,
         location: 'مقر الشركة',
-        status: 'active'
+        status: 'active',
+        startDate: '2025-07-01',
+        endDate: '2025-08-15'
       })
       .onConflictDoNothing()
       .returning();
