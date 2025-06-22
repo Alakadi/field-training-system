@@ -134,10 +134,14 @@ const AdminCourses: React.FC = () => {
   };
 
   const handleStudentSelection = (studentId: string, checked: boolean) => {
+    // التحقق من أن الطالب ليس مسجل بالفعل
+    const student = eligibleStudents.find((s: any) => String(s.id) === studentId);
+    if (student?.isEnrolled) return;
+
     if (checked) {
-      setSelectedStudents(prev => [...prev, studentId]);
+      setSelectedStudents([...selectedStudents, studentId]);
     } else {
-      setSelectedStudents(prev => prev.filter(id => id !== studentId));
+      setSelectedStudents(selectedStudents.filter(id => id !== studentId));
     }
   };
 
@@ -148,7 +152,7 @@ const AdminCourses: React.FC = () => {
     try {
       // Get course groups for assignment
       const groups = Array.isArray(courseGroups) ? courseGroups.filter((group: any) => group.courseId === selectedCourse.id) : [];
-      
+
       if (groups.length === 0) {
         toast({
           title: "لا توجد مجموعات",
@@ -172,8 +176,13 @@ const AdminCourses: React.FC = () => {
         return;
       }
 
-      // Add students to the course group
-      for (const studentId of selectedStudents) {
+      // إضافة الطلاب المحددين للدورة (استبعاد المسجلين بالفعل)
+      const studentsToAdd = selectedStudents.filter(studentId => {
+        const student = eligibleStudents.find((s: any) => String(s.id) === studentId);
+        return !student?.isEnrolled;
+      });
+
+      for (const studentId of studentsToAdd) {
         await apiRequest("POST", "/api/training-assignments", {
           studentId: parseInt(studentId),
           groupId: availableGroup.id,
@@ -182,7 +191,7 @@ const AdminCourses: React.FC = () => {
 
       toast({
         title: "تم إضافة الطلاب بنجاح",
-        description: `تم إضافة ${selectedStudents.length} طالب للدورة`,
+        description: `تم إضافة ${studentsToAdd.length} طالب للدورة`,
       });
 
       // Refresh data and close modal
@@ -497,7 +506,7 @@ const AdminCourses: React.FC = () => {
                 )}
               </DialogDescription>
             </DialogHeader>
-            
+
             <div className="space-y-4">
               {isLoadingStudents ? (
                 <div className="text-center py-4">جاري تحميل الطلاب المؤهلين...</div>
@@ -530,7 +539,7 @@ const AdminCourses: React.FC = () => {
                       ) ? 'إلغاء تحديد الكل' : 'تحديد الكل'}
                     </Button>
                   </div>
-                  
+
                   <div className="max-h-60 overflow-y-auto space-y-2 border rounded-md p-3">
                     {eligibleStudents.map((student: any) => (
                       <div
@@ -543,6 +552,7 @@ const AdminCourses: React.FC = () => {
                           onCheckedChange={(checked) =>
                             handleStudentSelection(String(student.id), checked as boolean)
                           }
+                          disabled={student.isEnrolled}
                         />
                         <div className="flex-1">
                           <label
@@ -551,6 +561,11 @@ const AdminCourses: React.FC = () => {
                           >
                             {student.user?.name || student.name}
                           </label>
+                           {student.isEnrolled && (
+                              <Badge className="mr-2" variant="secondary">
+                                  مسجل بالفعل
+                              </Badge>
+                          )}
                           <p className="text-xs text-muted-foreground">
                             {student.universityId} - {student.faculty?.name} - {student.major?.name}
                           </p>
@@ -558,7 +573,7 @@ const AdminCourses: React.FC = () => {
                       </div>
                     ))}
                   </div>
-                  
+
                   {selectedStudents.length > 0 && (
                     <div className="text-sm text-muted-foreground">
                       تم تحديد {selectedStudents.length} طالب
