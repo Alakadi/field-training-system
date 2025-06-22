@@ -61,8 +61,8 @@ const SupervisorLogin: React.FC = () => {
         title: "تم تسجيل الدخول بنجاح",
         description: `مرحباً ${user.name}`,
       });
-      window.location.href = "/supervisor/dashboard";
-      // setLocation("/supervisor/dashboard");
+      
+      setLocation("/supervisor");
     } catch (error) {
       setError(error instanceof Error ? error.message : "حدث خطأ أثناء تسجيل الدخول");
     } finally {
