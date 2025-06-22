@@ -62,8 +62,8 @@ const AdminLogin: React.FC = () => {
         description: `مرحباً ${user.name}`,
       });
       
-      setLocation("/admin/dashboard");
-      // window.location.href = "/student";للتوجيه الاجباري 
+      // setLocation("/admin/dashboard");
+      window.location.href = "/admin/dashboard"; 
 
     } catch (error) {
       setError(error instanceof Error ? error.message : "حدث خطأ أثناء تسجيل الدخول");
