@@ -1707,7 +1707,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         // Check if student matches course criteria
         if (studentDetails.faculty?.id === course.facultyId && 
-            studentDetails.major?.id === course.majorId) {
+            studentDetails.major?.id === course.majorId &&
+            studentDetails.level?.id === course.levelId) {
           
           // Check if student is already enrolled in this course
           const assignments = await storage.getTrainingAssignmentsByStudent(student.id);
