@@ -27,6 +27,16 @@ interface SupervisorAssignment {
 
 export const SupervisorNotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [lastReadTime, setLastReadTime] = useState<string | null>(
+    localStorage.getItem('supervisor-notifications-last-read')
+  );
+
+  const markAsRead = async () => {
+    const currentTime = new Date().toISOString();
+    // Update local storage with current time
+    localStorage.setItem('supervisor-notifications-last-read', currentTime);
+    setLastReadTime(currentTime);
+  };
 
   // Fetch supervisor's course assignments (when admin assigns supervisor to courses)
   const { data: assignments, isLoading } = useQuery({
@@ -41,15 +51,25 @@ export const SupervisorNotificationBell: React.FC = () => {
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 
-  // Filter for new course assignments (last 7 days)
-  const newAssignments = assignments?.filter((assignment: SupervisorAssignment) => 
-    new Date(assignment.assignedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-  ).slice(0, 10) || [];
+  // Filter for new course assignments
+  const newAssignments = assignments?.filter((assignment: SupervisorAssignment) => {
+    if (!lastReadTime) {
+      // If no last read time, consider assignments from last 7 days as unread
+      return new Date(assignment.assignedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    }
+    // Otherwise, consider assignments newer than last read time as unread
+    return new Date(assignment.assignedAt) > new Date(lastReadTime);
+  }).slice(0, 10) || [];
 
   const unreadCount = newAssignments.length;
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover open={isOpen} onOpenChange={(open) => {
+      setIsOpen(open);
+      if (open) {
+        markAsRead();
+      }
+    }}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" className="relative">
           {unreadCount > 0 ? (

@@ -20,14 +20,22 @@ interface Notification {
 
 export const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [lastReadTime, setLastReadTime] = useState<string | null>(
+    localStorage.getItem('notifications-last-read')
+  );
 
   const markAsRead = async () => {
     // Mark notifications as read when bell is clicked
     try {
+      const currentTime = new Date().toISOString();
       await fetch("/api/notifications/mark-read", {
         method: "POST",
         credentials: "include",
       });
+      
+      // Update local storage with current time
+      localStorage.setItem('notifications-last-read', currentTime);
+      setLastReadTime(currentTime);
     } catch (error) {
       console.error("Error marking notifications as read:", error);
     }
@@ -51,14 +59,22 @@ export const NotificationBell: React.FC = () => {
     log.action === "grade_entry"
   ).slice(0, 10) || [];
 
-  const unreadCount = gradeNotifications.filter((notification: any) => 
-    new Date(notification.timestamp) > new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
-  ).length;
+  // Count unread notifications (those newer than last read time)
+  const unreadCount = gradeNotifications.filter((notification: any) => {
+    if (!lastReadTime) {
+      // If no last read time, consider notifications from last 24 hours as unread
+      return new Date(notification.timestamp) > new Date(Date.now() - 24 * 60 * 60 * 1000);
+    }
+    // Otherwise, consider notifications newer than last read time as unread
+    return new Date(notification.timestamp) > new Date(lastReadTime);
+  }).length;
 
   return (
     <Popover open={isOpen} onOpenChange={(open) => {
       setIsOpen(open);
-      if (open) markAsRead();
+      if (open) {
+        markAsRead();
+      }
     }}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" className="relative">
