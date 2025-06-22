@@ -62,7 +62,9 @@ const StudentLogin: React.FC = () => {
         description: `مرحباً ${user.name}`,
       });
       
-      setLocation("/student");
+      window.location.href = "/student/dashboard";
+
+      // setLocation("/student");
     } catch (error) {
       setError(error instanceof Error ? error.message : "حدث خطأ أثناء تسجيل الدخول");
     } finally {
