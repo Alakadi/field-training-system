@@ -99,7 +99,7 @@ const StudentCourses: React.FC = () => {
     return matches;
   }) || [];
 
-  const handleEnrollCourse = async (courseId: number) => {
+  const handleEnrollCourse = async (groupId: number) => {
     if (!studentData?.id) {
       toast({
         title: "خطأ",
@@ -110,9 +110,8 @@ const StudentCourses: React.FC = () => {
     }
 
     try {
-      await apiRequest("POST", "/api/training-assignments", {
-        studentId: studentData.id,
-        courseId,
+      await apiRequest("POST", "/api/training-assignments/register", {
+        groupId,
       });
 
       toast({
@@ -122,6 +121,7 @@ const StudentCourses: React.FC = () => {
 
       // Refresh data
       queryClient.invalidateQueries({ queryKey: ["/api/training-assignments/student"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/training-course-groups/available", studentData?.facultyId, studentData?.majorId, studentData?.levelId] });
     } catch (error) {
       toast({
         title: "فشل التسجيل",
