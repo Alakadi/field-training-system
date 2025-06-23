@@ -243,7 +243,7 @@ const StudentCourses: React.FC = () => {
                 <span className="material-icons absolute right-3 top-2 text-neutral-500">search</span>
               </div>
               
-              <Select value={facultyFilter} onValueChange={setFacultyFilter}>
+              {/* <Select value={facultyFilter} onValueChange={setFacultyFilter}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="كل الكليات" />
                 </SelectTrigger>
@@ -255,7 +255,7 @@ const StudentCourses: React.FC = () => {
                     </SelectItem>
                   ))}
                 </SelectContent>
-              </Select>
+              </Select> */}
             </div>
           </div>
           

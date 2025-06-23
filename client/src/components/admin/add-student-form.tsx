@@ -17,7 +17,10 @@ import { useToast } from "@/hooks/use-toast";
 // Define schema
 const addStudentSchema = z.object({
   name: z.string().min(3, { message: "يجب أن يحتوي الاسم على الأقل على 3 أحرف" }),
-  universityId: z.string().min(4, { message: "يجب أن يحتوي الرقم الجامعي على الأقل على 4 أرقام" }),
+  universityId: z
+  .string()
+  // .regex(/^\d+$/, { message: "يجب أن يحتوي الرقم الجامعي على أرقام فقط" })
+  .min(4, { message: "يجب أن يحتوي الرقم الجامعي على الأقل على 4 أرقام" }),
   email: z.string().email({ message: "يرجى إدخال بريد إلكتروني صالح" }).optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
   facultyId: z.string().min(1, { message: "يرجى اختيار الكلية" }),
@@ -87,6 +90,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
 
   const form = useForm<AddStudentFormValues>({
     resolver: zodResolver(addStudentSchema),
+    mode: "onBlur",
     defaultValues: {
       name: "",
       universityId: "",
@@ -221,13 +225,18 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
                             placeholder="أدخل الرقم الجامعي" 
                             value={field.value}
                             onChange={(e) => {
-                              // السماح بالأرقام فقط
                               const value = e.target.value.replace(/[^0-9]/g, '');
                               field.onChange(value);
                             }}
+                            onBlur={field.onBlur}
                           />
                         </FormControl>
-                        <FormMessage />
+
+                        {form.formState.errors.universityId && (
+                          <p className="text-sm text-red-600 mt-1">
+                            🔴 {form.formState.errors.universityId.message}
+                          </p>
+                        )}
                       </FormItem>
                     )}
                   />
