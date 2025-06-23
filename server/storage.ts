@@ -773,6 +773,11 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
+  async getAssignmentsByGroup(groupId: number): Promise<TrainingAssignment[]> {
+    const result = await db.select().from(trainingAssignments).where(eq(trainingAssignments.groupId, groupId));
+    return result;
+  }
+
   async getTrainingAssignmentWithDetails(id: number): Promise<(TrainingAssignment & { 
     student: Student & { user: User }, 
     group: TrainingCourseGroup & { 

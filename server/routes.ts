@@ -883,6 +883,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const validGroups = result.filter(group => group !== null);
         res.json(validGroups);
+      } else if (courseId && available) {
+        // Get groups with available spots for a specific course
+        const allGroups = await storage.getTrainingCourseGroupsByCourse(courseId);
+        const groupsWithDetails = await Promise.all(
+          allGroups.map(async (group) => {
+            try {
+              // Get current enrollment for each group
+              const assignments = await storage.getAssignmentsByGroup(group.id);
+              const availableSpots = group.capacity - assignments.length;
+              
+              if (availableSpots <= 0) return null; // Skip full groups
+              
+              // Get course, site, and supervisor details
+              const [course, site, supervisor] = await Promise.all([
+                storage.getTrainingCourse(group.courseId),
+                storage.getTrainingSite(group.siteId),
+                storage.getSupervisorWithUser(group.supervisorId)
+              ]);
+
+              return {
+                ...group,
+                currentEnrollment: assignments.length,
+                availableSpots,
+                course,
+                site,
+                supervisor
+              };
+            } catch (error) {
+              console.error(`Error processing group ${group.id}:`, error);
+              return null;
+            }
+          })
+        );
+        
+        const validGroups = groupsWithDetails.filter(group => group !== null);
+        res.json(validGroups);
       } else if (available || (facultyId && majorId && levelId)) {
         // Get groups with available spots for student registration
         const groups = await storage.getTrainingCourseGroupsWithAvailableSpots(facultyId, majorId, levelId);
