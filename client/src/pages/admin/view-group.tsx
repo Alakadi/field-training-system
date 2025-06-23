@@ -10,40 +10,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface GroupStudent {
   id: number;
-  student: {
+  userId: number;
+  universityId: string;
+  facultyId: number;
+  majorId: number;
+  levelId: number;
+  user: {
     id: number;
-    userId: number;
-    universityId: string;
-    gpa: number | null;
-    user: {
-      id: number;
-      name: string;
-      email: string;
-    };
-    faculty: {
-      id: number;
-      name: string;
-    };
-    major: {
-      id: number;
-      name: string;
-    };
-    level: {
-      id: number;
-      name: string;
-    };
-  };
-  assignment: {
-    id: number;
-    status: string;
-    assignedAt: string;
-  };
-  evaluation?: {
-    id: number;
-    score: number;
-    comments: string;
-    evaluatorName: string;
-    createdAt: string;
+    username: string;
+    name: string;
+    email: string;
+    phone?: string;
   };
 }
 
@@ -54,37 +31,43 @@ interface GroupDetails {
   currentEnrollment: number;
   startDate: string;
   endDate: string;
-  location: string;
+  location?: string;
   status: string;
-  course: {
+  course?: {
     id: number;
     name: string;
-    description: string;
-    faculty: {
+    description?: string;
+    facultyId: number;
+    majorId: number;
+    levelId: number;
+    faculty?: {
       name: string;
     };
-    major: {
+    major?: {
       name: string;
     };
-    level: {
+    level?: {
       name: string;
     };
   };
-  site: {
+  site?: {
     id: number;
     name: string;
     address: string;
-    contactPerson: string;
-    contactPhone: string;
+    contactName?: string;
+    contactEmail?: string;
+    contactPhone?: string;
   };
-  supervisor: {
+  supervisor?: {
     id: number;
-    user: {
+    userId: number;
+    facultyId: number;
+    department: string;
+    user?: {
       name: string;
       email: string;
-      phone: string;
+      phone?: string;
     };
-    specialization: string;
   };
   students: GroupStudent[];
 }
@@ -93,7 +76,7 @@ export default function ViewGroup() {
   const { groupId } = useParams();
 
   const { data: groupDetails, isLoading } = useQuery<GroupDetails>({
-    queryKey: ['/api/training-course-groups', groupId],
+    queryKey: [`/api/training-course-groups/${groupId}`],
     enabled: !!groupId
   });
 
@@ -169,8 +152,8 @@ export default function ViewGroup() {
           الدورات التدريبية
         </Link>
         <ArrowRight className="h-4 w-4" />
-        <Link href={`/admin/view-course/${groupDetails.course.id}`} className="hover:text-neutral-900">
-          {groupDetails.course.name}
+        <Link href={`/admin/view-course/${groupDetails.course?.id || ''}`} className="hover:text-neutral-900">
+          {groupDetails.course?.name || 'دورة غير محددة'}
         </Link>
         <ArrowRight className="h-4 w-4" />
         <span className="text-neutral-900 font-medium">{groupDetails.groupName}</span>
@@ -185,7 +168,7 @@ export default function ViewGroup() {
               <div className="flex items-start justify-between">
                 <div>
                   <CardTitle className="text-2xl mb-2">{groupDetails.groupName}</CardTitle>
-                  <p className="text-neutral-600 mb-4">{groupDetails.course.name}</p>
+                  <p className="text-neutral-600 mb-4">{groupDetails.course?.name || 'دورة غير محددة'}</p>
                   <div className="flex gap-2">
                     {getStatusBadge(groupDetails.status)}
                     <Badge variant="outline">
@@ -273,44 +256,35 @@ export default function ViewGroup() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-neutral-200">
-                      {groupDetails.students.map((item) => (
-                        <tr key={item.id} className="hover:bg-neutral-50">
+                      {(groupDetails.students || []).map((student, index) => (
+                        <tr key={student.id || index} className="hover:bg-neutral-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div>
                               <div className="text-sm font-medium text-neutral-900">
-                                {item.student.user.name}
+                                {student.user?.name || 'غير محدد'}
                               </div>
                               <div className="text-sm text-neutral-500">
-                                {item.student.user.email}
+                                {student.user?.email || 'غير محدد'}
                               </div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
-                            {item.student.universityId}
+                            {student.universityId || 'غير محدد'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div>
-                              <div className="text-sm text-neutral-900">{item.student.major.name}</div>
-                              <div className="text-sm text-neutral-500">{item.student.level.name}</div>
+                              <div className="text-sm text-neutral-900">تخصص {student.majorId}</div>
+                              <div className="text-sm text-neutral-500">مستوى {student.levelId}</div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
-                            {item.student.gpa ? item.student.gpa.toFixed(2) : 'غير محدد'}
+                            غير محدد
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {getAssignmentStatusBadge(item.assignment.status)}
+                            <Badge className="bg-green-100 text-green-800">مسجل</Badge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {item.evaluation ? (
-                              <div className="flex items-center gap-2">
-                                <Trophy className="h-4 w-4 text-yellow-500" />
-                                <span className="text-sm font-medium text-neutral-900">
-                                  {item.evaluation.score}/100
-                                </span>
-                              </div>
-                            ) : (
-                              <Badge variant="outline">لم يتم التقييم</Badge>
-                            )}
+                            <Badge variant="outline">لم يتم التقييم</Badge>
                           </td>
                         </tr>
                       ))}
@@ -332,21 +306,27 @@ export default function ViewGroup() {
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm font-medium text-neutral-500">اسم الدورة</p>
-                <p className="text-sm">{groupDetails.course.name}</p>
+                <p className="text-sm">{groupDetails.course?.name || 'غير محدد'}</p>
               </div>
-              <div>
-                <p className="text-sm font-medium text-neutral-500">الكلية</p>
-                <p className="text-sm">{groupDetails.course.faculty.name}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-neutral-500">التخصص</p>
-                <p className="text-sm">{groupDetails.course.major.name}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-neutral-500">المستوى</p>
-                <p className="text-sm">{groupDetails.course.level.name}</p>
-              </div>
-              {groupDetails.course.description && (
+              {groupDetails.course?.faculty && (
+                <div>
+                  <p className="text-sm font-medium text-neutral-500">الكلية</p>
+                  <p className="text-sm">{groupDetails.course.faculty.name}</p>
+                </div>
+              )}
+              {groupDetails.course?.major && (
+                <div>
+                  <p className="text-sm font-medium text-neutral-500">التخصص</p>
+                  <p className="text-sm">{groupDetails.course.major.name}</p>
+                </div>
+              )}
+              {groupDetails.course?.level && (
+                <div>
+                  <p className="text-sm font-medium text-neutral-500">المستوى</p>
+                  <p className="text-sm">{groupDetails.course.level.name}</p>
+                </div>
+              )}
+              {groupDetails.course?.description && (
                 <div>
                   <p className="text-sm font-medium text-neutral-500">الوصف</p>
                   <p className="text-sm">{groupDetails.course.description}</p>
@@ -366,20 +346,24 @@ export default function ViewGroup() {
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm font-medium text-neutral-500">اسم الموقع</p>
-                <p className="text-sm">{groupDetails.site.name}</p>
+                <p className="text-sm">{groupDetails.site?.name || 'غير محدد'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-neutral-500">العنوان</p>
-                <p className="text-sm">{groupDetails.site.address}</p>
+                <p className="text-sm">{groupDetails.site?.address || 'غير محدد'}</p>
               </div>
-              <div>
-                <p className="text-sm font-medium text-neutral-500">الشخص المسؤول</p>
-                <p className="text-sm">{groupDetails.site.contactPerson}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-neutral-500">رقم الاتصال</p>
-                <p className="text-sm">{groupDetails.site.contactPhone}</p>
-              </div>
+              {groupDetails.site?.contactPerson && (
+                <div>
+                  <p className="text-sm font-medium text-neutral-500">الشخص المسؤول</p>
+                  <p className="text-sm">{groupDetails.site.contactPerson}</p>
+                </div>
+              )}
+              {groupDetails.site?.contactPhone && (
+                <div>
+                  <p className="text-sm font-medium text-neutral-500">رقم الاتصال</p>
+                  <p className="text-sm">{groupDetails.site.contactPhone}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -394,21 +378,21 @@ export default function ViewGroup() {
             <CardContent className="space-y-4">
               <div>
                 <p className="text-sm font-medium text-neutral-500">الاسم</p>
-                <p className="text-sm">{groupDetails.supervisor.user.name}</p>
+                <p className="text-sm">{groupDetails.supervisor?.user?.name || 'غير محدد'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-neutral-500">البريد الإلكتروني</p>
-                <p className="text-sm">{groupDetails.supervisor.user.email}</p>
+                <p className="text-sm">{groupDetails.supervisor?.user?.email || 'غير محدد'}</p>
               </div>
-              {groupDetails.supervisor.user.phone && (
+              {groupDetails.supervisor?.user?.phone && (
                 <div>
                   <p className="text-sm font-medium text-neutral-500">رقم الهاتف</p>
                   <p className="text-sm">{groupDetails.supervisor.user.phone}</p>
                 </div>
               )}
               <div>
-                <p className="text-sm font-medium text-neutral-500">التخصص</p>
-                <p className="text-sm">{groupDetails.supervisor.specialization}</p>
+                <p className="text-sm font-medium text-neutral-500">القسم</p>
+                <p className="text-sm">{groupDetails.supervisor?.department || 'غير محدد'}</p>
               </div>
             </CardContent>
           </Card>
