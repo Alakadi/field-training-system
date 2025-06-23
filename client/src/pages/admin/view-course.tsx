@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams, useLocation } from "wouter";
+import { useParams, useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import AdminLayout from "@/components/layout/admin-layout";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
+import { ArrowRight, Calendar, MapPin, User, Users, BookOpen, Eye } from "lucide-react";
 
 const ViewCourse: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -217,6 +218,15 @@ const ViewCourse: React.FC = () => {
                                     {group.capacity - (group.currentEnrollment || 0)}
                                   </p>
                                 </div>
+                              </div>
+                              
+                              <div className="flex justify-end mt-4 pt-4 border-t">
+                                <Link href={`/admin/view-group/${group.id}`}>
+                                  <Button variant="outline" size="sm" className="flex items-center gap-2">
+                                    <Eye className="h-4 w-4" />
+                                    عرض تفاصيل المجموعة
+                                  </Button>
+                                </Link>
                               </div>
                             </CardContent>
                           </Card>

@@ -1738,6 +1738,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get detailed information about a specific training group
+  app.get("/api/training-course-groups/:groupId", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const groupId = parseInt(req.params.groupId);
+      
+      // Get group with basic details
+      const group = await storage.getTrainingCourseGroupWithStudents(groupId);
+      if (!group) {
+        return res.status(404).json({ message: "المجموعة غير موجودة" });
+      }
+
+      // Get course details
+      const courseDetails = await storage.getTrainingCourseWithDetails(group.courseId);
+      
+      // Get supervisor details
+      const supervisorDetails = await storage.getSupervisorWithUser(group.supervisorId);
+
+      // Get students with their assignments and evaluations
+      const assignments = await storage.getTrainingAssignmentsByGroup(groupId);
+      const studentsWithDetails = [];
+
+      for (const assignment of assignments) {
+        const studentDetails = await storage.getStudentWithDetails(assignment.studentId);
+        if (studentDetails) {
+          // Get evaluation for this assignment
+          const evaluations = await storage.getAllEvaluations();
+          const evaluation = evaluations.find(evalItem => evalItem.assignmentId === assignment.id);
+
+          studentsWithDetails.push({
+            id: assignment.id,
+            student: studentDetails,
+            assignment: {
+              id: assignment.id,
+              status: assignment.status,
+              assignedAt: assignment.createdAt || new Date().toISOString()
+            },
+            evaluation: evaluation || null
+          });
+        }
+      }
+
+      const result = {
+        id: group.id,
+        groupName: group.groupName,
+        capacity: group.capacity,
+        currentEnrollment: group.currentEnrollment || assignments.length,
+        startDate: group.startDate,
+        endDate: group.endDate,
+        location: group.location,
+        status: group.status,
+        course: courseDetails ? {
+          id: courseDetails.id,
+          name: courseDetails.name,
+          description: courseDetails.description,
+          faculty: courseDetails.faculty,
+          major: courseDetails.major,
+          level: courseDetails.level
+        } : null,
+        site: group.site,
+        supervisor: supervisorDetails ? {
+          id: supervisorDetails.id,
+          user: supervisorDetails.user,
+          specialization: supervisorDetails.specialization
+        } : null,
+        students: studentsWithDetails
+      };
+
+      res.json(result);
+    } catch (error) {
+      console.error("Error fetching group details:", error);
+      res.status(500).json({ message: "خطأ في استرجاع تفاصيل المجموعة" });
+    }
+  });
+
   // Get students for a specific course with enrollment status
   app.get("/api/students/for-course/:courseId", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
