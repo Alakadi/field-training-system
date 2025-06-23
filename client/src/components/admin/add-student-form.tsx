@@ -217,7 +217,15 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
                       <FormItem>
                         <FormLabel>الرقم الجامعي</FormLabel>
                         <FormControl>
-                          <Input placeholder="أدخل الرقم الجامعي" {...field} />
+                          <Input 
+                            placeholder="أدخل الرقم الجامعي" 
+                            value={field.value}
+                            onChange={(e) => {
+                              // السماح بالأرقام فقط
+                              const value = e.target.value.replace(/[^0-9]/g, '');
+                              field.onChange(value);
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
