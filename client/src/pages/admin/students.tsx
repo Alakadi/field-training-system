@@ -249,9 +249,6 @@ const AdminStudents: React.FC = () => {
                     المستوى
                   </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    المشرف
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
                     الحالة
                   </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
@@ -262,13 +259,13 @@ const AdminStudents: React.FC = () => {
               <tbody className="bg-white divide-y divide-neutral-200">
                 {isLoadingStudents ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-4 text-center">
+                    <td colSpan={7} className="px-6 py-4 text-center">
                       جاري تحميل البيانات...
                     </td>
                   </tr>
                 ) : paginatedStudents.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-6 py-4 text-center">
+                    <td colSpan={7} className="px-6 py-4 text-center">
                       لا توجد بيانات للعرض
                     </td>
                   </tr>
@@ -289,9 +286,6 @@ const AdminStudents: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
                         {student.level?.name || "-"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                        {student.supervisor?.user?.name || "-"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
