@@ -14,16 +14,16 @@ const AdminSupervisors: React.FC = () => {
   const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
+
   // Parse query parameters
   const params = new URLSearchParams(location.split("?")[1]);
   const action = params.get("action");
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [facultyFilter, setFacultyFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showAddSupervisorForm, setShowAddSupervisorForm] = useState(action === "new");
-  
+
   const itemsPerPage = 10;
 
   // Fetch data
@@ -38,19 +38,19 @@ const AdminSupervisors: React.FC = () => {
   // Filter supervisors
   const filteredSupervisors = supervisors?.filter((supervisor: any) => {
     let matches = true;
-    
+
     // Search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       matches = supervisor.user.name.toLowerCase().includes(query) || 
                 (supervisor.department && supervisor.department.toLowerCase().includes(query));
     }
-    
+
     // Faculty filter
     if (facultyFilter && matches) {
       matches = supervisor.facultyId === parseInt(facultyFilter);
     }
-    
+
     return matches;
   }) || [];
 
@@ -68,16 +68,16 @@ const AdminSupervisors: React.FC = () => {
   const handleEditSupervisor = (supervisorId: number) => {
     setLocation(`/admin/supervisors/edit/${supervisorId}`);
   };
-  
+
   const handleDeleteSupervisor = async (supervisorId: number) => {
     if (window.confirm("هل أنت متأكد من حذف هذا المشرف؟")) {
       try {
         await apiRequest("DELETE", `/api/supervisors/${supervisorId}`);
-        
+
         toast({
           title: "تم حذف المشرف بنجاح",
         });
-        
+
         queryClient.invalidateQueries({ queryKey: ["/api/supervisors"] });
       } catch (error) {
         toast({
@@ -167,12 +167,6 @@ const AdminSupervisors: React.FC = () => {
                     الكلية
                   </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    القسم
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                    عدد الطلاب
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
                     الحالة
                   </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
@@ -183,20 +177,20 @@ const AdminSupervisors: React.FC = () => {
               <tbody className="bg-white divide-y divide-neutral-200">
                 {isLoadingSupervisors ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-4 text-center">
+                    <td colSpan={5} className="px-6 py-4 text-center">
                       جاري تحميل البيانات...
                     </td>
                   </tr>
                 ) : paginatedSupervisors.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-4 text-center">
+                    <td colSpan={5} className="px-6 py-4 text-center">
                       لا توجد بيانات للعرض
                     </td>
                   </tr>
                 ) : (
                   paginatedSupervisors.map((supervisor: any) => {
                     const faculty = faculties?.find((f: any) => f.id === supervisor.facultyId);
-                    
+
                     return (
                       <tr key={supervisor.id} className="hover:bg-neutral-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
@@ -207,12 +201,6 @@ const AdminSupervisors: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
                           {faculty?.name || "-"}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                          {supervisor.department || "-"}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                          {supervisor.studentCount || 0}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -256,7 +244,7 @@ const AdminSupervisors: React.FC = () => {
               </tbody>
             </table>
           </div>
-          
+
           {/* Pagination */}
           {filteredSupervisors.length > 0 && (
             <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-neutral-200 sm:px-6">
@@ -303,7 +291,7 @@ const AdminSupervisors: React.FC = () => {
                       <span className="sr-only">السابق</span>
                       <span className="material-icons text-sm">chevron_right</span>
                     </Button>
-                    
+
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       let pageNum = i + 1;
                       if (totalPages > 5 && currentPage > 3) {
@@ -323,7 +311,7 @@ const AdminSupervisors: React.FC = () => {
                       }
                       return null;
                     })}
-                    
+
                     <Button
                       variant="outline"
                       className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-neutral-300 text-sm font-medium"
