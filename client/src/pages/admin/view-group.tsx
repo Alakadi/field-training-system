@@ -1,4 +1,5 @@
 import { useParams, Link } from "wouter";
+import AdminLayout from "@/components/layout/admin-layout";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, MapPin, User, Calendar, Users, Trophy } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -160,7 +161,8 @@ export default function ViewGroup() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <AdminLayout>
+      <div className="container mx-auto p-6 space-y-6">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-neutral-600 mb-6">
         <Link href="/admin/courses" className="hover:text-neutral-900">
@@ -412,6 +414,7 @@ export default function ViewGroup() {
           </Card>
         </div>
       </div>
-    </div>
+      </div>
+    </AdminLayout>
   );
 }

@@ -30,6 +30,7 @@ import EditSupervisor from "@/pages/admin/edit-supervisor";
 import ViewSupervisor from "@/pages/admin/view-supervisor";
 import EditStudent from "@/pages/admin/edit-student";
 import ViewStudent from "@/pages/admin/view-student";
+import ViewGroup from "@/pages/admin/view-group";
 import StudentGroupAssignments from "@/pages/admin/student-group-assignments";
 
 // Supervisor pages
@@ -117,6 +118,16 @@ function Router() {
       <Route path="/admin/courses/:id">
         <AdminOnly>
           <ViewCourse />
+        </AdminOnly>
+      </Route>
+      <Route path="/admin/view-course/:id">
+        <AdminOnly>
+          <ViewCourse />
+        </AdminOnly>
+      </Route>
+      <Route path="/admin/view-group/:groupId">
+        <AdminOnly>
+          <ViewGroup />
         </AdminOnly>
       </Route>
       <Route path="/admin/supervisors">

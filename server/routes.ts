@@ -1786,12 +1786,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         currentEnrollment: group.currentEnrollment || assignments.length,
         startDate: group.startDate,
         endDate: group.endDate,
-        location: group.location,
+        location: group.location || "غير محدد",
         status: group.status,
         course: courseDetails ? {
           id: courseDetails.id,
           name: courseDetails.name,
-          description: courseDetails.description,
+          description: courseDetails.description || "لا يوجد وصف",
           faculty: courseDetails.faculty,
           major: courseDetails.major,
           level: courseDetails.level
@@ -1800,7 +1800,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         supervisor: supervisorDetails ? {
           id: supervisorDetails.id,
           user: supervisorDetails.user,
-          specialization: supervisorDetails.specialization
+          specialization: supervisorDetails.specialization || "غير محدد"
         } : null,
         students: studentsWithDetails
       };
