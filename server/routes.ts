@@ -1255,10 +1255,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Check if student is already enrolled in this group
       const existingAssignments = await storage.getTrainingAssignmentsByStudent(Number(studentId));
-      const alreadyEnrolled = existingAssignments.some(assignment => assignment.groupId === Number(groupId));
+      const alreadyEnrolledInGroup = existingAssignments.some(assignment => assignment.groupId === Number(groupId));
 
-      if (alreadyEnrolled) {
+      if (alreadyEnrolledInGroup) {
         return res.status(400).json({ message: "الطالب مسجل بالفعل في هذه المجموعة" });
+      }
+
+      // Check if student is already enrolled in ANY group of the same course
+      const courseAssignments = await Promise.all(
+        existingAssignments.map(async (assignment) => {
+          const assignmentGroup = await storage.getTrainingCourseGroup(assignment.groupId);
+          return { assignment, group: assignmentGroup };
+        })
+      );
+      
+      const alreadyEnrolledInCourse = courseAssignments.some(({ group: assignmentGroup }) => 
+        assignmentGroup && assignmentGroup.courseId === group.courseId
+      );
+
+      if (alreadyEnrolledInCourse) {
+        return res.status(400).json({ message: "الطالب مسجل بالفعل في مجموعة أخرى من نفس الدورة" });
       }
 
       const assignment = await storage.createTrainingAssignment({
