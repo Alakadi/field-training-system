@@ -7,23 +7,21 @@ import { fromZodError } from "zod-validation-error";
 import * as XLSX from "xlsx";
 import { authMiddleware, requireRole } from "./middlewares/auth";
 
-// Helper function to log activities
+// Helper function to log activities - مبسط
 async function logActivity(
-  userId: number | null, 
+  username: string | null, 
   action: string, 
   entityType: string, 
   entityId: number | null = null, 
-  details: any = {}, 
-  ipAddress: string | null = null
+  details: any = {}
 ): Promise<void> {
   try {
     await storage.logActivity({
-      userId,
+      username,
       action,
       entityType,
       entityId,
-      details,
-      ipAddress
+      details
     });
   } catch (error) {
     console.error("Error logging activity:", error);
@@ -39,12 +37,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log this activity view
       if (req.user) {
         await logActivity(
-          req.user.id,
+          req.user.username,
           "view",
           "activity_logs",
           null,
-          { message: "عرض سجلات النشاط" },
-          req.ip
+          { message: "عرض سجلات النشاط" }
         );
       }
 
@@ -95,12 +92,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log login activity
       try {
         await logActivity(
-          user.id,
+          user.username,
           "login",
           "user",
           user.id,
-          { message: `تم تسجيل الدخول` },
-          req.ip
+          { message: `تم تسجيل الدخول` }
         );
       } catch (logError) {
         console.error("Error logging activity:", logError);
@@ -290,15 +286,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity
       if (req.user) {
         await logActivity(
-          req.user.id,
+          req.user.username,
           "create",
           "supervisor",
           supervisor.id,
           { 
             message: `تم إنشاء حساب مشرف: ${name}`,
             supervisorData: { name, username, facultyId, department }
-          },
-          req.ip
+          }
         );
       }
 
@@ -337,15 +332,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity
       if (req.user) {
         await logActivity(
-          req.user.id,
+          req.user.username,
           "update",
           "supervisor",
           supervisor.id,
           { 
             message: `تم تحديث بيانات المشرف: ${name}`,
             supervisorData: { name, username, facultyId, department, active }
-          },
-          req.ip
+          }
         );
       }
 
@@ -460,15 +454,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // تسجيل النشاط
       if (req.user) {
         await logActivity(
-          req.user.id,
+          req.user.username,
           "update",
           "student",
           id,
           { 
             message: `تم تحديث بيانات الطالب: ${name || 'غير محدد'}`,
             studentData: { name, email, phone, facultyId, majorId, levelId }
-          },
-          req.ip
+          }
         );
       }
 
@@ -513,15 +506,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity
       if (req.user) {
         await logActivity(
-          req.user.id,
+          req.user.username,
           "create",
           "student",
           student.id,
           { 
             message: `تم إنشاء حساب طالب: ${name}`,
             studentData: { name, universityId, facultyId, majorId, levelId }
-          },
-          req.ip
+          }
         );
       }
 
@@ -597,7 +589,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log the import activity
       if (req.user) {
         await logActivity(
-          req.user.id,
+          req.user.username,
           "import",
           "students",
           null,
@@ -609,8 +601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               errorCount: result.errors,
               fileName: "Excel file"
             }
-          },
-          req.ip
+          }
         );
       }
 
@@ -649,15 +640,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity
       if (req.user) {
         await logActivity(
-          req.user.id,
+          req.user.username,
           "create",
           "training_site",
           site.id,
           { 
             message: `تم إنشاء جهة تدريب: ${name}`,
             siteData: { name, address, contactName, contactEmail, contactPhone }
-          },
-          req.ip
+          }
         );
       }
 
@@ -675,12 +665,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity
       if (req.user) {
         await logActivity(
-          req.user.id,
+          req.user.username,
           "update",
           "training_course",
           null,
-          { message: "تم تحديث حالات الدورات بناءً على التواريخ" },
-          req.ip
+          { message: "تم تحديث حالات الدورات بناءً على التواريخ" }
         );
       }
 
@@ -795,15 +784,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity
       if (req.user) {
         await logActivity(
-          req.user.id,
+          req.user.username,
           "create",
           "training_course",
           result.course.id,
           { 
             message: `تم إنشاء دورة تدريبية مع ${result.groups.length} مجموعة: ${name}`,
             courseData: { name, facultyId, majorId, levelId, description, groupsCount: result.groups.length }
-          },
-          req.ip
+          }
         );
       }
 
@@ -1068,15 +1056,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Log activity
       if (req.user) {
         await logActivity(
-          req.user.id,
+          req.user.username,
           "create",
           "training_course_group",
           group.id,
           { 
             message: `تم إنشاء مجموعة تدريب: ${groupName}`,
             groupData: { courseId, groupName, siteId, supervisorId, capacity, startDate, endDate, status: groupStatus }
-          },
-          req.ip
+          }
         );
       }
 
@@ -1291,7 +1278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const studentUser = student ? await storage.getUser(student.userId) : null;
 
         await logActivity(
-          req.user.id,
+          req.user.username,
           "create",
           "training_assignment",
           assignment.id,
@@ -1304,8 +1291,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               assignedBy: req.user.name,
               assignedByRole: req.user.role
             }
-          },
-          req.ip
+          }
         );
       }
 
@@ -1373,7 +1359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Log activity
       await logActivity(
-        req.user.id,
+        req.user.username,
         "register",
         "training_assignment",
         assignment.id,
@@ -1385,8 +1371,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             groupName: group.groupName,
             courseName: course.name
           }
-        },
-        req.ip
+        }
       );
 
       res.status(201).json({
@@ -1425,7 +1410,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         if (studentUser) {
           await logActivity(
-            req.user.id,
+            req.user.username,
             "confirm",
             "training_assignment",
             assignment.id,
@@ -1436,8 +1421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 studentId: student.id,
                 studentName: studentUser.name
               }
-            },
-            req.ip
+            }
           );
         }
       }
@@ -1486,7 +1470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const studentUser = student ? await storage.getUser(student.userId) : null;
 
           await logActivity(
-            req.user.id,
+            req.user.username,
             "create",
             "evaluation",
             evaluation.id,
@@ -1500,8 +1484,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 courseName: "تقييم دورة تدريبية",
                 score
               }
-            },
-            req.ip
+            }
           );
         }
       }
@@ -1948,7 +1931,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Send notification to admin
       await logActivity(
-        req.user!.id,
+        req.user!.username,
         "grade_entry",
         "evaluation",
         evaluation.id,
@@ -1965,8 +1948,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             major: student.major?.name || 'غير محدد',
             level: student.level?.name || 'غير محدد'
           }
-        },
-        req.ip
+        }
       );
 
       res.json({

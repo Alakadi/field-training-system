@@ -70,7 +70,6 @@ export const trainingCourses = pgTable("training_courses", {
   majorId: integer("major_id").references(() => majors.id), // ربط الدورة بتخصص معين
   levelId: integer("level_id").references(() => levels.id), // ربط الدورة بمستوى دراسي معين
   description: text("description"),
-  location: text("location"),
   status: text("status").default("upcoming"), // "upcoming", "active", "completed", "cancelled"
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: integer("created_by").references(() => users.id),
@@ -100,8 +99,7 @@ export const trainingAssignments = pgTable("training_assignments", {
   id: serial("id").primaryKey(),
   studentId: integer("student_id").notNull().references(() => students.id),
   groupId: integer("group_id").notNull().references(() => trainingCourseGroups.id), // ربط بالمجموعة بدلاً من الدورة مباشرة
-  assignedBySupervisorId: integer("assigned_by_supervisor_id").references(() => supervisors.id),
-  assignedByAdminId: integer("assigned_by_admin_id").references(() => users.id),
+  assignedBy: integer("assigned_by").references(() => users.id), // مبسط - أي مستخدم يمكنه التعيين
   status: text("status").default("pending"), // "pending", "active", "completed"
   confirmed: boolean("confirmed").default(false), // Student confirmation
   assignedAt: timestamp("assigned_at").defaultNow(),
@@ -120,15 +118,14 @@ export const evaluations = pgTable("evaluations", {
   createdBy: integer("created_by").references(() => users.id),
 });
 
-// Activity Logs table
+// Activity Logs table - مبسط بدون ربط مباشر بالمستخدمين
 export const activityLogs = pgTable("activity_logs", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
+  username: text("username"), // اسم المستخدم بدلاً من foreign key
   action: text("action").notNull(), // e.g. "create", "update", "delete"
   entityType: text("entity_type").notNull(), // e.g. "student", "course", "assignment"
   entityId: integer("entity_id"), // ID of the affected entity
   details: jsonb("details"), // JSON details about the activity
-  ipAddress: text("ip_address"),
   timestamp: timestamp("timestamp").defaultNow(),
 });
 

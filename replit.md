@@ -121,6 +121,14 @@ This is a comprehensive Arabic-supported field training management system built 
 - Environment-specific connection handling
 
 ## Recent Changes
+- June 24, 2025: تبسيط العلاقات في قاعدة البيانات وإزالة التعقيدات غير الضرورية
+  - دمج حقلي assignedBySupervisorId و assignedByAdminId في حقل واحد assignedBy في trainingAssignments
+  - تبسيط جدول activityLogs بإزالة ربط userId وإضافة حقل username نصي بدلاً منه
+  - إزالة حقل ipAddress من activityLogs لتقليل تعقيد البيانات المخزنة
+  - إزالة حقل location المكرر من trainingCourses لأنه موجود في trainingCourseGroups
+  - تحديث جميع استدعاءات logActivity لتتماشى مع التبسيطات الجديدة
+  - تحسين أداء قاعدة البيانات بتقليل عدد الجداول المرتبطة في العمليات الأساسية
+
 - June 23, 2025: إضافة نظام إلغاء التسجيل والتحويل بين المجموعات
   - إضافة API endpoint لإلغاء التسجيل في مجموعة معينة (/api/training-assignments/group/:groupId)
   - تطوير واجهة إلغاء التسجيل في صفحة الدورات للطلاب
