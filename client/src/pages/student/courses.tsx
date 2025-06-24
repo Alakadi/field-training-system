@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import StudentLayout from "@/components/layout/student-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import CourseCard from "@/components/student/course-card";
@@ -98,6 +99,90 @@ const StudentCourses: React.FC = () => {
     
     return matches;
   }) || [];
+
+  // التحقق من حالة التسجيل
+  const isRegisteredInGroup = (groupId: number) => {
+    return myAssignments?.some(assignment => assignment.groupId === groupId);
+  };
+
+  // التحقق من التسجيل في نفس الكورس
+  const isRegisteredInCourse = (courseId: number) => {
+    return myAssignments?.some(assignment => assignment.group?.courseId === courseId);
+  };
+
+  // الحصول على المجموعة المسجل فيها في نفس الكورس
+  const getRegisteredGroupInCourse = (courseId: number) => {
+    return myAssignments?.find(assignment => assignment.group?.courseId === courseId);
+  };
+
+  // متغير للتسجيل
+  const registerMutation = useMutation({
+    mutationFn: async (groupId: number) => {
+      const response = await fetch('/api/training-assignments/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ groupId }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'فشل التسجيل');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/training-assignments/student'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/training-course-groups/available'] });
+      toast({
+        title: "تم التسجيل بنجاح",
+        description: "تم تسجيلك في المجموعة التدريبية",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "خطأ في التسجيل",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // متغير لإلغاء التسجيل
+  const cancelRegistrationMutation = useMutation({
+    mutationFn: async (groupId: number) => {
+      const response = await fetch(`/api/training-assignments/group/${groupId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'فشل إلغاء التسجيل');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/training-assignments/student'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/training-course-groups/available'] });
+      toast({
+        title: "تم إلغاء التسجيل بنجاح",
+        description: "تم إلغاء تسجيلك من المجموعة التدريبية",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "خطأ في إلغاء التسجيل",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleEnrollCourse = async (groupId: number) => {
     if (!studentData?.id) {
@@ -281,12 +366,81 @@ const StudentCourses: React.FC = () => {
                     <p><span className="font-medium">تاريخ البدء:</span> {new Date(group.startDate).toLocaleDateString('ar-SA')}</p>
                     <p><span className="font-medium">تاريخ الانتهاء:</span> {new Date(group.endDate).toLocaleDateString('ar-SA')}</p>
                   </div>
-                  <button
-                    onClick={() => handleEnrollCourse(group.id)}
-                    className="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    التسجيل في الدورة
-                  </button>
+                  <div className="mt-4">
+                    {isRegisteredInGroup(group.id) ? (
+                      <div className="flex gap-2">
+                        <Badge className="bg-green-100 text-green-800 flex-1 justify-center py-2">
+                          مسجل
+                        </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => cancelRegistrationMutation.mutate(group.id)}
+                          disabled={cancelRegistrationMutation.isPending}
+                          className="text-red-600 border-red-600 hover:bg-red-50"
+                        >
+                          {cancelRegistrationMutation.isPending ? "جاري الإلغاء..." : "إلغاء التسجيل"}
+                        </Button>
+                      </div>
+                    ) : group.availableSpots > 0 ? (
+                      !isRegisteredInCourse(group.course.id) ? (
+                        <Button
+                          onClick={() => registerMutation.mutate(group.id)}
+                          disabled={registerMutation.isPending}
+                          className="w-full bg-blue-600 hover:bg-blue-700"
+                        >
+                          {registerMutation.isPending ? "جاري التسجيل..." : "تسجيل"}
+                        </Button>
+                      ) : (
+                        <div className="space-y-2">
+                          <Badge variant="outline" className="w-full justify-center py-2 text-orange-600 border-orange-600">
+                            مسجل في مجموعة أخرى
+                          </Badge>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const registeredGroup = getRegisteredGroupInCourse(group.course.id);
+                                if (registeredGroup) {
+                                  cancelRegistrationMutation.mutate(registeredGroup.groupId);
+                                }
+                              }}
+                              disabled={cancelRegistrationMutation.isPending}
+                              className="flex-1 text-red-600 border-red-600 hover:bg-red-50"
+                            >
+                              {cancelRegistrationMutation.isPending ? "جاري الإلغاء..." : "إلغاء الحالي"}
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                const registeredGroup = getRegisteredGroupInCourse(group.course.id);
+                                if (registeredGroup) {
+                                  // إلغاء التسجيل الحالي أولاً ثم التسجيل في المجموعة الجديدة
+                                  cancelRegistrationMutation.mutate(registeredGroup.groupId, {
+                                    onSuccess: () => {
+                                      // تسجيل في المجموعة الجديدة بعد إلغاء التسجيل الحالي
+                                      setTimeout(() => {
+                                        registerMutation.mutate(group.id);
+                                      }, 500);
+                                    }
+                                  });
+                                }
+                              }}
+                              disabled={registerMutation.isPending || cancelRegistrationMutation.isPending}
+                              className="flex-1 bg-blue-600 hover:bg-blue-700"
+                              size="sm"
+                            >
+                              {registerMutation.isPending || cancelRegistrationMutation.isPending ? "جاري التحويل..." : "تحويل"}
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    ) : (
+                      <Badge variant="outline" className="w-full justify-center py-2 text-red-600 border-red-600">
+                        مكتملة
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
