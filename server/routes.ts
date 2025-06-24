@@ -828,7 +828,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get groups assigned to this supervisor with full details
         const allGroups = await storage.getAllTrainingCourseGroups();
         const supervisorGroups = allGroups.filter(group => group.supervisorId === supervisorId);
-
+        
         // Fetch complete details for each group
         const result = await Promise.all(
           supervisorGroups.map(async (group) => {
@@ -892,9 +892,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Get current enrollment for each group
               const assignments = await storage.getAssignmentsByGroup(group.id);
               const availableSpots = group.capacity - assignments.length;
-
+              
               if (availableSpots <= 0) return null; // Skip full groups
-
+              
               // Get course, site, and supervisor details
               const [course, site, supervisor] = await Promise.all([
                 storage.getTrainingCourse(group.courseId),
@@ -916,7 +916,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           })
         );
-
+        
         const validGroups = groupsWithDetails.filter(group => group !== null);
         res.json(validGroups);
       } else if (available || (facultyId && majorId && levelId)) {
@@ -1268,7 +1268,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return { assignment, group: assignmentGroup };
         })
       );
-
+      
       const alreadyEnrolledInCourse = courseAssignments.some(({ group: assignmentGroup }) => 
         assignmentGroup && assignmentGroup.courseId === group.courseId
       );
@@ -1516,7 +1516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/training-courses/:id/students", authMiddleware, async (req: Request, res: Response) => {
     try {
       const courseId = Number(req.params.id);
-
+      
       // Get all groups for this course
       const groups = await storage.getTrainingCourseGroupsByCourse(courseId);
       const courseStudents = [];
@@ -1547,7 +1547,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/training-courses/:id/evaluations", authMiddleware, async (req: Request, res: Response) => {
     try {
       const courseId = Number(req.params.id);
-
+      
       // Get all groups for this course
       const groups = await storage.getTrainingCourseGroupsByCourse(courseId);
       const courseEvaluations = [];
@@ -1587,7 +1587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const group = await storage.getTrainingCourseGroupWithStudents(assignment.groupId);
             if (group) {
               const supervisorDetails = await storage.getSupervisorWithUser(group.supervisorId);
-
+              
               for (const evaluation of evaluations) {
                 courses.push({
                   id: group.course.id,
@@ -1660,7 +1660,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           const supervisorDetails = await storage.getSupervisorWithUser(group.supervisorId);
-
+          
           courseGroups.push({
             id: group.id,
             name: group.groupName,
@@ -1712,7 +1712,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (groupWithDetails) {
           // Get course details
           const courseDetails = await storage.getTrainingCourseWithDetails(groupWithDetails.courseId);
-
+          
           courseAssignments.push({
             id: group.id,
             supervisorId: supervisor.id,
@@ -1742,7 +1742,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/training-course-groups/:groupId", authMiddleware, async (req: Request, res: Response) => {
     try {
       const groupId = parseInt(req.params.groupId);
-
+      
       // Get group with basic details
       const group = await storage.getTrainingCourseGroupWithStudents(groupId);
       if (!group) {
@@ -1751,7 +1751,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get course details
       const courseDetails = await storage.getTrainingCourseWithDetails(group.courseId);
-
+      
       // Get supervisor details
       const supervisorDetails = await storage.getSupervisorWithUser(group.supervisorId);
 
@@ -1816,7 +1816,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/students/for-course/:courseId", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
       const courseId = parseInt(req.params.courseId);
-
+      
       // Get course details to filter students by faculty, major, and level
       const course = await storage.getTrainingCourseWithDetails(courseId);
       if (!course) {
@@ -1835,7 +1835,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (studentDetails.faculty?.id === course.facultyId && 
             studentDetails.major?.id === course.majorId &&
             studentDetails.level?.id === course.levelId) {
-
+          
           // Check if student is already enrolled in this course
           const assignments = await storage.getTrainingAssignmentsByStudent(student.id);
           let isEnrolled = false;
@@ -1928,7 +1928,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Find assignment for this student and group
       const assignments = await storage.getTrainingAssignmentsByGroup(groupId);
       const assignment = assignments.find(a => a.studentId === studentId);
-
+      
       if (!assignment) {
         return res.status(404).json({ message: "لا يوجد تعيين للطالب في هذه المجموعة" });
       }

@@ -107,12 +107,12 @@ const StudentCourses: React.FC = () => {
 
   // التحقق من التسجيل في نفس الكورس
   const isRegisteredInCourse = (courseId: number) => {
-    return myAssignments?.some(assignment => assignment.course?.id === courseId) || false;
+    return myAssignments?.some(assignment => assignment.group?.courseId === courseId);
   };
 
   // الحصول على المجموعة المسجل فيها في نفس الكورس
   const getRegisteredGroupInCourse = (courseId: number) => {
-    return myAssignments?.find(assignment => assignment.course?.id === courseId);
+    return myAssignments?.find(assignment => assignment.group?.courseId === courseId);
   };
 
   // متغير للتسجيل
@@ -158,7 +158,6 @@ const StudentCourses: React.FC = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
       });
       
       if (!response.ok) {
@@ -170,7 +169,7 @@ const StudentCourses: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/training-assignments/student'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/training-course-groups/available', studentData?.facultyId, studentData?.majorId, studentData?.levelId] });
+      queryClient.invalidateQueries({ queryKey: ['/api/training-course-groups/available'] });
       toast({
         title: "تم إلغاء التسجيل بنجاح",
         description: "تم إلغاء تسجيلك من المجموعة التدريبية",
