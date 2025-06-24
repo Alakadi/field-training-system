@@ -272,7 +272,12 @@ const StudentCourses: React.FC = () => {
                   myAssignments.map((assignment: any) => (
                     <tr key={assignment.id} className="hover:bg-neutral-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary">
-                        {assignment.course.name}
+                        <button 
+                          onClick={() => setLocation(`/student/courses/${assignment.course.id}`)}
+                          className="text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          {assignment.course.name}
+                        </button>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
                         {assignment.course.site.name}
