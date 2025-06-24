@@ -18,9 +18,8 @@ const addCourseSchema = z.object({
   facultyId: z.string().min(1, "الكلية مطلوبة"),
   majorId: z.string().min(1, "التخصص مطلوب"),
   levelId: z.string().min(1, "المستوى مطلوب"),
-  location: z.string().min(1, "الموقع مطلوب"),
   description: z.string().optional(),
-  status: z.enum(["upcoming", "active", "completed", "cancelled"]),
+  // إزالة حقل الحالة - سيتم تحديدها تلقائياً بناءً على تواريخ المجموعات
 });
 
 const courseGroupSchema = z.object({
@@ -84,9 +83,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
       facultyId: "",
       majorId: "",
       levelId: "",
-      location: "",
       description: "",
-      status: "upcoming",
     },
   });
 
@@ -210,19 +207,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>الموقع</FormLabel>
-                      <FormControl>
-                        <Input placeholder="أدخل موقع الدورة" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {/* تم إزالة حقل الموقع - سيتم تحديده من خلال مواقع التدريب في المجموعات */}
               </div>
 
               {/* Academic Information */}
@@ -314,32 +299,8 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                 />
               </div>
 
-              {/* Status and Description */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>حالة الدورة</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="اختر حالة الدورة" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="upcoming">قادمة</SelectItem>
-                          <SelectItem value="active">نشطة</SelectItem>
-                          <SelectItem value="completed">مكتملة</SelectItem>
-                          <SelectItem value="cancelled">ملغية</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
+              {/* Description */}
+              <div className="w-full">
                 <FormField
                   control={form.control}
                   name="description"
@@ -348,8 +309,8 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                       <FormLabel>وصف الدورة</FormLabel>
                       <FormControl>
                         <Textarea 
-                          placeholder="أدخل وصفاً تفصيلياً للدورة التدريبية"
-                          className="h-32"
+                          placeholder="أدخل وصفاً تفصيلياً للدورة التدريبية (اختياري) - سيتم تحديد حالة الدورة تلقائياً بناءً على تواريخ المجموعات"
+                          className="h-24"
                           {...field} 
                         />
                       </FormControl>
