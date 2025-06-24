@@ -127,6 +127,8 @@ export interface IStorage {
   createTrainingAssignment(assignment: InsertTrainingAssignment): Promise<TrainingAssignment>;
   getTrainingAssignmentsByStudent(studentId: number): Promise<TrainingAssignment[]>;
   getTrainingAssignmentsByGroup(groupId: number): Promise<TrainingAssignment[]>;
+  getTrainingAssignmentsByCourse(courseId: number): Promise<TrainingAssignment[]>;
+  isStudentEnrolledInCourse(studentId: number, courseId: number): Promise<boolean>;
   getTrainingAssignmentWithDetails(id: number): Promise<(TrainingAssignment & { 
     student: Student & { user: User }, 
     group: TrainingCourseGroup & { 
@@ -752,8 +754,8 @@ export class DatabaseStorage implements IStorage {
   async createTrainingAssignment(assignment: InsertTrainingAssignment): Promise<TrainingAssignment> {
     const result = await db.insert(trainingAssignments).values(assignment).returning();
 
-    // Update group enrollment
-    if (result[0]) {
+    // Update group enrollment if groupId is provided
+    if (result[0] && result[0].groupId) {
       const group = await this.getTrainingCourseGroup(result[0].groupId);
       if (group) {
         await this.updateGroupEnrollment(result[0].groupId, (group.currentEnrollment || 0) + 1);
@@ -766,6 +768,19 @@ export class DatabaseStorage implements IStorage {
   async getTrainingAssignmentsByStudent(studentId: number): Promise<TrainingAssignment[]> {
     const result = await db.select().from(trainingAssignments).where(eq(trainingAssignments.studentId, studentId));
     return result;
+  }
+
+  // جديد: استرجاع تعيينات الطلاب حسب الكورس مباشرة
+  async getTrainingAssignmentsByCourse(courseId: number): Promise<TrainingAssignment[]> {
+    const result = await db.select().from(trainingAssignments).where(eq(trainingAssignments.courseId, courseId));
+    return result;
+  }
+
+  // جديد: التحقق من تسجيل الطالب في كورس معين
+  async isStudentEnrolledInCourse(studentId: number, courseId: number): Promise<boolean> {
+    const result = await db.select().from(trainingAssignments)
+      .where(and(eq(trainingAssignments.studentId, studentId), eq(trainingAssignments.courseId, courseId)));
+    return result.length > 0;
   }
 
   async getTrainingAssignmentsByGroup(groupId: number): Promise<TrainingAssignment[]> {

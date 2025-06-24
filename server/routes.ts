@@ -710,16 +710,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             const groups = await storage.getTrainingCourseGroupsByCourse(course.id);
 
-            // Calculate total students across all groups
-            let totalStudents = 0;
-            for (const group of groups) {
-              try {
-                const assignments = await storage.getTrainingAssignmentsByGroup(group.id);
-                totalStudents += assignments.length;
-              } catch (error) {
-                console.error(`Error fetching assignments for group ${group.id}:`, error);
-              }
-            }
+            // Calculate total students using direct course relationship
+            const assignments = await storage.getTrainingAssignmentsByCourse(course.id);
+            const totalStudents = assignments.length;
 
             return {
               ...courseDetails,
@@ -1266,9 +1259,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const assignment = await storage.createTrainingAssignment({
         studentId: Number(studentId),
+        courseId: group.courseId, // ربط مباشر بالكورس
         groupId: Number(groupId),
-        assignedBySupervisorId: req.user?.role === "supervisor" ? (await storage.getSupervisorByUserId(req.user.id))?.id : undefined,
-        assignedByAdminId: req.user?.role === "admin" ? req.user.id : undefined,
+        assignedBy: req.user?.id,
         status: "pending"
       });
 
@@ -1338,21 +1331,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "المجموعة ممتلئة" });
       }
 
-      // Check if student is already enrolled in this group or any group for the same course
-      const existingAssignments = await storage.getTrainingAssignmentsByStudent(student.id);
-      const alreadyEnrolledInCourse = existingAssignments.some(assignment => {
-        // We need to check if any assignment is for the same course
-        return assignment.groupId === Number(groupId);
-      });
-
-      if (alreadyEnrolledInCourse) {
-        return res.status(400).json({ message: "أنت مسجل بالفعل في هذه المجموعة" });
+      // Check if student is already enrolled in this course using direct course relationship
+      const isAlreadyEnrolled = await storage.isStudentEnrolledInCourse(student.id, course.id);
+      if (isAlreadyEnrolled) {
+        return res.status(400).json({ message: "أنت مسجل بالفعل في هذا الكورس" });
       }
 
-      // Create assignment with student confirmation
+      // Create assignment with direct course and group relationship
       const assignment = await storage.createTrainingAssignment({
         studentId: student.id,
+        courseId: course.id, // Direct course relationship
         groupId: Number(groupId),
+        assignedBy: req.user?.id,
         status: "active",
         confirmed: true // Student is registering themselves
       });

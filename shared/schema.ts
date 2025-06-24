@@ -94,17 +94,18 @@ export const trainingCourseGroups = pgTable("training_course_groups", {
   uniqueIndex("course_group_unique").on(table.courseId, table.groupName),
 ]);
 
-// Training Assignments table - ربط الطلاب بالمجموعات
+// Training Assignments table - ربط الطلاب بالكورسات والمجموعات
 export const trainingAssignments = pgTable("training_assignments", {
   id: serial("id").primaryKey(),
   studentId: integer("student_id").notNull().references(() => students.id),
-  groupId: integer("group_id").notNull().references(() => trainingCourseGroups.id), // ربط بالمجموعة بدلاً من الدورة مباشرة
-  assignedBy: integer("assigned_by").references(() => users.id), // مبسط - أي مستخدم يمكنه التعيين
+  courseId: integer("course_id").notNull().references(() => trainingCourses.id), // ربط مباشر بالكورس
+  groupId: integer("group_id").references(() => trainingCourseGroups.id), // ربط بالمجموعة (اختياري للمرونة)
+  assignedBy: integer("assigned_by").references(() => users.id),
   status: text("status").default("pending"), // "pending", "active", "completed"
   confirmed: boolean("confirmed").default(false), // Student confirmation
   assignedAt: timestamp("assigned_at").defaultNow(),
 }, (table) => [
-  uniqueIndex("student_group_unique").on(table.studentId, table.groupId),
+  uniqueIndex("student_course_unique").on(table.studentId, table.courseId), // منع التسجيل المتكرر في نفس الكورس
 ]);
 
 // Evaluations table
