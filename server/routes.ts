@@ -682,13 +682,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Training Course Routes
   app.get("/api/training-courses", authMiddleware, async (req: Request, res: Response) => {
     try {
-      // Update course statuses before fetching
+      // Update course statuses automatically before fetching
       await storage.updateCourseStatusBasedOnDates();
-
-      let courses = await storage.getAllTrainingCourses();
-
+      
       const facultyId = req.query.facultyId ? Number(req.query.facultyId) : undefined;
       const status = req.query.status as string | undefined;
+      const userRole = req.user?.role;
+
+      let courses: any[] = [];
+
+      // Filter courses based on user role
+      if (userRole === 'student') {
+        // Students see only upcoming/active courses + their enrolled courses
+        const studentRecord = req.user?.id ? await storage.getStudentByUserId(req.user.id) : null;
+        if (studentRecord) {
+          const availableCourses = await storage.getAvailableCoursesForStudents(studentRecord.id);
+          const enrolledCourses = await storage.getEnrolledCoursesForStudent(studentRecord.id);
+          courses = [...availableCourses, ...enrolledCourses];
+          // Remove duplicates
+          courses = courses.filter((course, index, self) => 
+            index === self.findIndex(c => c.id === course.id)
+          );
+        } else {
+          courses = await storage.getAvailableCoursesForStudents();
+        }
+      } else {
+        // Admin and supervisors see all courses
+        courses = await storage.getAllTrainingCourses();
+      }
 
       if (facultyId) {
         courses = courses.filter(course => course.facultyId === facultyId);
@@ -1323,18 +1344,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "المجموعة ممتلئة" });
       }
 
+      // Update course status before checking
+      await storage.updateCourseStatusBasedOnDates();
+      
+      // Re-fetch course to get updated status
+      const updatedCourse = await storage.getTrainingCourse(course.id);
+      if (!updatedCourse) {
+        return res.status(404).json({ message: "الكورس غير موجود" });
+      }
+
+      // Check course status - only allow registration for upcoming/active courses
+      if (updatedCourse.status === 'completed') {
+        return res.status(400).json({ 
+          message: `كورس "${updatedCourse.name}" منتهي. يمكنك فقط مراجعة درجاتك إذا كنت مسجلاً مسبقاً.` 
+        });
+      }
+
       // Check if student is already enrolled in THIS SPECIFIC course (not all courses)
-      const isAlreadyEnrolled = await storage.isStudentEnrolledInCourse(student.id, course.id);
+      const isAlreadyEnrolled = await storage.isStudentEnrolledInCourse(student.id, updatedCourse.id);
       if (isAlreadyEnrolled) {
         return res.status(400).json({ 
-          message: `أنت مسجل بالفعل في كورس "${course.name}". يمكنك التسجيل في كورسات أخرى.` 
+          message: `أنت مسجل بالفعل في كورس "${updatedCourse.name}". يمكنك التسجيل في كورسات أخرى.` 
         });
       }
 
       // Create assignment with direct course and group relationship
       const assignment = await storage.createTrainingAssignment({
         studentId: student.id,
-        courseId: course.id, // Direct course relationship
+        courseId: updatedCourse.id, // Direct course relationship
         groupId: Number(groupId),
         assignedBy: req.user?.id,
         status: "active",
@@ -1353,7 +1390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             studentId: student.id,
             studentName: req.user.name,
             groupName: group.groupName,
-            courseName: course.name
+            courseName: updatedCourse.name
           }
         }
       );

@@ -70,7 +70,7 @@ export const trainingCourses = pgTable("training_courses", {
   majorId: integer("major_id").references(() => majors.id), // ربط الدورة بتخصص معين
   levelId: integer("level_id").references(() => levels.id), // ربط الدورة بمستوى دراسي معين
   description: text("description"),
-  status: text("status").default("upcoming"), // "upcoming", "active", "completed", "cancelled"
+  status: text("status").default("upcoming"), // "upcoming", "active", "completed", "cancelled", "registration_closed"
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: integer("created_by").references(() => users.id),
 });

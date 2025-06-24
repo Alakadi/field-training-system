@@ -570,6 +570,50 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
+  // Get courses available for student registration (upcoming and active only)
+  async getAvailableCoursesForStudents(studentId?: number): Promise<TrainingCourse[]> {
+    // Update statuses first
+    await this.updateCourseStatusBasedOnDates();
+    
+    const result = await db.select().from(trainingCourses)
+      .where(sql`status IN ('upcoming', 'active')`);
+    
+    // If studentId provided, filter out courses the student is already enrolled in
+    if (studentId) {
+      const enrolledCourses = await this.getEnrolledCoursesForStudent(studentId);
+      const enrolledCourseIds = enrolledCourses.map(c => c.id);
+      return result.filter(course => !enrolledCourseIds.includes(course.id));
+    }
+    
+    return result;
+  }
+
+  // Get courses the student is enrolled in (all statuses)
+  async getEnrolledCoursesForStudent(studentId: number): Promise<TrainingCourse[]> {
+    const result = await db.select({
+      id: trainingCourses.id,
+      name: trainingCourses.name,
+      facultyId: trainingCourses.facultyId,
+      majorId: trainingCourses.majorId,
+      levelId: trainingCourses.levelId,
+      description: trainingCourses.description,
+      status: trainingCourses.status,
+      createdAt: trainingCourses.createdAt,
+      createdBy: trainingCourses.createdBy
+    })
+    .from(trainingCourses)
+    .innerJoin(trainingAssignments, eq(trainingCourses.id, trainingAssignments.courseId))
+    .where(eq(trainingAssignments.studentId, studentId));
+    
+    return result;
+  }
+
+  // Get student by user ID
+  async getStudentByUserId(userId: number): Promise<Student | undefined> {
+    const result = await db.select().from(students).where(eq(students.userId, userId));
+    return result[0];
+  }
+
   // Training Course Group operations
   async getAllTrainingCourseGroups(): Promise<TrainingCourseGroup[]> {
     const result = await db.select().from(trainingCourseGroups);
@@ -899,11 +943,12 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  // Update course status based on dates
+  // Update course status based on dates with enhanced logic
   async updateCourseStatusBasedOnDates(): Promise<void> {
     try {
       const currentDate = new Date();
       const today = currentDate.toISOString().split('T')[0]; // Get YYYY-MM-DD format
+      // No registration deadline logic needed, use actual group start dates
 
       // Get all training course groups
       const groups = await db.select({
@@ -927,10 +972,12 @@ export class DatabaseStorage implements IStorage {
             status = 'active';
           } else if (today > endDate) {
             status = 'completed';
+          } else if (today < startDate) {
+            status = 'upcoming';
           }
         }
 
-        // If course has multiple groups, prioritize active > upcoming > completed
+        // Priority: active > upcoming > completed
         const currentStatus = courseStatuses.get(group.courseId);
         if (!currentStatus || 
             (status === 'active') || 
@@ -946,7 +993,7 @@ export class DatabaseStorage implements IStorage {
           .where(eq(trainingCourses.id, courseId));
       }
 
-      console.log(`Updated status for ${courseStatuses.size} courses based on dates`);
+      console.log(`Updated status for ${courseStatuses.size} courses based on group dates`);
     } catch (error) {
       console.error('Error updating course statuses:', error);
     }
