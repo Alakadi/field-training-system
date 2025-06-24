@@ -682,8 +682,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Training Course Routes
   app.get("/api/training-courses", authMiddleware, async (req: Request, res: Response) => {
     try {
-      // Update course statuses automatically before fetching
-      await storage.updateCourseStatusBasedOnDates();
+      // تحديث الحالة فقط إذا لم يتم التحديث اليوم (تحسين الأداء)
+      const { courseStatusUpdater } = await import('./schedulers/course-status-updater');
+      await courseStatusUpdater.updateIfNeeded();
       
       const facultyId = req.query.facultyId ? Number(req.query.facultyId) : undefined;
       const status = req.query.status as string | undefined;
@@ -1344,8 +1345,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "المجموعة ممتلئة" });
       }
 
-      // Update course status before checking
-      await storage.updateCourseStatusBasedOnDates();
+      // تحديث الحالة فقط إذا لم يتم التحديث اليوم
+      const { courseStatusUpdater } = await import('./schedulers/course-status-updater');
+      await courseStatusUpdater.updateIfNeeded();
       
       // Re-fetch course to get updated status
       const updatedCourse = await storage.getTrainingCourse(course.id);
