@@ -1241,20 +1241,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "الطالب مسجل بالفعل في هذه المجموعة" });
       }
 
-      // Check if student is already enrolled in ANY group of the same course
-      const courseAssignments = await Promise.all(
-        existingAssignments.map(async (assignment) => {
-          const assignmentGroup = await storage.getTrainingCourseGroup(assignment.groupId);
-          return { assignment, group: assignmentGroup };
-        })
-      );
-      
-      const alreadyEnrolledInCourse = courseAssignments.some(({ group: assignmentGroup }) => 
-        assignmentGroup && assignmentGroup.courseId === group.courseId
-      );
-
-      if (alreadyEnrolledInCourse) {
-        return res.status(400).json({ message: "الطالب مسجل بالفعل في مجموعة أخرى من نفس الدورة" });
+      // استخدام الربط المباشر للتحقق من التسجيل في نفس الكورس
+      const isAlreadyEnrolledInCourse = await storage.isStudentEnrolledInCourse(Number(studentId), group.courseId);
+      if (isAlreadyEnrolledInCourse) {
+        return res.status(400).json({ 
+          message: `الطالب مسجل بالفعل في كورس "${course?.name || 'غير محدد'}". يمكن التسجيل في كورسات أخرى.` 
+        });
       }
 
       const assignment = await storage.createTrainingAssignment({
@@ -1331,10 +1323,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "المجموعة ممتلئة" });
       }
 
-      // Check if student is already enrolled in this course using direct course relationship
+      // Check if student is already enrolled in THIS SPECIFIC course (not all courses)
       const isAlreadyEnrolled = await storage.isStudentEnrolledInCourse(student.id, course.id);
       if (isAlreadyEnrolled) {
-        return res.status(400).json({ message: "أنت مسجل بالفعل في هذا الكورس" });
+        return res.status(400).json({ 
+          message: `أنت مسجل بالفعل في كورس "${course.name}". يمكنك التسجيل في كورسات أخرى.` 
+        });
       }
 
       // Create assignment with direct course and group relationship
