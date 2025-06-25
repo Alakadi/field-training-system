@@ -679,6 +679,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get courses with their groups for students
+  app.get("/api/courses-with-groups", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const coursesWithGroups = await storage.getCoursesWithGroups();
+      res.json(coursesWithGroups);
+    } catch (error) {
+      console.error("Error fetching courses with groups:", error);
+      res.status(500).json({ message: "خطأ في جلب الدورات والمجموعات" });
+    }
+  });
+
   // Training Course Routes
   app.get("/api/training-courses", authMiddleware, async (req: Request, res: Response) => {
     try {

@@ -120,6 +120,16 @@ export interface IStorage {
     supervisor: Supervisor & { user: User },
     students: (Student & { user: User })[]
   }) | undefined>;
+  getCoursesWithGroups(): Promise<(TrainingCourse & {
+    faculty?: Faculty,
+    major?: Major,
+    level?: Level,
+    groups: (TrainingCourseGroup & {
+      site: TrainingSite,
+      supervisor: Supervisor & { user: User },
+      currentEnrollment: number
+    })[]
+  })[]>;
 
   // Training Assignment operations
   getAllTrainingAssignments(): Promise<TrainingAssignment[]>;
@@ -1110,6 +1120,73 @@ export class DatabaseStorage implements IStorage {
       errors: errorCount,
       messages: messages
     };
+  }
+
+  // Get courses with their groups for students
+  async getCoursesWithGroups(): Promise<(TrainingCourse & {
+    faculty?: Faculty,
+    major?: Major,
+    level?: Level,
+    groups: (TrainingCourseGroup & {
+      site: TrainingSite,
+      supervisor: Supervisor & { user: User },
+      currentEnrollment: number
+    })[]
+  })[]> {
+    const courses = await db.select({
+      id: trainingCourses.id,
+      name: trainingCourses.name,
+      facultyId: trainingCourses.facultyId,
+      majorId: trainingCourses.majorId,
+      levelId: trainingCourses.levelId,
+      description: trainingCourses.description,
+      status: trainingCourses.status,
+      createdAt: trainingCourses.createdAt,
+      createdBy: trainingCourses.createdBy
+    }).from(trainingCourses);
+
+    const result = await Promise.all(
+      courses.map(async (course) => {
+        // Get course details (faculty, major, level)
+        const [faculty, major, level] = await Promise.all([
+          course.facultyId ? this.getFaculty(course.facultyId) : undefined,
+          course.majorId ? this.getMajor(course.majorId) : undefined,
+          course.levelId ? this.getLevel(course.levelId) : undefined
+        ]);
+
+        // Get course groups
+        const groups = await db.select().from(trainingCourseGroups)
+          .where(eq(trainingCourseGroups.courseId, course.id));
+
+        // Get group details with site, supervisor, and enrollment
+        const groupsWithDetails = await Promise.all(
+          groups.map(async (group) => {
+            const [site, supervisor, assignments] = await Promise.all([
+              this.getTrainingSite(group.siteId),
+              this.getSupervisorWithUser(group.supervisorId),
+              this.getTrainingAssignmentsByGroup(group.id)
+            ]);
+
+            return {
+              ...group,
+              site: site!,
+              supervisor: supervisor!,
+              currentEnrollment: assignments.length
+            };
+          })
+        );
+
+        return {
+          ...course,
+          faculty,
+          major,
+          level,
+          groups: groupsWithDetails
+        };
+      })
+    );
+
+    return result;
   }
 }
 

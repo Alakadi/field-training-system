@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import CourseCard from "@/components/student/course-card";
+import EnhancedCourseCard from "@/components/student/enhanced-course-card";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
 
@@ -57,46 +57,43 @@ const StudentCourses: React.FC = () => {
     enabled: !!studentData?.id,
   });
 
-  // Fetch available course groups for enrollment based on student's profile
-  const { data: availableCourseGroups, isLoading: isLoadingCourses } = useQuery({
-    queryKey: ["/api/training-course-groups/available", studentData?.facultyId, studentData?.majorId, studentData?.levelId],
+  // Fetch courses with their groups for enhanced display
+  const { data: coursesWithGroups, isLoading: isLoadingCourses } = useQuery({
+    queryKey: ["/api/courses-with-groups"],
     queryFn: async () => {
-      if (!studentData?.facultyId || !studentData?.majorId || !studentData?.levelId) return [];
-      
-      const params = new URLSearchParams({
-        facultyId: studentData.facultyId.toString(),
-        majorId: studentData.majorId.toString(),
-        levelId: studentData.levelId.toString(),
-        available: "true"
-      });
-      
-      const res = await fetch(`/api/training-course-groups?${params}`, {
+      const res = await fetch("/api/courses-with-groups", {
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Failed to fetch available course groups");
+      if (!res.ok) throw new Error("Failed to fetch courses with groups");
       return res.json();
     },
-    enabled: !!studentData?.facultyId && !!studentData?.majorId && !!studentData?.levelId,
   });
 
-  // Filter available course groups
-  const filteredCourseGroups = availableCourseGroups?.filter((group: any) => {
-    // First, exclude groups student is already enrolled in
-    const alreadyEnrolled = myAssignments?.some((a: any) => a.groupId === group.id);
-    if (alreadyEnrolled) return false;
-    
+  // Filter courses based on search and student eligibility
+  const filteredCourses = coursesWithGroups?.filter((course: any) => {
     let matches = true;
     
     // Search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      matches = group.course.name.toLowerCase().includes(query) || 
-                group.site.name.toLowerCase().includes(query);
+      matches = course.name.toLowerCase().includes(query) || 
+                course.description?.toLowerCase().includes(query) ||
+                course.groups.some((group: any) => 
+                  group.site?.name?.toLowerCase().includes(query) ||
+                  group.supervisor?.user?.name?.toLowerCase().includes(query)
+                );
     }
     
-    // Faculty filter
-    if (facultyFilter && matches) {
-      matches = group.course.facultyId === parseInt(facultyFilter);
+    // Faculty filter (if student data is available)
+    if (facultyFilter && studentData?.facultyId && matches) {
+      matches = course.facultyId === parseInt(facultyFilter);
+    }
+    
+    // Only show courses that match student's academic profile or are general
+    if (studentData && matches) {
+      matches = (!course.facultyId || course.facultyId === studentData.facultyId) &&
+                (!course.majorId || course.majorId === studentData.majorId) &&
+                (!course.levelId || course.levelId === studentData.levelId);
     }
     
     return matches;
@@ -359,104 +356,22 @@ const StudentCourses: React.FC = () => {
             <div className="text-center p-12 bg-white rounded-lg shadow">
               جاري تحميل الدورات المتاحة...
             </div>
-          ) : filteredCourseGroups.length === 0 ? (
+          ) : filteredCourses.length === 0 ? (
             <div className="text-center p-12 bg-white rounded-lg shadow">
               لا توجد دورات متاحة للتسجيل حالياً
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCourseGroups.map((group: any) => (
-                <div key={group.id} className="bg-white rounded-lg shadow p-6">
-                  <h3 className="text-lg font-semibold mb-2">{group.course.name}</h3>
-                  <p className="text-gray-600 mb-3">{group.course.description}</p>
-                  <div className="space-y-2 text-sm">
-                    <p><span className="font-medium">المجموعة:</span> {group.groupName}</p>
-                    <p><span className="font-medium">جهة التدريب:</span> {group.site.name}</p>
-                    <p><span className="font-medium">المشرف:</span> {group.supervisor.user.name}</p>
-                    <p><span className="font-medium">الأماكن المتاحة:</span> {group.availableSpots} من {group.capacity}</p>
-                    <p><span className="font-medium">تاريخ البدء:</span> {new Date(group.startDate).toLocaleDateString('ar-SA')}</p>
-                    <p><span className="font-medium">تاريخ الانتهاء:</span> {new Date(group.endDate).toLocaleDateString('ar-SA')}</p>
-                  </div>
-                  <div className="mt-4">
-                    {isRegisteredInGroup(group.id) ? (
-                      <div className="flex gap-2">
-                        <Badge className="bg-green-100 text-green-800 flex-1 justify-center py-2">
-                          مسجل
-                        </Badge>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => cancelRegistrationMutation.mutate(group.id)}
-                          disabled={cancelRegistrationMutation.isPending}
-                          className="text-red-600 border-red-600 hover:bg-red-50"
-                        >
-                          {cancelRegistrationMutation.isPending ? "جاري الإلغاء..." : "إلغاء التسجيل"}
-                        </Button>
-                      </div>
-                    ) : group.course.status === 'completed' ? (
-                      <Button disabled className="w-full">
-                        دورة منتهية
-                      </Button>
-                    ) : group.availableSpots > 0 ? (
-                      !isRegisteredInCourse(group.course.id) ? (
-                        <Button
-                          onClick={() => registerMutation.mutate(group.id)}
-                          disabled={registerMutation.isPending}
-                          className="w-full bg-blue-600 hover:bg-blue-700"
-                        >
-                          {registerMutation.isPending ? "جاري التسجيل..." : "تسجيل"}
-                        </Button>
-                      ) : (
-                        <div className="space-y-2">
-                          <Badge variant="outline" className="w-full justify-center py-2 text-orange-600 border-orange-600">
-                            مسجل في مجموعة أخرى
-                          </Badge>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const registeredGroup = getRegisteredGroupInCourse(group.course.id);
-                                if (registeredGroup) {
-                                  cancelRegistrationMutation.mutate(registeredGroup.groupId);
-                                }
-                              }}
-                              disabled={cancelRegistrationMutation.isPending}
-                              className="flex-1 text-red-600 border-red-600 hover:bg-red-50"
-                            >
-                              {cancelRegistrationMutation.isPending ? "جاري الإلغاء..." : "إلغاء الحالي"}
-                            </Button>
-                            <Button
-                              onClick={() => {
-                                const registeredGroup = getRegisteredGroupInCourse(group.course.id);
-                                if (registeredGroup) {
-                                  // إلغاء التسجيل الحالي أولاً ثم التسجيل في المجموعة الجديدة
-                                  cancelRegistrationMutation.mutate(registeredGroup.groupId, {
-                                    onSuccess: () => {
-                                      // تسجيل في المجموعة الجديدة بعد إلغاء التسجيل الحالي
-                                      setTimeout(() => {
-                                        registerMutation.mutate(group.id);
-                                      }, 500);
-                                    }
-                                  });
-                                }
-                              }}
-                              disabled={registerMutation.isPending || cancelRegistrationMutation.isPending}
-                              className="flex-1 bg-blue-600 hover:bg-blue-700"
-                              size="sm"
-                            >
-                              {registerMutation.isPending || cancelRegistrationMutation.isPending ? "جاري التحويل..." : "تحويل"}
-                            </Button>
-                          </div>
-                        </div>
-                      )
-                    ) : (
-                      <Badge variant="outline" className="w-full justify-center py-2 text-red-600 border-red-600">
-                        مكتملة
-                      </Badge>
-                    )}
-                  </div>
-                </div>
+            <div className="space-y-6">
+              {filteredCourses.map((course: any) => (
+                <EnhancedCourseCard
+                  key={course.id}
+                  course={course}
+                  groups={course.groups}
+                  myAssignments={myAssignments || []}
+                  onRegister={(groupId: number) => registerMutation.mutate(groupId)}
+                  onCancel={(groupId: number) => cancelRegistrationMutation.mutate(groupId)}
+                  isRegistering={registerMutation.isPending || cancelRegistrationMutation.isPending}
+                />
               ))}
             </div>
           )}
