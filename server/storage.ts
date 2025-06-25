@@ -818,6 +818,22 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async deleteTrainingAssignment(id: number): Promise<void> {
+    // Get assignment details before deletion to update group enrollment
+    const assignment = await this.getTrainingAssignment(id);
+    
+    // Delete the assignment
+    await db.delete(trainingAssignments).where(eq(trainingAssignments.id, id));
+    
+    // Update group enrollment if groupId exists
+    if (assignment && assignment.groupId) {
+      const group = await this.getTrainingCourseGroup(assignment.groupId);
+      if (group && group.currentEnrollment && group.currentEnrollment > 0) {
+        await this.updateGroupEnrollment(assignment.groupId, group.currentEnrollment - 1);
+      }
+    }
+  }
+
   async getTrainingAssignmentsByStudent(studentId: number): Promise<TrainingAssignment[]> {
     const result = await db.select().from(trainingAssignments).where(eq(trainingAssignments.studentId, studentId));
     return result;
