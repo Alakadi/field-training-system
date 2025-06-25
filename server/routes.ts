@@ -694,16 +694,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Filter courses based on user role
       if (userRole === 'student') {
-        // Students see only upcoming/active courses + their enrolled courses
+        // Students see only upcoming/active courses + their enrolled courses (including completed ones they're enrolled in)
         const studentRecord = req.user?.id ? await storage.getStudentByUserId(req.user.id) : null;
         if (studentRecord) {
-          const availableCourses = await storage.getAvailableCoursesForStudents(studentRecord.id);
+          // Get available courses for registration (upcoming + active only)
+          const availableCourses = await storage.getAvailableCoursesForStudents();
+          
+          // Get enrolled courses (all statuses including completed)
           const enrolledCourses = await storage.getEnrolledCoursesForStudent(studentRecord.id);
-          courses = [...availableCourses, ...enrolledCourses];
-          // Remove duplicates
-          courses = courses.filter((course, index, self) => 
-            index === self.findIndex(c => c.id === course.id)
-          );
+          
+          // Combine courses, marking which ones the student is enrolled in
+          const allCourseIds = new Set();
+          const combinedCourses = [];
+          
+          // Add available courses first
+          for (const course of availableCourses) {
+            if (!allCourseIds.has(course.id)) {
+              allCourseIds.add(course.id);
+              combinedCourses.push({ ...course, isEnrolled: false });
+            }
+          }
+          
+          // Add enrolled courses (even if completed)
+          for (const course of enrolledCourses) {
+            if (!allCourseIds.has(course.id)) {
+              allCourseIds.add(course.id);
+              combinedCourses.push({ ...course, isEnrolled: true });
+            } else {
+              // Mark existing course as enrolled
+              const existingCourse = combinedCourses.find(c => c.id === course.id);
+              if (existingCourse) {
+                existingCourse.isEnrolled = true;
+              }
+            }
+          }
+          
+          courses = combinedCourses;
         } else {
           courses = await storage.getAvailableCoursesForStudents();
         }

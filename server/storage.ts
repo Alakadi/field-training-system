@@ -570,9 +570,9 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  // Get courses available for student registration (upcoming and active only)
+  // Get courses available for student registration (upcoming and active only, excludes completed)
   async getAvailableCoursesForStudents(studentId?: number): Promise<TrainingCourse[]> {
-    // لا نحتاج تحديث الحالة هنا - يتم التحديث يومياً بشكل تلقائي
+    // Only show upcoming and active courses for new registrations
     const result = await db.select().from(trainingCourses)
       .where(sql`status IN ('upcoming', 'active')`);
     

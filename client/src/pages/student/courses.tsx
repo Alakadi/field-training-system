@@ -10,11 +10,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import CourseCard from "@/components/student/course-card";
 import { apiRequest } from "@/lib/queryClient";
+import { useLocation } from "wouter";
 
 const StudentCourses: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [facultyFilter, setFacultyFilter] = useState("");
@@ -387,6 +389,10 @@ const StudentCourses: React.FC = () => {
                           {cancelRegistrationMutation.isPending ? "جاري الإلغاء..." : "إلغاء التسجيل"}
                         </Button>
                       </div>
+                    ) : group.course.status === 'completed' ? (
+                      <Button disabled className="w-full">
+                        دورة منتهية
+                      </Button>
                     ) : group.availableSpots > 0 ? (
                       !isRegisteredInCourse(group.course.id) ? (
                         <Button
