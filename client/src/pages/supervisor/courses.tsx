@@ -138,6 +138,63 @@ const SupervisorCourses: React.FC = () => {
     },
   });
 
+  // Update multiple student grades mutation
+  const updateGradesMutation = useMutation({
+    mutationFn: async ({ grades, groupId }: { grades: { studentId: number; grade: number }[]; groupId: number }) => {
+      console.log("Sending bulk grades request:", { grades, groupId });
+      
+      const response = await fetch("/api/students/grades/bulk", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          grades,
+          groupId,
+        }),
+      });
+      
+      console.log("Response status:", response.status);
+      
+      if (!response.ok) {
+        let errorMessage = "Failed to save grades";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          errorMessage = response.statusText || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+      
+      try {
+        const result = await response.json();
+        console.log("Response data:", result);
+        return result;
+      } catch (e) {
+        return { message: "تم حفظ الدرجات بنجاح" };
+      }
+    },
+    onSuccess: (data) => {
+      console.log("Bulk grades save successful:", data);
+      toast({
+        title: "تم الحفظ",
+        description: `تم حفظ درجات ${data.savedCount || 0} طالب بنجاح وإرسال إشعار للمسؤول`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/training-course-groups"] });
+      setEditingGrades({});
+    },
+    onError: (error: any) => {
+      console.error("Grades save error:", error);
+      toast({
+        title: "خطأ",
+        description: error.message || "حدث خطأ أثناء حفظ الدرجات",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleGradeChange = (studentId: number, grade: string) => {
     const gradeNumber = grade === '' ? undefined : parseFloat(grade);
     if (grade === '' || (!isNaN(gradeNumber!) && gradeNumber! >= 0 && gradeNumber! <= 100)) {
@@ -146,9 +203,14 @@ const SupervisorCourses: React.FC = () => {
   };
 
   const saveAllGrades = async (groupId: number) => {
+    console.log("Starting saveAllGrades for group:", groupId);
+    console.log("Current editing grades:", editingGrades);
+    
     const gradesToSave = Object.entries(editingGrades)
       .filter(([_, grade]) => grade !== undefined && grade >= 0 && grade <= 100)
       .map(([studentId, grade]) => ({ studentId: parseInt(studentId), grade: grade! }));
+
+    console.log("Grades to save:", gradesToSave);
 
     if (gradesToSave.length === 0) {
       toast({
