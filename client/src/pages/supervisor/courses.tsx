@@ -202,6 +202,27 @@ const SupervisorCourses: React.FC = () => {
     }
   };
 
+  const getCurrentGrade = (student: Student) => {
+    // If there's an editing grade, use it
+    if (editingGrades[student.id] !== undefined) {
+      return editingGrades[student.id];
+    }
+    // Otherwise use the saved grade
+    return student.grade || '';
+  };
+
+  const getGradePlaceholder = (student: Student) => {
+    if (student.grade) {
+      return `الدرجة الحالية: ${student.grade}`;
+    }
+    return "أدخل الدرجة الجديدة";
+  };
+
+  const hasGradeChanged = (student: Student) => {
+    const editingGrade = editingGrades[student.id];
+    return editingGrade !== undefined && editingGrade !== student.grade;
+  };
+
   const saveAllGrades = async (groupId: number) => {
     console.log("Starting saveAllGrades for group:", groupId);
     console.log("Current editing grades:", editingGrades);
@@ -424,9 +445,10 @@ const SupervisorCourses: React.FC = () => {
                     {group.students && group.students.length > 0 ? (
                       <div className="space-y-4">
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                          <h4 className="font-medium text-blue-900 mb-2">إدراج الدرجات</h4>
+                          <h4 className="font-medium text-blue-900 mb-2">إدراج وتعديل الدرجات</h4>
                           <p className="text-sm text-blue-700">
-                            يمكنك إدراج درجات الطلاب من 0 إلى 100. اضغط على زر الحفظ بعد إدخال الدرجة.
+                            يمكنك إدراج درجات جديدة أو تعديل الدرجات المحفوظة مسبقاً من 0 إلى 100. 
+                            الدرجات المُعدلة ستظهر بلون مختلف قبل الحفظ.
                           </p>
                         </div>
 
@@ -434,9 +456,17 @@ const SupervisorCourses: React.FC = () => {
                           <div className="flex justify-between items-center">
                             <div className="text-sm text-gray-600">
                               {hasUnsavedChanges(group.id) && (
-                                <span className="text-amber-600 font-medium">
-                                  ⚠ يوجد تغييرات غير محفوظة
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-amber-600 font-medium">
+                                    ⚠ يوجد {Object.keys(editingGrades).length} تغييرات غير محفوظة
+                                  </span>
+                                  <button
+                                    onClick={() => setEditingGrades({})}
+                                    className="text-xs text-gray-500 hover:text-gray-700 underline"
+                                  >
+                                    إلغاء التغييرات
+                                  </button>
+                                </div>
                               )}
                             </div>
                             <Button
@@ -482,20 +512,27 @@ const SupervisorCourses: React.FC = () => {
                                         min="0"
                                         max="100"
                                         step="0.5"
-                                        placeholder="أدخل الدرجة"
-                                        className="w-24 text-center"
-                                        value={editingGrades[student.id] !== undefined ? editingGrades[student.id] : ''}
+                                        placeholder={getGradePlaceholder(student)}
+                                        className={`w-24 text-center ${hasGradeChanged(student) ? 'border-amber-400 bg-amber-50' : ''}`}
+                                        value={getCurrentGrade(student)}
                                         onChange={(e) => handleGradeChange(student.id, e.target.value)}
                                       />
                                       <span className="text-sm text-gray-500">/100</span>
                                     </div>
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap">
-                                    {student.grade ? (
-                                      <Badge variant="secondary">{student.grade}/100</Badge>
-                                    ) : (
-                                      <span className="text-gray-400 text-sm">لم يتم التقييم</span>
-                                    )}
+                                    <div className="flex flex-col gap-1">
+                                      {student.grade ? (
+                                        <Badge variant="secondary">{student.grade}/100</Badge>
+                                      ) : (
+                                        <span className="text-gray-400 text-sm">لم يتم التقييم</span>
+                                      )}
+                                      {hasGradeChanged(student) && (
+                                        <span className="text-xs text-amber-600 font-medium">
+                                          ← {editingGrades[student.id]}/100 (جديد)
+                                        </span>
+                                      )}
+                                    </div>
                                   </td>
                                 </tr>
                               ))}
