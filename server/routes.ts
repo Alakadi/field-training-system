@@ -2075,6 +2075,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API endpoint to save multiple student grades at once
+  app.post("/api/students/grades/bulk", authMiddleware, requireRole("supervisor"), async (req: Request, res: Response) => {
+    try {
+      const { grades, groupId } = req.body;
+
+      if (!grades || !Array.isArray(grades) || !groupId) {
+        return res.status(400).json({ message: "بيانات غير صحيحة" });
+      }
+
+      // Validate grades
+      for (const gradeItem of grades) {
+        if (!gradeItem.studentId || gradeItem.grade === undefined || gradeItem.grade < 0 || gradeItem.grade > 100) {
+          return res.status(400).json({ message: "درجة غير صحيحة" });
+        }
+      }
+
+      // Get supervisor info
+      const supervisor = await storage.getSupervisorByUserId(req.user!.id);
+      if (!supervisor) {
+        return res.status(403).json({ message: "غير مصرح بالوصول" });
+      }
+
+      // Get group and course details
+      const group = await storage.getTrainingCourseGroupWithStudents(groupId);
+      if (!group) {
+        return res.status(404).json({ message: "المجموعة غير موجودة" });
+      }
+
+      // Check if supervisor is assigned to this group
+      if (group.supervisorId !== supervisor.id) {
+        return res.status(403).json({ message: "غير مصرح بالوصول لهذه المجموعة" });
+      }
+
+      // Get supervisor details
+      const supervisorWithUser = await storage.getSupervisorWithUser(supervisor.id);
+      
+      const savedEvaluations = [];
+      const studentDetails = [];
+
+      // Process each grade
+      for (const gradeItem of grades) {
+        const { studentId, grade } = gradeItem;
+
+        // Check if student is in this group
+        const studentInGroup = group.students.find(s => s.id === studentId);
+        if (!studentInGroup) {
+          continue; // Skip invalid students
+        }
+
+        // Get student details
+        const student = await storage.getStudentWithDetails(studentId);
+        if (!student) {
+          continue; // Skip invalid students
+        }
+
+        // Find assignment for this student and group
+        const assignments = await storage.getTrainingAssignmentsByGroup(groupId);
+        const assignment = assignments.find(a => a.studentId === studentId);
+        
+        if (!assignment) {
+          continue; // Skip students without assignments
+        }
+
+        // Create or update evaluation
+        const evaluation = await storage.createEvaluation({
+          assignmentId: assignment.id,
+          score: Math.round(grade),
+          comments: `درجة الطالب: ${grade}/100`,
+          evaluatorName: supervisorWithUser?.user?.name || 'المشرف',
+          evaluationDate: new Date(),
+          createdBy: req.user!.id
+        });
+
+        savedEvaluations.push(evaluation);
+        studentDetails.push({
+          name: student.user.name,
+          universityId: student.universityId,
+          grade: grade
+        });
+      }
+
+      // Send single notification for all grades
+      if (savedEvaluations.length > 0) {
+        await logActivity(
+          req.user!.username,
+          "bulk_grade_entry",
+          "evaluation",
+          groupId,
+          {
+            message: `المشرف ${supervisorWithUser?.user?.name || 'غير محدد'} قد أدخل درجات ${savedEvaluations.length} طالب في الكورس "${group.course.name}" - ${group.groupName}`,
+            details: {
+              supervisorName: supervisorWithUser?.user?.name || 'غير محدد',
+              courseName: group.course.name,
+              groupName: group.groupName,
+              studentsCount: savedEvaluations.length,
+              students: studentDetails
+            }
+          }
+        );
+      }
+
+      res.json({
+        message: `تم حفظ درجات ${savedEvaluations.length} طالب بنجاح وإرسال إشعار للمسؤول`,
+        savedCount: savedEvaluations.length,
+        evaluations: savedEvaluations
+      });
+
+    } catch (error) {
+      console.error("Error saving bulk grades:", error);
+      res.status(500).json({ message: "خطأ في حفظ الدرجات" });
+    }
+  });
+
   // Helper methods are already implemented in DatabaseStorage
 
   const httpServer = createServer(app);

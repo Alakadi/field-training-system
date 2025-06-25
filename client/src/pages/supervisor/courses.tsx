@@ -139,24 +139,38 @@ const SupervisorCourses: React.FC = () => {
   });
 
   const handleGradeChange = (studentId: number, grade: string) => {
-    const gradeNumber = parseFloat(grade);
-    if (!isNaN(gradeNumber) && gradeNumber >= 0 && gradeNumber <= 100) {
+    const gradeNumber = grade === '' ? undefined : parseFloat(grade);
+    if (grade === '' || (!isNaN(gradeNumber!) && gradeNumber! >= 0 && gradeNumber! <= 100)) {
       setEditingGrades(prev => ({ ...prev, [studentId]: gradeNumber }));
     }
   };
 
-  const saveGrade = async (studentId: number, groupId: number) => {
-    const grade = editingGrades[studentId];
-    if (grade !== undefined && grade >= 0 && grade <= 100) {
-      setSavingGrades(true);
-      try {
-        await updateGradeMutation.mutateAsync({ studentId, groupId, grade });
-      } catch (error) {
-        console.error("Error saving grade:", error);
-      } finally {
-        setSavingGrades(false);
-      }
+  const saveAllGrades = async (groupId: number) => {
+    const gradesToSave = Object.entries(editingGrades)
+      .filter(([_, grade]) => grade !== undefined && grade >= 0 && grade <= 100)
+      .map(([studentId, grade]) => ({ studentId: parseInt(studentId), grade: grade! }));
+
+    if (gradesToSave.length === 0) {
+      toast({
+        title: "تنبيه",
+        description: "لا توجد درجات صالحة للحفظ",
+        variant: "destructive",
+      });
+      return;
     }
+
+    setSavingGrades(true);
+    try {
+      await updateGradesMutation.mutateAsync({ grades: gradesToSave, groupId });
+    } catch (error) {
+      console.error("Error saving grades:", error);
+    } finally {
+      setSavingGrades(false);
+    }
+  };
+
+  const hasUnsavedChanges = (groupId: number) => {
+    return Object.keys(editingGrades).length > 0;
   };
 
   const getStatusBadge = (status: string) => {
@@ -354,8 +368,27 @@ const SupervisorCourses: React.FC = () => {
                           </p>
                         </div>
 
-                        <div className="overflow-x-auto">
-                          <table className="min-w-full divide-y divide-gray-200">
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center">
+                            <div className="text-sm text-gray-600">
+                              {hasUnsavedChanges(group.id) && (
+                                <span className="text-amber-600 font-medium">
+                                  ⚠ يوجد تغييرات غير محفوظة
+                                </span>
+                              )}
+                            </div>
+                            <Button
+                              onClick={() => saveAllGrades(group.id)}
+                              disabled={!hasUnsavedChanges(group.id) || savingGrades}
+                              className="flex items-center gap-2"
+                            >
+                              <Save className="h-4 w-4" />
+                              {savingGrades ? "جاري الحفظ..." : "حفظ جميع الدرجات"}
+                            </Button>
+                          </div>
+                          
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                               <tr>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -365,7 +398,7 @@ const SupervisorCourses: React.FC = () => {
                                   الدرجة (من 100)
                                 </th>
                                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  العمليات
+                                  الدرجة الحالية
                                 </th>
                               </tr>
                             </thead>
@@ -387,29 +420,26 @@ const SupervisorCourses: React.FC = () => {
                                         min="0"
                                         max="100"
                                         step="0.5"
-                                        placeholder={student.grade ? student.grade.toString() : "أدخل الدرجة"}
+                                        placeholder="أدخل الدرجة"
                                         className="w-24 text-center"
-                                        value={editingGrades[student.id] !== undefined ? editingGrades[student.id] : (student.grade || '')}
+                                        value={editingGrades[student.id] !== undefined ? editingGrades[student.id] : ''}
                                         onChange={(e) => handleGradeChange(student.id, e.target.value)}
                                       />
                                       <span className="text-sm text-gray-500">/100</span>
                                     </div>
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap">
-                                    <Button
-                                      size="sm"
-                                      onClick={() => saveGrade(student.id, group.id)}
-                                      disabled={editingGrades[student.id] === undefined || savingGrades}
-                                      className="flex items-center gap-2"
-                                    >
-                                      <Save className="h-4 w-4" />
-                                      {savingGrades ? "جاري الحفظ..." : "حفظ"}
-                                    </Button>
+                                    {student.grade ? (
+                                      <Badge variant="secondary">{student.grade}/100</Badge>
+                                    ) : (
+                                      <span className="text-gray-400 text-sm">لم يتم التقييم</span>
+                                    )}
                                   </td>
                                 </tr>
                               ))}
                             </tbody>
-                          </table>
+                            </table>
+                          </div>
                         </div>
                       </div>
                     ) : (
