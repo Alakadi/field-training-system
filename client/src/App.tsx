@@ -43,6 +43,7 @@ import SupervisorEvaluations from "@/pages/supervisor/evaluations";
 import StudentDashboard from "@/pages/student/dashboard";
 import StudentCourses from "@/pages/student/courses";
 import StudentResults from "@/pages/student/results";
+import CourseDetails from "@/pages/student/course-details";
 
 // صفحة للتحويل عند تسجيل الدخول بناءً على الدور
 const RoleRouter: React.FC = () => {
@@ -215,7 +216,7 @@ function Router() {
       <Route path="/student/courses/:courseId">
         <StudentOnly>
           <Suspense fallback={<div className="p-6 text-center">جاري تحميل البيانات...</div>}>
-            {React.createElement(lazy(() => import("./pages/student/course-details")))}
+            <CourseDetails />
           </Suspense>
         </StudentOnly>
       </Route>

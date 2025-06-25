@@ -169,7 +169,7 @@ const StudentCourseDetails = () => {
                     </p>
                   </div>
                 </div>
-                
+
                 {courseAssignment.course?.startDate && courseAssignment.course?.endDate && (
                   <div>
                     <label className="text-sm font-medium text-gray-600">مدة التدريب</label>
@@ -241,7 +241,7 @@ const StudentCourseDetails = () => {
                         {group.currentEnrollment || 0}/{group.capacity} طالب
                       </Badge>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                       <div>
                         <span className="text-gray-600">موقع التدريب: </span>
