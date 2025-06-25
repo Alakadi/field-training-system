@@ -1,4 +1,4 @@
-import React, { lazy } from "react";
+import React from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -43,6 +43,7 @@ import SupervisorEvaluations from "@/pages/supervisor/evaluations";
 import StudentDashboard from "@/pages/student/dashboard";
 import StudentCourses from "@/pages/student/courses";
 import StudentResults from "@/pages/student/results";
+import StudentCourseDetails from "@/pages/student/course-details";
 
 // صفحة للتحويل عند تسجيل الدخول بناءً على الدور
 const RoleRouter: React.FC = () => {
@@ -211,7 +212,11 @@ function Router() {
           <StudentDashboard />
         </StudentOnly>
       </Route>
-      <Route path="/student/courses/:courseId" component={lazy(() => import("./pages/student/course-details"))} />
+      <Route path="/student/courses/:courseId">
+        <StudentOnly>
+          <StudentCourseDetails />
+        </StudentOnly>
+      </Route>
       <Route path="/student/courses">
         <StudentOnly>
           <StudentCourses />

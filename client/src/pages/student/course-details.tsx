@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { StudentLayout } from "@/components/layout/student-layout";
+import StudentLayout from "@/components/layout/student-layout";
 import { ArrowLeft, Calendar, MapPin, User, GraduationCap } from "lucide-react";
 import { useLocation } from "wouter";
 
