@@ -265,23 +265,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { name, username, password, email, phone, facultyId, department } = req.body;
 
+      console.log("Creating supervisor with data:", { name, username, email, phone, facultyId, department });
+
+      // Validate required fields
+      if (!name || !username || !password) {
+        return res.status(400).json({ message: "اسم المشرف واسم المستخدم وكلمة المرور مطلوبة" });
+      }
+
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: "اسم المستخدم موجود بالفعل" });
+      }
+
       // Create user
+      console.log("Creating user...");
       const user = await storage.createUser({
         username,
         password,
         role: "supervisor",
         name,
-        email,
-        phone,
+        email: email || null,
+        phone: phone || null,
         active: true
       });
+      console.log("User created with ID:", user.id);
 
       // Create supervisor
+      console.log("Creating supervisor...");
       const supervisor = await storage.createSupervisor({
         userId: user.id,
-        facultyId: facultyId ? Number(facultyId) : undefined,
-        department
+        facultyId: facultyId ? Number(facultyId) : null,
+        department: department || null
       });
+      console.log("Supervisor created with ID:", supervisor.id);
 
       // Log activity
       if (req.user) {
@@ -299,7 +316,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json({ ...supervisor, user });
     } catch (error) {
-      res.status(500).json({ message: "خطأ في إنشاء حساب المشرف" });
+      console.error("Error creating supervisor:", error);
+      res.status(500).json({ 
+        message: "خطأ في إنشاء حساب المشرف",
+        error: error instanceof Error ? error.message : "خطأ غير معروف"
+      });
     }
   });
 
