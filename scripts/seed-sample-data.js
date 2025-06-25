@@ -201,6 +201,7 @@ async function seedSampleData() {
       const [assignment] = await db.insert(trainingAssignments)
         .values({
           studentId: allStudents[i].id,
+          courseId: course1.id,
           groupId: group1.id,
           status: 'confirmed',
           registeredAt: new Date().toISOString()
@@ -227,6 +228,7 @@ async function seedSampleData() {
       await db.insert(trainingAssignments)
         .values({
           studentId: allStudents[i].id,
+          courseId: course2.id,
           groupId: group2.id,
           status: 'pending',
           registeredAt: new Date().toISOString()
