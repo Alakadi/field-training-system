@@ -106,12 +106,18 @@ const StudentCourses: React.FC = () => {
 
   // التحقق من التسجيل في نفس الكورس
   const isRegisteredInCourse = (courseId: number) => {
-    return myAssignments?.some(assignment => assignment.group?.courseId === courseId);
+    return myAssignments?.some(assignment => {
+      const assignmentCourseId = assignment.courseId || assignment.group?.courseId;
+      return assignmentCourseId === courseId;
+    });
   };
 
   // الحصول على المجموعة المسجل فيها في نفس الكورس
   const getRegisteredGroupInCourse = (courseId: number) => {
-    return myAssignments?.find(assignment => assignment.group?.courseId === courseId);
+    return myAssignments?.find(assignment => {
+      const assignmentCourseId = assignment.courseId || assignment.group?.courseId;
+      return assignmentCourseId === courseId;
+    });
   };
 
   // متغير للتسجيل
@@ -134,7 +140,7 @@ const StudentCourses: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/training-assignments/student'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/training-course-groups/available'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/courses-with-groups'] });
       toast({
         title: "تم التسجيل بنجاح",
         description: "تم تسجيلك في المجموعة التدريبية",
@@ -168,7 +174,7 @@ const StudentCourses: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/training-assignments/student'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/training-course-groups/available'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/courses-with-groups'] });
       toast({
         title: "تم إلغاء التسجيل بنجاح",
         description: "تم إلغاء تسجيلك من المجموعة التدريبية",
@@ -177,6 +183,55 @@ const StudentCourses: React.FC = () => {
     onError: (error: Error) => {
       toast({
         title: "خطأ في إلغاء التسجيل",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // متغير للتحويل بين المجموعات
+  const transferMutation = useMutation({
+    mutationFn: async ({ fromGroupId, toGroupId }: { fromGroupId: number, toGroupId: number }) => {
+      // أولاً إلغاء التسجيل من المجموعة الحالية
+      const cancelResponse = await fetch(`/api/training-assignments/group/${fromGroupId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!cancelResponse.ok) {
+        const error = await cancelResponse.json();
+        throw new Error(error.message || 'فشل إلغاء التسجيل الحالي');
+      }
+
+      // ثم التسجيل في المجموعة الجديدة
+      const registerResponse = await fetch('/api/training-assignments/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ groupId: toGroupId }),
+      });
+      
+      if (!registerResponse.ok) {
+        const error = await registerResponse.json();
+        throw new Error(error.message || 'فشل التسجيل في المجموعة الجديدة');
+      }
+      
+      return registerResponse.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/training-assignments/student'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/courses-with-groups'] });
+      toast({
+        title: "تم التحويل بنجاح",
+        description: "تم تحويلك إلى المجموعة الجديدة",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "خطأ في التحويل",
         description: error.message,
         variant: "destructive",
       });
@@ -370,7 +425,10 @@ const StudentCourses: React.FC = () => {
                   myAssignments={myAssignments || []}
                   onRegister={(groupId: number) => registerMutation.mutate(groupId)}
                   onCancel={(groupId: number) => cancelRegistrationMutation.mutate(groupId)}
-                  isRegistering={registerMutation.isPending || cancelRegistrationMutation.isPending}
+                  onTransfer={(fromGroupId: number, toGroupId: number) => 
+                    transferMutation.mutate({ fromGroupId, toGroupId })
+                  }
+                  isRegistering={registerMutation.isPending || cancelRegistrationMutation.isPending || transferMutation.isPending}
                 />
               ))}
             </div>

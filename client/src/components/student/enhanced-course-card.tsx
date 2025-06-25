@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CalendarDays, MapPin, User, Users, Clock, CheckCircle } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 interface GroupData {
   id: number;
@@ -47,6 +47,7 @@ interface EnhancedCourseCardProps {
   myAssignments: any[];
   onRegister: (groupId: number) => void;
   onCancel: (groupId: number) => void;
+  onTransfer: (fromGroupId: number, toGroupId: number) => void;
   isRegistering: boolean;
 }
 
@@ -56,6 +57,7 @@ const EnhancedCourseCard: React.FC<EnhancedCourseCardProps> = ({
   myAssignments,
   onRegister,
   onCancel,
+  onTransfer,
   isRegistering
 }) => {
   const [expandedGroup, setExpandedGroup] = useState<number | null>(null);
@@ -74,9 +76,11 @@ const EnhancedCourseCard: React.FC<EnhancedCourseCardProps> = ({
   };
 
   const getMyAssignmentForCourse = () => {
-    return myAssignments?.find(assignment => 
-      assignment.course?.id === course.id || assignment.courseId === course.id
-    );
+    return myAssignments?.find(assignment => {
+      // Check direct courseId or nested course.id
+      const assignmentCourseId = assignment.courseId || assignment.course?.id;
+      return assignmentCourseId === course.id;
+    });
   };
 
   const isRegisteredInGroup = (groupId: number) => {
@@ -233,7 +237,12 @@ const EnhancedCourseCard: React.FC<EnhancedCourseCardProps> = ({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => onRegister(group.id)}
+                          onClick={() => {
+                            const currentAssignment = getMyAssignmentForCourse();
+                            if (currentAssignment?.groupId) {
+                              onTransfer(currentAssignment.groupId, group.id);
+                            }
+                          }}
                           disabled={isRegistering}
                           className="text-xs"
                         >
