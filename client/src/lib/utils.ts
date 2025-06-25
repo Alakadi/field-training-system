@@ -20,8 +20,12 @@ export function formatDate(dateString: string | null | undefined): string {
   }
 }
 
-export function getUserAvatarUrl(name: string): string {
+export function getUserAvatarUrl(name: string | null | undefined): string {
   // Generate a simple avatar URL based on user name
+  if (!name || typeof name !== 'string') {
+    return `https://ui-avatars.com/api/?name=User&background=4f46e5&color=fff&size=32&format=svg&rounded=true`;
+  }
+  
   const initials = name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=4f46e5&color=fff&size=32&format=svg&rounded=true`;
 }

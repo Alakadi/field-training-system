@@ -62,7 +62,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
           {user && (
             <div className="flex items-center space-x-2 space-x-reverse">
               <img 
-                src={getUserAvatarUrl(user.id)} 
+                src={getUserAvatarUrl(user.name)} 
                 alt="صورة المستخدم" 
                 className="h-8 w-8 rounded-full" 
               />
