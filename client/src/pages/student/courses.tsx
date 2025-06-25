@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, startTransition } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import StudentLayout from "@/components/layout/student-layout";
 import { Button } from "@/components/ui/button";
@@ -275,7 +275,7 @@ const StudentCourses: React.FC = () => {
                     <tr key={assignment.id} className="hover:bg-neutral-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary">
                         <button 
-                          onClick={() => setLocation(`/student/courses/${assignment.course.id}`)}
+                          onClick={() => startTransition(() => setLocation(`/student/courses/${assignment.course.id}`))}
                           className="text-blue-600 hover:text-blue-800 hover:underline"
                         >
                           {assignment.course.name}
@@ -305,7 +305,11 @@ const StudentCourses: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                        <Button size="sm" className="bg-primary text-white px-2 py-1 rounded-md text-xs">
+                        <Button 
+                          size="sm" 
+                          className="bg-primary text-white px-2 py-1 rounded-md text-xs"
+                          onClick={() => startTransition(() => setLocation(`/student/courses/${assignment.course.id}`))}
+                        >
                           تفاصيل
                         </Button>
                       </td>
