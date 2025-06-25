@@ -17,10 +17,10 @@ const StudentCourses: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
-
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [facultyFilter, setFacultyFilter] = useState("");
-
+  
   // Fetch student data
   const { data: studentData, isLoading: isLoadingStudent } = useQuery({
     queryKey: ["/api/students/me"],
@@ -62,14 +62,14 @@ const StudentCourses: React.FC = () => {
     queryKey: ["/api/training-course-groups/available", studentData?.facultyId, studentData?.majorId, studentData?.levelId],
     queryFn: async () => {
       if (!studentData?.facultyId || !studentData?.majorId || !studentData?.levelId) return [];
-
+      
       const params = new URLSearchParams({
         facultyId: studentData.facultyId.toString(),
         majorId: studentData.majorId.toString(),
         levelId: studentData.levelId.toString(),
         available: "true"
       });
-
+      
       const res = await fetch(`/api/training-course-groups?${params}`, {
         credentials: "include",
       });
@@ -84,21 +84,21 @@ const StudentCourses: React.FC = () => {
     // First, exclude groups student is already enrolled in
     const alreadyEnrolled = myAssignments?.some((a: any) => a.groupId === group.id);
     if (alreadyEnrolled) return false;
-
+    
     let matches = true;
-
+    
     // Search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       matches = group.course.name.toLowerCase().includes(query) || 
                 group.site.name.toLowerCase().includes(query);
     }
-
+    
     // Faculty filter
     if (facultyFilter && matches) {
       matches = group.course.facultyId === parseInt(facultyFilter);
     }
-
+    
     return matches;
   }) || [];
 
@@ -127,12 +127,12 @@ const StudentCourses: React.FC = () => {
         },
         body: JSON.stringify({ groupId }),
       });
-
+      
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'فشل التسجيل');
       }
-
+      
       return response.json();
     },
     onSuccess: () => {
@@ -161,12 +161,12 @@ const StudentCourses: React.FC = () => {
           'Content-Type': 'application/json',
         },
       });
-
+      
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || 'فشل إلغاء التسجيل');
       }
-
+      
       return response.json();
     },
     onSuccess: () => {
@@ -325,7 +325,7 @@ const StudentCourses: React.FC = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold">دورات متاحة للتسجيل</h2>
-
+            
             {/* Search and Filters */}
             <div className="flex space-x-2 space-x-reverse">
               <div className="relative w-64">
@@ -338,7 +338,7 @@ const StudentCourses: React.FC = () => {
                 />
                 <span className="material-icons absolute right-3 top-2 text-neutral-500">search</span>
               </div>
-
+              
               {/* <Select value={facultyFilter} onValueChange={setFacultyFilter}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="كل الكليات" />
@@ -354,7 +354,7 @@ const StudentCourses: React.FC = () => {
               </Select> */}
             </div>
           </div>
-
+          
           {isLoadingCourses ? (
             <div className="text-center p-12 bg-white rounded-lg shadow">
               جاري تحميل الدورات المتاحة...

@@ -1,4 +1,4 @@
-import React, { useState, startTransition } from "react";
+import React, { useState } from "react";
 import { useParams } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -13,15 +13,13 @@ const StudentCourseDetails = () => {
   const [, setLocation] = useLocation();
 
   // جلب تفاصيل الكورس
-  const { data: course, isLoading: isLoadingCourse, error: courseError } = useQuery({
+  const { data: course, isLoading: isLoadingCourse } = useQuery({
     queryKey: ['/api/training-courses', courseId],
     enabled: !!courseId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   // جلب المجموعات
-  const { data: groups, isLoading: isLoadingGroups, error: groupsError } = useQuery({
+  const { data: groups, isLoading: isLoadingGroups } = useQuery({
     queryKey: ['/api/training-course-groups', courseId],
     queryFn: async () => {
       const response = await fetch(`/api/training-course-groups?courseId=${courseId}`);
@@ -29,15 +27,11 @@ const StudentCourseDetails = () => {
       return response.json();
     },
     enabled: !!courseId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   // جلب تعيينات الطالب
-  const { data: assignments, isLoading: isLoadingAssignments } = useQuery({
+  const { data: assignments } = useQuery({
     queryKey: ['/api/training-assignments/student'],
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
   // البحث عن التعيين الخاص بهذا الكورس
@@ -81,7 +75,7 @@ const StudentCourseDetails = () => {
         <div className="space-y-6">
           <div className="text-center py-8">
             <h2 className="text-xl font-bold text-red-600 mb-4">الكورس غير موجود</h2>
-            <Button onClick={() => startTransition(() => setLocation('/student/courses'))}>
+            <Button onClick={() => setLocation('/student/courses')}>
               العودة للدورات
             </Button>
           </div>
@@ -99,7 +93,7 @@ const StudentCourseDetails = () => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => startTransition(() => setLocation('/student/courses'))}
+              onClick={() => setLocation('/student/courses')}
             >
               <ArrowLeft className="h-4 w-4 ml-1" />
               العودة
@@ -169,7 +163,7 @@ const StudentCourseDetails = () => {
                     </p>
                   </div>
                 </div>
-
+                
                 {courseAssignment.course?.startDate && courseAssignment.course?.endDate && (
                   <div>
                     <label className="text-sm font-medium text-gray-600">مدة التدريب</label>
@@ -241,7 +235,7 @@ const StudentCourseDetails = () => {
                         {group.currentEnrollment || 0}/{group.capacity} طالب
                       </Badge>
                     </div>
-
+                    
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                       <div>
                         <span className="text-gray-600">موقع التدريب: </span>

@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from "react";
+import React, { lazy } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -43,7 +43,6 @@ import SupervisorEvaluations from "@/pages/supervisor/evaluations";
 import StudentDashboard from "@/pages/student/dashboard";
 import StudentCourses from "@/pages/student/courses";
 import StudentResults from "@/pages/student/results";
-import CourseDetails from "@/pages/student/course-details";
 
 // صفحة للتحويل عند تسجيل الدخول بناءً على الدور
 const RoleRouter: React.FC = () => {
@@ -77,8 +76,7 @@ const RoleRouter: React.FC = () => {
 
 function Router() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">جاري تحميل التطبيق...</div>}>
-      <Switch>
+    <Switch>
       {/* Auth Routes */}
       <Route path="/" component={RoleRouter} />
       <Route path="/login" component={AdminLogin} />
@@ -213,13 +211,7 @@ function Router() {
           <StudentDashboard />
         </StudentOnly>
       </Route>
-      <Route path="/student/courses/:courseId">
-        <StudentOnly>
-          <Suspense fallback={<div className="p-6 text-center">جاري تحميل البيانات...</div>}>
-            <CourseDetails />
-          </Suspense>
-        </StudentOnly>
-      </Route>
+      <Route path="/student/courses/:courseId" component={lazy(() => import("./pages/student/course-details"))} />
       <Route path="/student/courses">
         <StudentOnly>
           <StudentCourses />
@@ -233,8 +225,7 @@ function Router() {
 
       {/* Fallback to 404 */}
       <Route component={NotFound} />
-      </Switch>
-    </Suspense>
+    </Switch>
   );
 }
 
