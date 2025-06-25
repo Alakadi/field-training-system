@@ -404,7 +404,7 @@ export class DatabaseStorage implements IStorage {
       .innerJoin(trainingCourseGroups, eq(trainingAssignments.groupId, trainingCourseGroups.id))
       .where(eq(trainingCourseGroups.supervisorId, supervisorId));
 
-    return result.map(row => ({
+    return result.map((row: any) => ({
       ...row.student,
       user: row.user!,
       faculty: row.faculty || undefined,
@@ -462,7 +462,7 @@ export class DatabaseStorage implements IStorage {
       throw new Error("اسم الدورة مطلوب");
     }
 
-    return await db.transaction(async (tx) => {
+    return await db.transaction(async (tx: any) => {
       // 1. إنشاء الدورة أولاً
       const [newCourse] = await tx.insert(trainingCourses).values(courseData).returning();
 
@@ -591,7 +591,7 @@ export class DatabaseStorage implements IStorage {
     if (studentId) {
       const enrolledCourses = await this.getEnrolledCoursesForStudent(studentId);
       const enrolledCourseIds = enrolledCourses.map(c => c.id);
-      return result.filter(course => !enrolledCourseIds.includes(course.id));
+      return result.filter((course: any) => !enrolledCourseIds.includes(course.id));
     }
     
     return result;
@@ -617,11 +617,7 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  // Get student by user ID
-  async getStudentByUserId(userId: number): Promise<Student | undefined> {
-    const result = await db.select().from(students).where(eq(students.userId, userId));
-    return result[0];
-  }
+
 
   // Training Course Group operations
   async getAllTrainingCourseGroups(): Promise<TrainingCourseGroup[]> {
@@ -699,9 +695,9 @@ export class DatabaseStorage implements IStorage {
     const result = await query;
 
     // Get assignment counts for each group
-    const groupIds = result.map(row => row.group.id);
+    const groupIds = result.map((row: any) => row.group.id);
     const assignmentCounts = await Promise.all(
-      groupIds.map(async (groupId) => {
+      groupIds.map(async (groupId: any) => {
         const assignments = await db.select().from(trainingAssignments).where(eq(trainingAssignments.groupId, groupId));
         return { groupId, count: assignments.length };
       })
@@ -759,7 +755,7 @@ export class DatabaseStorage implements IStorage {
 
     // Get supervisor user
     const supervisorUser = groupResult[0].supervisor ?
-      await db.select().from(users).where(eq(users.id, groupResult[0].supervisor.userId)).then(r => r[0]) : null;
+      await db.select().from(users).where(eq(users.id, groupResult[0].supervisor.userId)).then((r: any) => r[0]) : null;
 
     // Get students in this group
     const assignments = await db.select({
@@ -771,9 +767,9 @@ export class DatabaseStorage implements IStorage {
 
     // Get student users
     const studentsWithUsers = await Promise.all(
-      assignments.map(async (assignment) => {
+      assignments.map(async (assignment: any) => {
         if (!assignment.student) return null;
-        const studentUser = await db.select().from(users).where(eq(users.id, assignment.student.userId)).then(r => r[0]);
+        const studentUser = await db.select().from(users).where(eq(users.id, assignment.student.userId)).then((r: any) => r[0]);
         return {
           ...assignment.student,
           user: studentUser
@@ -892,11 +888,11 @@ export class DatabaseStorage implements IStorage {
 
     // Get student user separately
     const studentUser = assignmentResult[0].student ? 
-      await db.select().from(users).where(eq(users.id, assignmentResult[0].student.userId)).then(r => r[0]) : null;
+      await db.select().from(users).where(eq(users.id, assignmentResult[0].student.userId)).then((r: any) => r[0]) : null;
 
     // Get supervisor user separately  
     const supervisorUser = assignmentResult[0].supervisor ?
-      await db.select().from(users).where(eq(users.id, assignmentResult[0].supervisor.userId)).then(r => r[0]) : null;
+      await db.select().from(users).where(eq(users.id, assignmentResult[0].supervisor.userId)).then((r: any) => r[0]) : null;
 
     const result = [{
       assignment: assignmentResult[0].assignment,
@@ -1012,7 +1008,7 @@ export class DatabaseStorage implements IStorage {
       }
 
       // Update course statuses
-      for (const [courseId, status] of courseStatuses) {
+      for (const [courseId, status] of Array.from(courseStatuses)) {
         await db.update(trainingCourses)
           .set({ status })
           .where(eq(trainingCourses.id, courseId));
@@ -1163,7 +1159,7 @@ export class DatabaseStorage implements IStorage {
     }).from(trainingCourses);
 
     const result = await Promise.all(
-      courses.map(async (course) => {
+      courses.map(async (course: any) => {
         // Get course details (faculty, major, level)
         const [faculty, major, level] = await Promise.all([
           course.facultyId ? this.getFaculty(course.facultyId) : undefined,
@@ -1177,7 +1173,7 @@ export class DatabaseStorage implements IStorage {
 
         // Get group details with site, supervisor, and enrollment
         const groupsWithDetails = await Promise.all(
-          groups.map(async (group) => {
+          groups.map(async (group: any) => {
             const [site, supervisor, assignments] = await Promise.all([
               this.getTrainingSite(group.siteId),
               this.getSupervisorWithUser(group.supervisorId),
