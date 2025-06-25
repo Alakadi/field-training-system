@@ -135,6 +135,7 @@ export interface IStorage {
   getAllTrainingAssignments(): Promise<TrainingAssignment[]>;
   getTrainingAssignment(id: number): Promise<TrainingAssignment | undefined>;
   createTrainingAssignment(assignment: InsertTrainingAssignment): Promise<TrainingAssignment>;
+  deleteTrainingAssignment(id: number): Promise<void>;
   getTrainingAssignmentsByStudent(studentId: number): Promise<TrainingAssignment[]>;
   getTrainingAssignmentsByGroup(groupId: number): Promise<TrainingAssignment[]>;
   getTrainingAssignmentsByCourse(courseId: number): Promise<TrainingAssignment[]>;

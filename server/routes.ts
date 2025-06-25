@@ -1443,6 +1443,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cancel student registration from a specific group
+  app.delete("/api/training-assignments/group/:groupId", authMiddleware, requireRole("student"), async (req: Request, res: Response) => {
+    try {
+      const groupId = Number(req.params.groupId);
+      
+      // Get student info
+      const student = await storage.getStudentByUserId(req.user!.id);
+      if (!student) {
+        return res.status(403).json({ message: "الطالب غير موجود" });
+      }
+
+      // Find the assignment for this student and group
+      const assignments = await storage.getTrainingAssignmentsByStudent(student.id);
+      const assignment = assignments.find(a => a.groupId === groupId);
+      
+      if (!assignment) {
+        return res.status(404).json({ message: "لا يوجد تسجيل في هذه المجموعة" });
+      }
+
+      // Delete the assignment
+      await storage.deleteTrainingAssignment(assignment.id);
+
+      // Get group and course details for logging
+      const group = await storage.getTrainingCourseGroup(groupId);
+      const course = group ? await storage.getTrainingCourse(group.courseId) : null;
+
+      // Log activity
+      await logActivity(
+        req.user.username,
+        "cancel",
+        "training_assignment",
+        assignment.id,
+        { 
+          message: `قام الطالب بإلغاء التسجيل من مجموعة التدريب`,
+          assignmentData: { 
+            studentId: student.id,
+            studentName: req.user.name,
+            groupName: group?.groupName || 'غير محدد',
+            courseName: course?.name || 'غير محدد'
+          }
+        }
+      );
+
+      res.json({
+        message: "تم إلغاء التسجيل بنجاح",
+        assignmentId: assignment.id
+      });
+    } catch (error) {
+      console.error("Error canceling registration:", error);
+      res.status(500).json({ message: "خطأ في إلغاء التسجيل" });
+    }
+  });
+
   app.post("/api/training-assignments/:id/confirm", authMiddleware, requireRole("student"), async (req: Request, res: Response) => {
     try {
       const id = Number(req.params.id);
