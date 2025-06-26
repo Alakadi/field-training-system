@@ -18,7 +18,7 @@ interface StudentReport {
   courses: {
     id: number;
     name: string;
-    grade: number;
+    grade: number | null;
     groupName: string;
     site: string;
     supervisor: string;
@@ -53,9 +53,66 @@ export default function AdminReports() {
   const { data: studentsReport, isLoading: loadingStudents } = useQuery({
     queryKey: ["/api/reports/students"],
     queryFn: async () => {
-      const res = await fetch("/api/reports/students", { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch students report");
-      return res.json();
+      // Get all students
+      const studentsRes = await fetch("/api/students", { credentials: "include" });
+      if (!studentsRes.ok) throw new Error("Failed to fetch students");
+      const students = await studentsRes.json();
+
+      // Get all training assignments
+      const assignmentsRes = await fetch("/api/training-assignments", { credentials: "include" });
+      if (!assignmentsRes.ok) throw new Error("Failed to fetch assignments");
+      const assignments = await assignmentsRes.json();
+
+      // Get all evaluations
+      const evaluationsRes = await fetch("/api/evaluations", { credentials: "include" });
+      if (!evaluationsRes.ok) throw new Error("Failed to fetch evaluations");
+      const evaluations = await evaluationsRes.json();
+
+      // Get all training course groups
+      const groupsRes = await fetch("/api/training-course-groups", { credentials: "include" });
+      if (!groupsRes.ok) throw new Error("Failed to fetch groups");
+      const groups = await groupsRes.json();
+
+      const studentsReport = [];
+
+      for (const student of students) {
+        // Get student assignments
+        const studentAssignments = assignments.filter((a: any) => a.studentId === student.id);
+        const courses = [];
+
+        for (const assignment of studentAssignments) {
+          // Find evaluation for this assignment
+          const evaluation = evaluations.find((e: any) => e.assignmentId === assignment.id);
+          
+          // Find group details
+          const group = groups.find((g: any) => g.id === assignment.groupId);
+          
+          if (group) {
+            courses.push({
+              id: group.course?.id || assignment.groupId,
+              name: group.course?.name || 'دورة غير محددة',
+              grade: evaluation?.score || null,
+              groupName: group.groupName,
+              site: group.site?.name || 'غير محدد',
+              supervisor: group.supervisor?.user?.name || 'غير محدد'
+            });
+          }
+        }
+
+        if (courses.length > 0) {
+          studentsReport.push({
+            id: student.id,
+            name: student.user?.name || 'غير محدد',
+            universityId: student.universityId,
+            faculty: student.faculty?.name || 'غير محدد',
+            major: student.major?.name || 'غير محدد',
+            level: student.level?.name || 'غير محدد',
+            courses: courses
+          });
+        }
+      }
+
+      return studentsReport;
     },
   });
 
@@ -192,9 +249,15 @@ export default function AdminReports() {
                                             </div>
                                           </div>
                                           <div className="text-center">
-                                            <Badge variant={course.grade >= 75 ? "default" : course.grade >= 60 ? "secondary" : "destructive"}>
-                                              {course.grade}/100
-                                            </Badge>
+                                            {course.grade !== null ? (
+                                              <Badge variant={course.grade >= 75 ? "default" : course.grade >= 60 ? "secondary" : "destructive"}>
+                                                {course.grade}/100
+                                              </Badge>
+                                            ) : (
+                                              <Badge variant="outline">
+                                                لم يتم التقييم
+                                              </Badge>
+                                            )}
                                           </div>
                                         </div>
                                       </div>
@@ -214,7 +277,7 @@ export default function AdminReports() {
                           <div className="flex flex-wrap gap-2 justify-end">
                             {student.courses.slice(0, 3).map((course) => (
                               <Badge key={course.id} variant="outline" className="text-xs">
-                                {course.name}: {course.grade}/100
+                                {course.name}: {course.grade !== null ? `${course.grade}/100` : 'لم يتم التقييم'}
                               </Badge>
                             ))}
                             {student.courses.length > 3 && (
