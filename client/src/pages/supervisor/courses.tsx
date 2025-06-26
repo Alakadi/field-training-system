@@ -125,7 +125,9 @@ const SupervisorCourses: React.FC = () => {
         title: "تم الحفظ",
         description: "تم حفظ الدرجة بنجاح وإرسال إشعار للمسؤول",
       });
+      // Refresh the groups data to show updated grades
       queryClient.invalidateQueries({ queryKey: ["/api/training-course-groups"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/supervisor/course-assignments"] });
       setEditingGrades({});
     },
     onError: (error: any) => {
@@ -182,7 +184,9 @@ const SupervisorCourses: React.FC = () => {
         title: "تم الحفظ",
         description: `تم حفظ درجات ${data.savedCount || 0} طالب بنجاح وإرسال إشعار للمسؤول`,
       });
+      // Refresh the groups data to show updated grades
       queryClient.invalidateQueries({ queryKey: ["/api/training-course-groups"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/supervisor/course-assignments"] });
       setEditingGrades({});
     },
     onError: (error: any) => {
