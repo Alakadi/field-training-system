@@ -105,7 +105,7 @@ export default function AdminReports() {
               supervisor: group.supervisor?.user?.name || 'غير محدد'
             });
           }
-        }</studentCourses>
+        }
 
         if (studentCourses.length > 0) {
           studentsReport.push({
