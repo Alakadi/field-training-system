@@ -68,17 +68,22 @@ export default function AdminReports() {
       if (!evaluationsRes.ok) throw new Error("Failed to fetch evaluations");
       const evaluations = await evaluationsRes.json();
 
-      // Get all training course groups
+      // Get all training course groups with full details
       const groupsRes = await fetch("/api/training-course-groups", { credentials: "include" });
       if (!groupsRes.ok) throw new Error("Failed to fetch groups");
       const groups = await groupsRes.json();
+
+      // Get all courses for proper course names
+      const coursesRes = await fetch("/api/training-courses", { credentials: "include" });
+      if (!coursesRes.ok) throw new Error("Failed to fetch courses");
+      const courses = await coursesRes.json();
 
       const studentsReport = [];
 
       for (const student of students) {
         // Get student assignments
         const studentAssignments = assignments.filter((a: any) => a.studentId === student.id);
-        const courses = [];
+        const studentCourses = [];
 
         for (const assignment of studentAssignments) {
           // Find evaluation for this assignment
@@ -88,18 +93,21 @@ export default function AdminReports() {
           const group = groups.find((g: any) => g.id === assignment.groupId);
           
           if (group) {
-            courses.push({
-              id: group.course?.id || assignment.groupId,
-              name: group.course?.name || 'دورة غير محددة',
+            // Find the actual course details
+            const course = courses.find((c: any) => c.id === group.courseId);
+            
+            studentCourses.push({
+              id: course?.id || group.courseId || assignment.groupId,
+              name: course?.name || 'دورة غير محددة',
               grade: evaluation?.score || null,
               groupName: group.groupName,
               site: group.site?.name || 'غير محدد',
               supervisor: group.supervisor?.user?.name || 'غير محدد'
             });
           }
-        }
+        }</studentCourses>
 
-        if (courses.length > 0) {
+        if (studentCourses.length > 0) {
           studentsReport.push({
             id: student.id,
             name: student.user?.name || 'غير محدد',
@@ -107,10 +115,11 @@ export default function AdminReports() {
             faculty: student.faculty?.name || 'غير محدد',
             major: student.major?.name || 'غير محدد',
             level: student.level?.name || 'غير محدد',
-            courses: courses
+            courses: studentCourses
           });
+        }</old_str>
+
         }
-      }
 
       return studentsReport;
     },
