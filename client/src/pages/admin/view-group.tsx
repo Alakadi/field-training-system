@@ -77,7 +77,71 @@ export default function ViewGroup() {
   const { groupId } = useParams();
 
   const { data: groupDetails, isLoading } = useQuery<GroupDetails>({
-    queryKey: [`/api/training-course-groups/${groupId}`],
+    queryKey: [`/api/training-course-groups/${groupId}/details`],
+    queryFn: async () => {
+      if (!groupId) return null;
+      
+      // First get the group details
+      const groupResponse = await fetch(`/api/training-course-groups/${groupId}`, {
+        credentials: "include"
+      });
+      
+      if (!groupResponse.ok) {
+        throw new Error("Failed to fetch group details");
+      }
+      
+      const group = await groupResponse.json();
+      
+      // Then get assignments for this group to fetch students with grades
+      const assignmentsResponse = await fetch(`/api/training-assignments?groupId=${groupId}`, {
+        credentials: "include"
+      });
+      
+      if (!assignmentsResponse.ok) {
+        throw new Error("Failed to fetch assignments");
+      }
+      
+      const assignments = await assignmentsResponse.json();
+      
+      // Get evaluations for each assignment
+      const evaluationsResponse = await fetch("/api/evaluations", {
+        credentials: "include"
+      });
+      
+      const evaluations = evaluationsResponse.ok ? await evaluationsResponse.json() : [];
+      
+      // Build students array with grades
+      const studentsWithGrades = await Promise.all(
+        assignments.map(async (assignment: any) => {
+          try {
+            const studentResponse = await fetch(`/api/students/${assignment.studentId}`, {
+              credentials: "include"
+            });
+            
+            if (!studentResponse.ok) return null;
+            
+            const student = await studentResponse.json();
+            
+            // Find evaluation for this assignment
+            const evaluation = evaluations.find((eval: any) => eval.assignmentId === assignment.id);
+            
+            return {
+              ...student,
+              grade: evaluation?.score || null,
+              assignmentId: assignment.id
+            };
+          } catch (error) {
+            console.error("Error fetching student details:", error);
+            return null;
+          }
+        })
+      );
+      
+      return {
+        ...group,
+        students: studentsWithGrades.filter(student => student !== null)
+      };
+    },
     enabled: !!groupId
   });
 
