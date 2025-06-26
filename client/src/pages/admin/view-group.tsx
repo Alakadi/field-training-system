@@ -123,7 +123,7 @@ export default function ViewGroup() {
             const student = await studentResponse.json();
             
             // Find evaluation for this assignment
-            const evaluation = evaluations.find((eval: any) => eval.assignmentId === assignment.id);
+            const evaluation = evaluations.find((evalItem: any) => evalItem.assignmentId === assignment.id);
             
             return {
               ...student,
