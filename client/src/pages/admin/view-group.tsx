@@ -15,6 +15,7 @@ interface GroupStudent {
   facultyId: number;
   majorId: number;
   levelId: number;
+  grade?: number;
   user: {
     id: number;
     username: string;
@@ -284,9 +285,14 @@ export default function ViewGroup() {
                             <Badge className="bg-green-100 text-green-800">مسجل</Badge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <Badge variant={course.grade >= 75 ? "default" : course.grade >= 60 ? "secondary" : "destructive"}>
-                              {course.grade}/100
-                            </Badge>
+                            {student.grade ? (
+                              <Badge variant={student.grade >= 75 ? "default" : student.grade >= 60 ? "secondary" : "destructive"}>
+                                {student.grade}/100
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">لم يتم التقييم</Badge>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
