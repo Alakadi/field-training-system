@@ -1701,20 +1701,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const assignment of assignments) {
           const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
           if (evaluations.length > 0) {
-            const group = await storage.getTrainingCourseGroupWithStudents(assignment.groupId);
+            const group = assignment.groupId ? await storage.getTrainingCourseGroupWithStudents(assignment.groupId) : null;
             if (group) {
               const supervisorDetails = await storage.getSupervisorWithUser(group.supervisorId);
               
-              for (const evaluation of evaluations) {
-                courses.push({
-                  id: group.course.id,
-                  name: group.course.name,
-                  grade: evaluation.score,
-                  groupName: group.groupName,
-                  site: group.site.name,
-                  supervisor: supervisorDetails?.user?.name || 'غير محدد'
-                });
-              }
+              // Get the latest evaluation for this assignment (to avoid duplicates)
+              const latestEvaluation = evaluations[evaluations.length - 1];
+              courses.push({
+                id: group.course.id,
+                name: group.course.name,
+                grade: latestEvaluation.score,
+                groupName: group.groupName,
+                site: group.site.name,
+                supervisor: supervisorDetails?.user?.name || 'غير محدد'
+              });
             }
           }
         }
@@ -2053,15 +2053,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get supervisor details
       const supervisorWithUser = await storage.getSupervisorWithUser(supervisor.id);
 
-      // Create or update evaluation
-      const evaluation = await storage.createEvaluation({
-        assignmentId: assignment.id,
-        score: Math.round(grade),
-        comments: `درجة الطالب: ${grade}/100`,
-        evaluatorName: supervisorWithUser?.user?.name || 'المشرف',
-        evaluationDate: new Date(),
-        createdBy: req.user!.id
-      });
+      // Check if evaluation already exists for this assignment
+      const existingEvaluations = await storage.getAllEvaluations();
+      const existingEvaluation = existingEvaluations.find(evaluation => evaluation.assignmentId === assignment.id);
+      
+      let evaluation;
+      if (existingEvaluation) {
+        // Update existing evaluation instead of creating a new one
+        evaluation = await storage.updateEvaluation(existingEvaluation.id, {
+          score: Math.round(grade),
+          comments: `درجة الطالب: ${grade}/100`,
+          evaluatorName: supervisorWithUser?.user?.name || 'المشرف',
+          evaluationDate: new Date(),
+          createdBy: req.user!.id
+        });
+      } else {
+        // Create new evaluation
+        evaluation = await storage.createEvaluation({
+          assignmentId: assignment.id,
+          score: Math.round(grade),
+          comments: `درجة الطالب: ${grade}/100`,
+          evaluatorName: supervisorWithUser?.user?.name || 'المشرف',
+          evaluationDate: new Date(),
+          createdBy: req.user!.id
+        });
+      }
 
       // Send notification to admin
       await logActivity(
@@ -2159,15 +2175,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
           continue; // Skip students without assignments
         }
 
-        // Create or update evaluation
-        const evaluation = await storage.createEvaluation({
-          assignmentId: assignment.id,
-          score: Math.round(grade),
-          comments: `درجة الطالب: ${grade}/100`,
-          evaluatorName: supervisorWithUser?.user?.name || 'المشرف',
-          evaluationDate: new Date(),
-          createdBy: req.user!.id
-        });
+        // Check if evaluation already exists for this assignment
+        const existingEvaluations = await storage.getAllEvaluations();
+        const existingEvaluation = existingEvaluations.find(evaluation => evaluation.assignmentId === assignment.id);
+        
+        let evaluation;
+        if (existingEvaluation) {
+          // Update existing evaluation instead of creating a new one
+          evaluation = await storage.updateEvaluation(existingEvaluation.id, {
+            score: Math.round(grade),
+            comments: `درجة الطالب: ${grade}/100`,
+            evaluatorName: supervisorWithUser?.user?.name || 'المشرف',
+            evaluationDate: new Date(),
+            createdBy: req.user!.id
+          });
+        } else {
+          // Create new evaluation
+          evaluation = await storage.createEvaluation({
+            assignmentId: assignment.id,
+            score: Math.round(grade),
+            comments: `درجة الطالب: ${grade}/100`,
+            evaluatorName: supervisorWithUser?.user?.name || 'المشرف',
+            evaluationDate: new Date(),
+            createdBy: req.user!.id
+          });
+        }
 
         savedEvaluations.push(evaluation);
         studentDetails.push({
@@ -2181,7 +2213,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (savedEvaluations.length > 0) {
         await logActivity(
           req.user!.username,
-          "bulk_grade_entry",
+          "grade_entry",
           "evaluation",
           groupId,
           {
