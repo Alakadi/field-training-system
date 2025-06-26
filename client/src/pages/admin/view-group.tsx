@@ -284,8 +284,9 @@ export default function ViewGroup() {
                             <Badge className="bg-green-100 text-green-800">مسجل</Badge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <Badge variant="outline">لم يتم التقييم</Badge>
-                          </td>
+                            <Badge variant={course.grade >= 75 ? "default" : course.grade >= 60 ? "secondary" : "destructive"}>
+                              {course.grade}/100
+                            </Badge>
                         </tr>
                       ))}
                     </tbody>
