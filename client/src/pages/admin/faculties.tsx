@@ -80,7 +80,7 @@ export default function FacultiesPage() {
 
   // Faculty mutations
   const createFacultyMutation = useMutation({
-    mutationFn: (data: FacultyFormData) => apiRequest('/api/faculties', 'POST', data),
+    mutationFn: (data: FacultyFormData) => apiRequest('POST', '/api/faculties', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/faculties'] });
       toast({
@@ -101,7 +101,7 @@ export default function FacultiesPage() {
 
   const updateFacultyMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: FacultyFormData }) => 
-      apiRequest(`/api/faculties/${id}`, 'PUT', data),
+      apiRequest('PUT', `/api/faculties/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/faculties'] });
       toast({
@@ -123,7 +123,7 @@ export default function FacultiesPage() {
 
   // Major mutations
   const createMajorMutation = useMutation({
-    mutationFn: (data: MajorFormData) => apiRequest('/api/majors', 'POST', data),
+    mutationFn: (data: MajorFormData) => apiRequest('POST', '/api/majors', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/majors'] });
       toast({
@@ -144,7 +144,7 @@ export default function FacultiesPage() {
 
   const updateMajorMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: MajorFormData }) => 
-      apiRequest(`/api/majors/${id}`, 'PUT', data),
+      apiRequest('PUT', `/api/majors/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/majors'] });
       toast({
