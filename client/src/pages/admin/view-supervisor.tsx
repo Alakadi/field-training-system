@@ -72,14 +72,14 @@ const ViewSupervisor: React.FC = () => {
               variant="outline"
               onClick={() => setLocation(`/admin/supervisors/edit/${id}`)}
             >
-              <span className="material-icons ml-1 text-sm">edit</span>
+              <Icon name="edit" size={16} />
               تعديل
             </Button>
             <Button
               variant="outline"
               onClick={() => setLocation("/admin/supervisors")}
             >
-              <span className="material-icons ml-1 text-sm">arrow_forward</span>
+              <Icon name="chevron_right" size={16} />
               العودة إلى القائمة
             </Button>
           </div>
@@ -95,7 +95,7 @@ const ViewSupervisor: React.FC = () => {
                 <div className="space-y-4">
                   <div className="text-center mb-6">
                     <div className="h-24 w-24 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-3">
-                      <span className="material-icons text-4xl text-neutral-400">person</span>
+                      <Icon name="user" size={24} />
                     </div>
                     <h3 className="text-xl font-semibold">{supervisor?.user.name}</h3>
                     <Badge className={supervisor?.user.active ? "bg-green-100 text-green-800" : "bg-neutral-100 text-neutral-800"}>

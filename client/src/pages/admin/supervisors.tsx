@@ -9,6 +9,7 @@ import AddSupervisorForm from "@/components/admin/add-supervisor-form";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import Icon from "@/components/ui/icon-map";
 
 const AdminSupervisors: React.FC = () => {
   const [location, setLocation] = useLocation();
@@ -102,7 +103,7 @@ const AdminSupervisors: React.FC = () => {
                 setLocation("/admin/supervisors?action=new");
               }}
             >
-              <span className="material-icons ml-1 text-sm">add</span>
+              <Icon name="plus" size={16} />
               إضافة مشرف
             </Button>
           </div>
@@ -130,7 +131,7 @@ const AdminSupervisors: React.FC = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 pr-4 py-2"
                 />
-                <span className="material-icons absolute right-3 top-2 text-neutral-500">search</span>
+                <Icon name="search" size={16} />
               </div>
             </div>
             <div>
@@ -217,7 +218,7 @@ const AdminSupervisors: React.FC = () => {
                               className="text-primary hover:text-primary-dark"
                               onClick={() => handleEditSupervisor(supervisor.id)}
                             >
-                              <span className="material-icons text-sm">edit</span>
+                              <Icon name="edit" size={16} />
                             </Button>
                             <Button 
                               variant="ghost" 
@@ -225,7 +226,7 @@ const AdminSupervisors: React.FC = () => {
                               className="text-neutral-600 hover:text-neutral-900"
                               onClick={() => handleViewSupervisor(supervisor.id)}
                             >
-                              <span className="material-icons text-sm">visibility</span>
+                              <Icon name="eye" size={16} />
                             </Button>
                             <Button
                               variant="ghost"
@@ -233,7 +234,7 @@ const AdminSupervisors: React.FC = () => {
                               className="text-error hover:text-red-700"
                               onClick={() => handleDeleteSupervisor(supervisor.id)}
                             >
-                              <span className="material-icons text-sm">delete</span>
+                              <Icon name="trash" size={16} />
                             </Button>
                           </div>
                         </td>
@@ -289,7 +290,7 @@ const AdminSupervisors: React.FC = () => {
                       disabled={currentPage === 1}
                     >
                       <span className="sr-only">السابق</span>
-                      <span className="material-icons text-sm">chevron_right</span>
+                      <Icon name="chevron_right" size={16} />
                     </Button>
 
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -319,7 +320,7 @@ const AdminSupervisors: React.FC = () => {
                       disabled={currentPage === totalPages}
                     >
                       <span className="sr-only">التالي</span>
-                      <span className="material-icons text-sm">chevron_left</span>
+                      <Icon name="chevron_left" size={16} />
                     </Button>
                   </nav>
                 </div>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { formatDate } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
+import Icon from "@/components/ui/icon-map";
 
 const SupervisorDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -96,7 +97,7 @@ const SupervisorDashboard: React.FC = () => {
           <div className="flex space-x-2 space-x-reverse">
             <Link href="/supervisor/evaluations?action=new">
               <Button className="bg-primary hover:bg-primary-dark text-white flex items-center text-sm">
-                <span className="material-icons ml-1 text-sm">add</span>
+                <Icon name="plus" size={16} className="ml-1" />
                 إضافة تقييم جديد
               </Button>
             </Link>
@@ -109,7 +110,7 @@ const SupervisorDashboard: React.FC = () => {
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-blue-100 text-primary ml-4">
-                  <span className="material-icons">groups</span>
+                  <Icon name="users" size={24} />
                 </div>
                 <div>
                   <div className="text-sm text-neutral-500">إجمالي الطلاب</div>
@@ -128,7 +129,7 @@ const SupervisorDashboard: React.FC = () => {
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-green-100 text-secondary ml-4">
-                  <span className="material-icons">school</span>
+                  <Icon name="graduation_cap" size={24} />
                 </div>
                 <div>
                   <div className="text-sm text-neutral-500">المجموعات التدريبية</div>
@@ -147,7 +148,7 @@ const SupervisorDashboard: React.FC = () => {
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-purple-100 text-purple-600 ml-4">
-                  <span className="material-icons">checklist</span>
+                  <Icon name="check_circle" size={24} />
                 </div>
                 <div>
                   <div className="text-sm text-neutral-500">تقييمات مكتملة</div>

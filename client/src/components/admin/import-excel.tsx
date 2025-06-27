@@ -4,6 +4,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import Icon from "@/components/ui/icon-map";
 
 const ImportExcel: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
@@ -83,7 +84,7 @@ const ImportExcel: React.FC = () => {
       <CardContent>
         <div className="border-2 border-dashed border-neutral-300 rounded-lg p-8 text-center">
           <div className="max-w-md mx-auto">
-            <span className="material-icons text-neutral-400 text-5xl mb-2">upload_file</span>
+            <Icon name="upload" size={20} />
             <h3 className="text-lg font-medium mb-2">قم بتحميل ملف Excel</h3>
             <p className="text-neutral-500 mb-4">اسحب الملف هنا أو انقر لاختيار الملف</p>
 
@@ -101,7 +102,7 @@ const ImportExcel: React.FC = () => {
               disabled={isUploading}
               className="inline-flex items-center"
             >
-              <span className="material-icons ml-1 text-sm">file_upload</span>
+              <Icon name="upload" size={16} />
               {isUploading ? "جاري الرفع..." : "اختيار ملف"}
             </Button>
 
@@ -138,7 +139,7 @@ const ImportExcel: React.FC = () => {
             {uploadResult.messages && uploadResult.messages.length > 0 && (
               <div className="mt-4">
                 <h5 className="font-medium text-sm mb-2 flex items-center">
-                  <span className="material-icons text-sm ml-1">info</span>
+                  <Icon name="alert_circle" size={16} />
                   تفاصيل العملية:
                 </h5>
                 <div className="bg-neutral-50 border rounded-lg max-h-60 overflow-y-auto">

@@ -388,7 +388,7 @@ const StudentCourses: React.FC = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 pr-4 py-2"
                 />
-                <span className="material-icons absolute right-3 top-2 text-neutral-500">search</span>
+                <Icon name="search" size={16} />
               </div>
               
               {/* <Select value={facultyFilter} onValueChange={setFacultyFilter}>

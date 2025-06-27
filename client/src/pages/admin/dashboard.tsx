@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import ImportExcel from "@/components/admin/import-excel";
 import { Link } from "wouter";
 import { formatDate } from "@/lib/utils";
-import { Settings, BookOpen} from "@/components/ui/icons";
+import Icon from "@/components/ui/icon-map";
 const AdminDashboard: React.FC = () => {
   // Fetch statistics
   const { data: students, isLoading: isLoadingStudents } = useQuery({
@@ -58,12 +58,12 @@ const AdminDashboard: React.FC = () => {
           <div className="flex space-x-2 space-x-reverse">
             <Link href="/admin/courses?action=new">
               <Button className="bg-primary hover:bg-primary-dark text-white flex items-center text-sm">
-                <span className="material-icons ml-1 text-sm">add</span>
+                <Icon name="plus" size={16} className="ml-1" />
                 إنشاء دورة تدريبية
               </Button>
             </Link>
             <Button variant="outline" className="flex items-center text-sm">
-              <span className="material-icons ml-1 text-sm">file_download</span>
+              <Icon name="download" size={16} className="ml-1" />
               تصدير البيانات
             </Button>
           </div>
@@ -75,7 +75,7 @@ const AdminDashboard: React.FC = () => {
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-blue-100 text-primary ml-4">
-                  <span className="material-icons">people</span>
+                  <Icon name="users" size={24} />
                 </div>
                 <div>
                   <div className="text-sm text-neutral-500">إجمالي الطلاب</div>
@@ -85,7 +85,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
               </div>
               <div className="mt-4 text-xs text-success flex items-center">
-                <span className="material-icons text-sm">arrow_upward</span>
+                <Icon name="chevron_up" size={16} />
                 <span>12% زيادة هذا الفصل</span>
               </div>
             </CardContent>
@@ -95,7 +95,7 @@ const AdminDashboard: React.FC = () => {
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-green-100 text-secondary ml-4">
-                  <span className="material-icons">assignment</span>
+                  <Icon name="book_open" size={24} />
                 </div>
                 <div>
                   <div className="text-sm text-neutral-500">الدورات النشطة</div>
@@ -107,7 +107,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
               </div>
               <div className="mt-4 text-xs text-success flex items-center">
-                <span className="material-icons text-sm">arrow_upward</span>
+                <Icon name="chevron_up" size={16} />
                 <span>5 دورات جديدة هذا الأسبوع</span>
               </div>
             </CardContent>
@@ -117,7 +117,7 @@ const AdminDashboard: React.FC = () => {
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-purple-100 text-purple-600 ml-4">
-                  <span className="material-icons">supervisor_account</span>
+                  <Icon name="user" size={24} />
                 </div>
                 <div>
                   <div className="text-sm text-neutral-500">المشرفون</div>
@@ -136,7 +136,7 @@ const AdminDashboard: React.FC = () => {
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-yellow-100 text-accent-dark ml-4">
-                  <span className="material-icons">domain</span>
+                  <Icon name="building" size={24} />
                 </div>
                 <div>
                   <div className="text-sm text-neutral-500">جهات التدريب</div>
@@ -146,7 +146,7 @@ const AdminDashboard: React.FC = () => {
                 </div>
               </div>
               <div className="mt-4 text-xs text-success flex items-center">
-                <span className="material-icons text-sm">add</span>
+                <Icon name="plus" size={16} />
                 <span>6 جهات جديدة</span>
               </div>
             </CardContent>
@@ -168,7 +168,7 @@ const AdminDashboard: React.FC = () => {
                     className="flex items-start pb-4 border-b border-neutral-200"
                   >
                     <div className={`p-2 ${activity.iconClass} rounded-full ml-4`}>
-                      <span className="material-icons text-sm">{activity.icon}</span>
+                      <Icon name={activity.icon === "person_add" ? "user_plus" : activity.icon === "update" ? "edit" : "graduation_cap"} size={16} />
                     </div>
                     <div className="flex-1">
                       <p className="font-medium">{activity.title}</p>
@@ -196,7 +196,7 @@ const AdminDashboard: React.FC = () => {
                 <Link href="/admin/students?action=import">
                   <a className="block p-4 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition">
                     <div className="flex items-center">
-                      <span className="material-icons text-primary ml-3">upload_file</span>
+                      <Icon name="upload" size={20} className="text-primary ml-3" />
                       <div>
                         <h3 className="font-medium">استيراد بيانات الطلاب</h3>
                         <p className="text-neutral-500 text-sm">تحميل ملف Excel للطلاب الجدد</p>
@@ -207,7 +207,7 @@ const AdminDashboard: React.FC = () => {
                 <Link href="/admin/students?action=assignSupervisors">
                   <a className="block p-4 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition">
                     <div className="flex items-center">
-                      <span className="material-icons text-secondary ml-3">assignment_ind</span>
+                      <Icon name="user_plus" size={20} className="text-secondary ml-3" />
                       <div>
                         <h3 className="font-medium">تعيين مشرفين</h3>
                         <p className="text-neutral-500 text-sm">إسناد طلاب إلى مشرفين أكاديميين</p>
@@ -218,7 +218,7 @@ const AdminDashboard: React.FC = () => {
                 <Link href="/admin/courses">
                   <a className="block p-4 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition">
                     <div className="flex items-center">
-                      <span className="material-icons text-accent ml-3">rate_review</span>
+                      <Icon name="file_text" size={20} className="text-accent ml-3" />
                       <div>
                         <h3 className="font-medium">مراجعة الدورات</h3>
                         <p className="text-neutral-500 text-sm">

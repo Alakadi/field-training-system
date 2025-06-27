@@ -137,7 +137,7 @@ const SupervisorStudents: React.FC = () => {
           <h1 className="text-2xl font-bold">الطلاب تحت الإشراف</h1>
           <Link href="/supervisor/evaluations?action=new">
             <Button className="bg-primary hover:bg-primary-dark text-white flex items-center text-sm">
-              <span className="material-icons ml-1 text-sm">add</span>
+              <Icon name="plus" size={16} />
               إضافة تقييم جديد
             </Button>
           </Link>
@@ -155,7 +155,7 @@ const SupervisorStudents: React.FC = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 pr-4 py-2"
                 />
-                <span className="material-icons absolute right-3 top-2 text-neutral-500">search</span>
+                <Icon name="search" size={16} />
               </div>
             </div>
             <div>
@@ -266,7 +266,7 @@ const SupervisorStudents: React.FC = () => {
                               </Link>
                             )}
                             <Button variant="ghost" size="sm" className="text-neutral-600 hover:text-neutral-900">
-                              <span className="material-icons text-sm">visibility</span>
+                              <Icon name="eye" size={16} />
                             </Button>
                           </div>
                         </td>
@@ -322,7 +322,7 @@ const SupervisorStudents: React.FC = () => {
                       disabled={currentPage === 1}
                     >
                       <span className="sr-only">السابق</span>
-                      <span className="material-icons text-sm">chevron_right</span>
+                      <Icon name="chevron_right" size={16} />
                     </Button>
                     
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -352,7 +352,7 @@ const SupervisorStudents: React.FC = () => {
                       disabled={currentPage === totalPages}
                     >
                       <span className="sr-only">التالي</span>
-                      <span className="material-icons text-sm">chevron_left</span>
+                      <Icon name="chevron_left" size={16} />
                     </Button>
                   </nav>
                 </div>

@@ -242,7 +242,7 @@ const AdminCourses: React.FC = () => {
                 setLocation("/admin/courses?action=new");
               }}
             >
-              <span className="material-icons ml-1 text-sm">add</span>
+              <Icon name="plus" size={16} />
               إنشاء دورة جديدة
             </Button>
           </div>
@@ -270,7 +270,7 @@ const AdminCourses: React.FC = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 pr-4 py-2"
                 />
-                <span className="material-icons absolute right-3 top-2 text-neutral-500">search</span>
+                <Icon name="search" size={16} />
               </div>
             </div>
             <div>
@@ -384,7 +384,7 @@ const AdminCourses: React.FC = () => {
                             onClick={() => handleEditCourse(course.id)}
                             title="تعديل الدورة"
                           >
-                            <span className="material-icons text-sm">edit</span>
+                            <Icon name="edit" size={16} />
                           </Button>
                           <Button 
                             variant="ghost" 
@@ -393,7 +393,7 @@ const AdminCourses: React.FC = () => {
                             onClick={() => handleAddStudentsToCourse(course)}
                             title="إضافة طلاب للدورة"
                           >
-                            <span className="material-icons text-sm">person_add</span>
+                            <Icon name="user_plus" size={16} />
                           </Button>
                           <Button 
                             variant="ghost" 
@@ -402,7 +402,7 @@ const AdminCourses: React.FC = () => {
                             onClick={() => handleViewCourse(course.id)}
                             title="عرض الدورة"
                           >
-                            <span className="material-icons text-sm">visibility</span>
+                            <Icon name="eye" size={16} />
                           </Button>
                           <Button
                             variant="ghost"
@@ -411,7 +411,7 @@ const AdminCourses: React.FC = () => {
                             onClick={() => handleDeleteCourse(course.id)}
                             title="حذف الدورة"
                           >
-                            <span className="material-icons text-sm">delete</span>
+                            <Icon name="trash" size={16} />
                           </Button>
                         </div>
                       </td>
@@ -466,7 +466,7 @@ const AdminCourses: React.FC = () => {
                       disabled={currentPage === 1}
                     >
                       <span className="sr-only">السابق</span>
-                      <span className="material-icons text-sm">chevron_right</span>
+                      <Icon name="chevron_right" size={16} />
                     </Button>
 
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -496,7 +496,7 @@ const AdminCourses: React.FC = () => {
                       disabled={currentPage === totalPages}
                     >
                       <span className="sr-only">التالي</span>
-                      <span className="material-icons text-sm">chevron_left</span>
+                      <Icon name="chevron_left" size={16} />
                     </Button>
                   </nav>
                 </div>

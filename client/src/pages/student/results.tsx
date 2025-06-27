@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/use-auth";
 import { formatDate } from "@/lib/utils";
+import Icon from "@/components/ui/icon-map";
 
 const StudentResults: React.FC = () => {
   const { user } = useAuth();
@@ -92,7 +93,7 @@ const StudentResults: React.FC = () => {
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-blue-100 text-primary ml-4">
-                  <span className="material-icons">school</span>
+                  <Icon name="graduation_cap" size={24} />
                 </div>
                 <div>
                   <div className="text-sm text-neutral-500">إجمالي الدورات</div>
@@ -108,7 +109,7 @@ const StudentResults: React.FC = () => {
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-green-100 text-success ml-4">
-                  <span className="material-icons">check_circle</span>
+                  <Icon name="check_circle" size={24} />
                 </div>
                 <div>
                   <div className="text-sm text-neutral-500">الدورات المكتملة</div>
@@ -127,7 +128,7 @@ const StudentResults: React.FC = () => {
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-purple-100 text-purple-600 ml-4">
-                  <span className="material-icons">grading</span>
+                  <Icon name="bar_chart" size={24} />
                 </div>
                 <div>
                   <div className="text-sm text-neutral-500">التقييمات</div>
@@ -143,7 +144,7 @@ const StudentResults: React.FC = () => {
             <CardContent className="p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-yellow-100 text-accent-dark ml-4">
-                  <span className="material-icons">star</span>
+                  <Icon name="star" size={24} />
                 </div>
                 <div>
                   <div className="text-sm text-neutral-500">متوسط التقييم</div>

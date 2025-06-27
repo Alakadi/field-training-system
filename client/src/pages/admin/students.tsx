@@ -10,6 +10,7 @@ import ImportExcel from "@/components/admin/import-excel";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import Icon from "@/components/ui/icon-map";
 
 const AdminStudents: React.FC = () => {
   const [location, setLocation] = useLocation();
@@ -125,7 +126,7 @@ const AdminStudents: React.FC = () => {
                 setLocation("/admin/students?action=new");
               }}
             >
-              <span className="material-icons ml-1 text-sm">add</span>
+              <Icon name="plus" size={16} />
               إضافة طالب
             </Button>
             <Button
@@ -137,11 +138,11 @@ const AdminStudents: React.FC = () => {
                 setLocation("/admin/students?action=import");
               }}
             >
-              <span className="material-icons ml-1 text-sm">file_upload</span>
+              <Icon name="upload" size={16} />
               استيراد
             </Button>
             <Button variant="outline" className="flex items-center text-sm">
-              <span className="material-icons ml-1 text-sm">file_download</span>
+              <Icon name="download" size={16} />
               تصدير
             </Button>
           </div>
@@ -187,7 +188,7 @@ const AdminStudents: React.FC = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 pr-4 py-2"
                 />
-                <span className="material-icons absolute right-3 top-2 text-neutral-500">search</span>
+                <Icon name="search" size={16} />
               </div>
             </div>
             <div>
@@ -300,7 +301,7 @@ const AdminStudents: React.FC = () => {
                             className="text-primary hover:text-primary-dark"
                             onClick={() => handleEditStudent(student.id)}
                           >
-                            <span className="material-icons text-sm">edit</span>
+                            <Icon name="edit" size={16} />
                           </Button>
                           <Button 
                             variant="ghost" 
@@ -308,7 +309,7 @@ const AdminStudents: React.FC = () => {
                             className="text-neutral-600 hover:text-neutral-900"
                             onClick={() => handleViewStudent(student.id)}
                           >
-                            <span className="material-icons text-sm">visibility</span>
+                            <Icon name="eye" size={16} />
                           </Button>
                           <Button
                             variant="ghost"
@@ -316,7 +317,7 @@ const AdminStudents: React.FC = () => {
                             className="text-error hover:text-red-700"
                             onClick={() => handleDeleteStudent(student.id)}
                           >
-                            <span className="material-icons text-sm">delete</span>
+                            <Icon name="trash" size={16} />
                           </Button>
                         </div>
                       </td>
@@ -371,7 +372,7 @@ const AdminStudents: React.FC = () => {
                       disabled={currentPage === 1}
                     >
                       <span className="sr-only">السابق</span>
-                      <span className="material-icons text-sm">chevron_right</span>
+                      <Icon name="chevron_right" size={16} />
                     </Button>
 
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -401,7 +402,7 @@ const AdminStudents: React.FC = () => {
                       disabled={currentPage === totalPages}
                     >
                       <span className="sr-only">التالي</span>
-                      <span className="material-icons text-sm">chevron_left</span>
+                      <Icon name="chevron_left" size={16} />
                     </Button>
                   </nav>
                 </div>

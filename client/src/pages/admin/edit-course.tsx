@@ -269,7 +269,7 @@ const EditCourse: React.FC = () => {
             variant="outline"
             onClick={() => setLocation("/admin/courses")}
           >
-            <span className="material-icons ml-1 text-sm">arrow_forward</span>
+            <Icon name="chevron_right" size={16} />
             العودة إلى القائمة
           </Button>
         </div>

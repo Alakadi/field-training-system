@@ -2,11 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 
-// Add Material Icons
-const link = document.createElement("link");
-link.href = "file-d/icon.css";
-link.rel = "stylesheet";
-document.head.appendChild(link);
+// Material Icons removed - using local SVG icons instead
 
 // Add Tajawal font
 const fontLink = document.createElement("link");
