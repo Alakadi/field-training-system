@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Checkbox } from "@/components/ui/checkbox";
+import Icon from "@/components/ui/icon-map";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 

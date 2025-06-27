@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/use-auth";
 import EnhancedCourseCard from "@/components/student/enhanced-course-card";
 import { apiRequest } from "@/lib/queryClient";
 import { useLocation } from "wouter";
+import Icon from "@/components/ui/icon-map";
 
 const StudentCourses: React.FC = () => {
   const { user } = useAuth();

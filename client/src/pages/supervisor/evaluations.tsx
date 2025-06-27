@@ -9,6 +9,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { formatDate } from "@/lib/utils";
+import Icon from "@/components/ui/icon-map";
 
 const SupervisorEvaluations: React.FC = () => {
   const [location, setLocation] = useLocation();

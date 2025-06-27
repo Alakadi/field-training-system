@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import Icon from "@/components/ui/icon-map";
 import { Checkbox } from "@/components/ui/checkbox";
 
 // تعريف مخطط البيانات للتعديل

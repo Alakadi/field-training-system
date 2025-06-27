@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { ArrowRight, Calendar, MapPin, User, Users, BookOpen, Eye } from "lucide-react";
+import Icon from "@/components/ui/icon-map";
 
 const ViewCourse: React.FC = () => {
   const { id } = useParams<{ id: string }>();

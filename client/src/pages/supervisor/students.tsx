@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Link } from "wouter";
 import { formatDate } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
+import Icon from "@/components/ui/icon-map";
 
 const SupervisorStudents: React.FC = () => {
   const { user } = useAuth();

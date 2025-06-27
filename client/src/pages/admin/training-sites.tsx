@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import AddTrainingSiteForm from "@/components/admin/add-training-site-form";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import Icon from "@/components/ui/icon-map";
 import { useLocation } from "wouter";
 
 const AdminTrainingSites: React.FC = () => {

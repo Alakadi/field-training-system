@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import Icon from "@/components/ui/icon-map";
 import { Trash2, Plus, Edit2 } from "lucide-react";
 
 // Define schemas
