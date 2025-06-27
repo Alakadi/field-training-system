@@ -827,6 +827,84 @@ export const GripVertical: React.FC<IconProps> = ({ className = "", size = 24 })
   </svg>
 );
 
+export const FileSpreadsheet: React.FC<IconProps> = ({ className = "", size = 24 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+    <polyline points="14,2 14,8 20,8"/>
+    <path d="M8 13h8"/>
+    <path d="M8 17h8"/>
+    <path d="M8 9h2"/>
+  </svg>
+);
+
+export const Printer: React.FC<IconProps> = ({ className = "", size = 24 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <polyline points="6,9 6,2 18,2 18,9"/>
+    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+    <rect x="6" y="14" width="12" height="8"/>
+  </svg>
+);
+
+export const CheckAll: React.FC<IconProps> = ({ className = "", size = 24 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M9 11l3 3L22 4"/>
+    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+  </svg>
+);
+
+export const Loader: React.FC<IconProps> = ({ className = "", size = 24 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <line x1="12" y1="2" x2="12" y2="6"/>
+    <line x1="12" y1="18" x2="12" y2="22"/>
+    <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
+    <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+    <line x1="2" y1="12" x2="6" y2="12"/>
+    <line x1="18" y1="12" x2="22" y2="12"/>
+    <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
+    <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+  </svg>
+);
+
 // Default export for backward compatibility
 export default {
   Bell,

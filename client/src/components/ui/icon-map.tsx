@@ -45,7 +45,11 @@ import {
   AlertTriangle, 
   ChevronUp, 
   PanelLeft, 
-  GripVertical 
+  GripVertical,
+  FileSpreadsheet,
+  Printer,
+  CheckAll,
+  Loader
 } from './icons';
 
 interface IconProps {
@@ -100,7 +104,11 @@ export const iconMap: Record<string, React.ComponentType<IconProps>> = {
   alert_triangle: AlertTriangle,
   chevron_up: ChevronUp,
   panel_left: PanelLeft,
-  grip_vertical: GripVertical
+  grip_vertical: GripVertical,
+  file_spreadsheet: FileSpreadsheet,
+  printer: Printer,
+  check_all: CheckAll,
+  loader: Loader
 };
 
 // Simple Icon component for string-based references

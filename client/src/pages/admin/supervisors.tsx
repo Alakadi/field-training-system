@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import AddSupervisorForm from "@/components/admin/add-supervisor-form";
+import { ExportDialog } from "@/components/ExportDialog";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { formatDate } from "@/lib/export-utils";
 import Icon from "@/components/ui/icon-map";
 
 const AdminSupervisors: React.FC = () => {
@@ -90,6 +92,19 @@ const AdminSupervisors: React.FC = () => {
     }
   };
 
+  // Define export columns for supervisors
+  const exportColumns = [
+    { key: 'user.name', title: 'اسم المشرف', width: 20 },
+    { key: 'user.email', title: 'البريد الإلكتروني', width: 25 },
+    { key: 'faculty.name', title: 'الكلية', width: 20 },
+    { key: 'department', title: 'القسم', width: 20 },
+    { key: 'specialization', title: 'التخصص', width: 20 },
+    { key: 'academicTitle', title: 'المسمى الأكاديمي', width: 15 },
+    { key: 'phone', title: 'رقم الهاتف', width: 15 },
+    { key: 'officeLocation', title: 'مكان المكتب', width: 15 },
+    { key: 'user.createdAt', title: 'تاريخ التسجيل', width: 15, formatter: formatDate }
+  ];
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -106,6 +121,12 @@ const AdminSupervisors: React.FC = () => {
               <Icon name="plus" size={16} />
               إضافة مشرف
             </Button>
+            <ExportDialog
+              data={filteredSupervisors || []}
+              columns={exportColumns}
+              defaultFilename="قائمة_المشرفين"
+              title="تصدير قائمة المشرفين"
+            />
           </div>
         </div>
 

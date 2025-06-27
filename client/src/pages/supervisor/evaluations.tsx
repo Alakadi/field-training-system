@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import EvaluationForm from "@/components/supervisor/evaluation-form";
+import { ExportDialog } from "@/components/ExportDialog";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { formatDate } from "@/lib/utils";
+import { formatGrade } from "@/lib/export-utils";
 import Icon from "@/components/ui/icon-map";
 
 const SupervisorEvaluations: React.FC = () => {
@@ -146,6 +148,19 @@ const SupervisorEvaluations: React.FC = () => {
     }
   };
 
+  // Define export columns for evaluations
+  const exportColumns = [
+    { key: 'student.user.name', title: 'اسم الطالب', width: 20 },
+    { key: 'student.universityId', title: 'الرقم الجامعي', width: 15 },
+    { key: 'course.name', title: 'الدورة التدريبية', width: 25 },
+    { key: 'attendanceScore', title: 'درجة الحضور', width: 15, formatter: (value: any) => `${value || 0} / 30` },
+    { key: 'skillsScore', title: 'درجة المهارات', width: 15, formatter: (value: any) => `${value || 0} / 40` },
+    { key: 'reportScore', title: 'درجة التقرير', width: 15, formatter: (value: any) => `${value || 0} / 30` },
+    { key: 'totalScore', title: 'المجموع', width: 12, formatter: formatGrade },
+    { key: 'feedback', title: 'الملاحظات', width: 30 },
+    { key: 'createdAt', title: 'تاريخ التقييم', width: 15, formatter: formatDate }
+  ];
+
   return (
     <SupervisorLayout>
       <div className="space-y-6">
@@ -163,6 +178,12 @@ const SupervisorEvaluations: React.FC = () => {
               <Icon name="plus" size={16} />
               إضافة تقييم جديد
             </Button>
+            <ExportDialog
+              data={enhancedEvaluations || []}
+              columns={exportColumns}
+              defaultFilename="تقييمات_الطلاب"
+              title="تصدير تقييمات الطلاب"
+            />
           </div>
         </div>
 

@@ -7,9 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card } from "@/components/ui/card";
 import AddStudentForm from "@/components/admin/add-student-form";
 import ImportExcel from "@/components/admin/import-excel";
+import { ExportDialog } from "@/components/ExportDialog";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { formatDate, formatStatus } from "@/lib/export-utils";
 import Icon from "@/components/ui/icon-map";
 
 const AdminStudents: React.FC = () => {
@@ -112,6 +114,20 @@ const AdminStudents: React.FC = () => {
     }
   };
 
+  // Define export columns for students
+  const exportColumns = [
+    { key: 'universityId', title: 'الرقم الجامعي', width: 15 },
+    { key: 'user.name', title: 'اسم الطالب', width: 20 },
+    { key: 'user.email', title: 'البريد الإلكتروني', width: 25 },
+    { key: 'faculty.name', title: 'الكلية', width: 20 },
+    { key: 'major.name', title: 'التخصص', width: 20 },
+    { key: 'level.name', title: 'المستوى الدراسي', width: 15 },
+    { key: 'gpa', title: 'المعدل التراكمي', width: 12, formatter: (value: any) => value ? value.toFixed(2) : 'غير محدد' },
+    { key: 'phone', title: 'رقم الهاتف', width: 15 },
+    { key: 'address', title: 'العنوان', width: 25 },
+    { key: 'user.createdAt', title: 'تاريخ التسجيل', width: 15, formatter: formatDate }
+  ];
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -141,10 +157,12 @@ const AdminStudents: React.FC = () => {
               <Icon name="upload" size={16} />
               استيراد
             </Button>
-            <Button variant="outline" className="flex items-center text-sm">
-              <Icon name="download" size={16} />
-              تصدير
-            </Button>
+            <ExportDialog
+              data={filteredStudents || []}
+              columns={exportColumns}
+              defaultFilename="قائمة_الطلاب"
+              title="تصدير قائمة الطلاب"
+            />
           </div>
         </div>
 
