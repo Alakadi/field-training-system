@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Calendar, MapPin, Users, GraduationCap, Save } from "lucide-react";
+import { Calendar, MapPin, Users, GraduationCap, Save } from "../../components/ui/icons";
 
 interface Student {
   id: number;

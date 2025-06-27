@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, ClockIcon, SearchIcon, UserIcon } from "lucide-react";
+import { Calendar, Clock, Search, User } from "../../components/ui/icons";
 import { format } from "date-fns";
 import { arDZ } from "date-fns/locale";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -115,7 +115,7 @@ const ActivityLogs: React.FC = () => {
           <CardContent>
             <div className="flex flex-col space-y-4 sm:flex-row sm:space-y-0 sm:space-x-4 sm:space-x-reverse mb-6">
               <div className="relative flex-1">
-                <SearchIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                 <Input
                   placeholder="بحث عن نشاط..."
                   value={searchTerm}
@@ -195,7 +195,7 @@ const ActivityLogs: React.FC = () => {
                         <TableCell>
                           <div className="flex items-center space-x-2 space-x-reverse">
                             <div className="bg-primary w-8 h-8 rounded-full flex items-center justify-center">
-                              <UserIcon size={14} className="text-white" />
+                              <User size={14} className="text-white" />
                             </div>
                             <div>
                               <div className="font-medium">{log.user?.name || 'غير معروف'}</div>
@@ -230,11 +230,11 @@ const ActivityLogs: React.FC = () => {
                         <TableCell>
                           <div className="flex flex-col text-sm">
                             <div className="flex items-center">
-                              <CalendarIcon size={14} className="ml-1 text-gray-500" />
+                              <Calendar size={14} className="ml-1 text-gray-500" />
                               {formatDate(log.timestamp)}
                             </div>
                             <div className="flex items-center text-gray-500">
-                              <ClockIcon size={14} className="ml-1" />
+                              <Clock size={14} className="ml-1" />
                               {formatTime(log.timestamp)}
                             </div>
                           </div>

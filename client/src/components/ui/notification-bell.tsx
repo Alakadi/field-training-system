@@ -7,7 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "./popover";
-import { Bell, BellRing } from "lucide-react";
+import { Bell } from "./icons";
 
 interface Notification {
   id: number;
@@ -78,11 +78,7 @@ export const NotificationBell: React.FC = () => {
     }}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="sm" className="relative">
-          {unreadCount > 0 ? (
-            <BellRing className="h-5 w-5" />
-          ) : (
-            <Bell className="h-5 w-5" />
-          )}
+          <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
             <Badge 
               variant="destructive" 
