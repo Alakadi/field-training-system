@@ -15,14 +15,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   // Admin sidebar links
   const adminLinks: SidebarLink[] = [
-    { href: "/admin/dashboard", icon: "dashboard", text: "الرئيسية" },
-    { href: "/admin/students", icon: "groups", text: "الطلاب" },
-    { href: "/admin/supervisors", icon: "supervisor_account", text: "المشرفون" },
-    { href: "/admin/courses", icon: "school", text: "الدورات التدريبية" },
-    { href: "/admin/student-group-assignments", icon: "assignment", text: "تعيين الطلاب للمجموعات" },
-    { href: "/admin/training-sites", icon: "location_on", text: "جهات التدريب" },
-    { href: "/admin/reports", icon: "assessment", text: "التقارير" },
-    { href: "/admin/activity-logs", icon: "history", text: "سجل النشاطات" },
+    { href: "/admin/dashboard", icon: "home", text: "الرئيسية" },
+    { href: "/admin/students", icon: "users", text: "الطلاب" },
+    { href: "/admin/supervisors", icon: "user", text: "المشرفون" },
+    { href: "/admin/courses", icon: "graduation_cap", text: "الدورات التدريبية" },
+    { href: "/admin/student-group-assignments", icon: "file_text", text: "تعيين الطلاب للمجموعات" },
+    { href: "/admin/training-sites", icon: "map_pin", text: "جهات التدريب" },
+    { href: "/admin/reports", icon: "bar_chart", text: "التقارير" },
+    { href: "/admin/activity-logs", icon: "activity", text: "سجل النشاطات" },
     { href: "/admin/settings", icon: "settings", text: "الإعدادات" },
   ];
 

@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import Icon from "@/components/ui/icon-map";
 
 export interface SidebarLink {
   href: string;
@@ -47,7 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({ links, title, isVisible }) => {
                   isActive(link.href) && "active"
                 )}
               >
-                <span className="material-icons ml-3 text-neutral-600">{link.icon}</span>
+                <Icon name={link.icon} className="ml-3 text-neutral-600" size={20} />
                 <span>{link.text}</span>
               </a>
             </Link>

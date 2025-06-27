@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { getUserAvatarUrl } from "@/lib/utils";
 import { NotificationBell } from "@/components/ui/notification-bell";
 import { SupervisorNotificationBell } from "@/components/ui/supervisor-notification-bell";
+import Icon from "@/components/ui/icon-map";
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -42,7 +43,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
             onClick={toggleSidebar}
             className="md:hidden text-neutral-700 focus:outline-none"
           >
-            <span className="material-icons">menu</span>
+            <Icon name="menu" size={24} />
           </button>
           <div className="text-xl font-bold text-primary">نظام التدريب الميداني</div>
         </div>
@@ -76,7 +77,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                   onClick={toggleUserMenu}
                   className="text-neutral-700 focus:outline-none"
                 >
-                  <span className="material-icons">arrow_drop_down</span>
+                  <Icon name="chevron_down" size={20} />
                 </button>
                 
                 {userMenuOpen && (
