@@ -911,7 +911,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   const student = await storage.getStudentWithDetails(assignment.studentId);
                   const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
                   const evaluation = evaluations.length > 0 ? evaluations[0] : null;
-                  ```javascript
+                  
                   return {
                     ...student,
                     grade: evaluation?.score || null
