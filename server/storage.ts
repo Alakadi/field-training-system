@@ -57,11 +57,13 @@ export interface IStorage {
   getAllFaculties(): Promise<Faculty[]>;
   getFaculty(id: number): Promise<Faculty | undefined>;
   createFaculty(faculty: InsertFaculty): Promise<Faculty>;
+  updateFaculty(id: number, faculty: Partial<Faculty>): Promise<Faculty | undefined>;
 
   // Major operations
   getAllMajors(): Promise<Major[]>;
   getMajor(id: number): Promise<Major | undefined>;
   createMajor(major: InsertMajor): Promise<Major>;
+  updateMajor(id: number, major: Partial<Major>): Promise<Major | undefined>;
   getMajorsByFaculty(facultyId: number): Promise<Major[]>;
 
   // Level operations
@@ -233,6 +235,11 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async updateFaculty(id: number, faculty: Partial<Faculty>): Promise<Faculty | undefined> {
+    const result = await db.update(faculties).set(faculty).where(eq(faculties.id, id)).returning();
+    return result[0];
+  }
+
   // Major operations
   async getAllMajors(): Promise<Major[]> {
     const result = await db.select().from(majors);
@@ -246,6 +253,11 @@ export class DatabaseStorage implements IStorage {
 
   async createMajor(major: InsertMajor): Promise<Major> {
     const result = await db.insert(majors).values(major).returning();
+    return result[0];
+  }
+
+  async updateMajor(id: number, major: Partial<Major>): Promise<Major | undefined> {
+    const result = await db.update(majors).set(major).where(eq(majors.id, id)).returning();
     return result[0];
   }
 

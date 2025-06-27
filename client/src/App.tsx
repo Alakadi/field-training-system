@@ -22,6 +22,7 @@ import AdminStudents from "@/pages/admin/students";
 import AdminCourses from "@/pages/admin/courses";
 import AdminSupervisors from "@/pages/admin/supervisors";
 import AdminTrainingSites from "@/pages/admin/training-sites";
+import AdminFaculties from "@/pages/admin/faculties";
 import AdminReports from "@/pages/admin/reports";
 import AdminSettings from "@/pages/admin/settings";
 import AdminActivityLogs from "@/pages/admin/activity-logs";
@@ -160,6 +161,11 @@ function Router() {
       <Route path="/admin/training-sites">
         <AdminOnly>
           <AdminTrainingSites />
+        </AdminOnly>
+      </Route>
+      <Route path="/admin/faculties">
+        <AdminOnly>
+          <AdminFaculties />
         </AdminOnly>
       </Route>
 

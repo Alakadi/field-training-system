@@ -152,6 +152,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(faculties);
   });
 
+  app.post("/api/faculties", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
+    try {
+      const { name } = req.body;
+      
+      if (!name || !name.trim()) {
+        return res.status(400).json({ message: "اسم الكلية مطلوب" });
+      }
+
+      const faculty = await storage.createFaculty({ name: name.trim() });
+      await logActivity(req.user!.username, "إضافة كلية", "كلية", faculty.id, { name });
+      
+      res.status(201).json(faculty);
+    } catch (error) {
+      console.error("Error creating faculty:", error);
+      res.status(500).json({ message: "فشل في إضافة الكلية" });
+    }
+  });
+
+  app.put("/api/faculties/:id", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const { name } = req.body;
+      
+      if (!name || !name.trim()) {
+        return res.status(400).json({ message: "اسم الكلية مطلوب" });
+      }
+
+      const faculty = await storage.updateFaculty(id, { name: name.trim() });
+      if (!faculty) {
+        return res.status(404).json({ message: "الكلية غير موجودة" });
+      }
+
+      await logActivity(req.user!.username, "تعديل كلية", "كلية", id, { name });
+      
+      res.json(faculty);
+    } catch (error) {
+      console.error("Error updating faculty:", error);
+      res.status(500).json({ message: "فشل في تحديث الكلية" });
+    }
+  });
+
   // Major Routes
   app.get("/api/majors", authMiddleware, async (req: Request, res: Response) => {
     const facultyId = req.query.facultyId ? Number(req.query.facultyId) : undefined;
@@ -163,6 +204,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     const majors = await storage.getAllMajors();
     res.json(majors);
+  });
+
+  app.post("/api/majors", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
+    try {
+      const { name, facultyId } = req.body;
+      
+      if (!name || !name.trim()) {
+        return res.status(400).json({ message: "اسم التخصص مطلوب" });
+      }
+
+      if (!facultyId) {
+        return res.status(400).json({ message: "يجب تحديد الكلية" });
+      }
+
+      // Check if faculty exists
+      const faculty = await storage.getFaculty(facultyId);
+      if (!faculty) {
+        return res.status(400).json({ message: "الكلية المحددة غير موجودة" });
+      }
+
+      const major = await storage.createMajor({ name: name.trim(), facultyId });
+      await logActivity(req.user!.username, "إضافة تخصص", "تخصص", major.id, { name, facultyName: faculty.name });
+      
+      res.status(201).json(major);
+    } catch (error) {
+      console.error("Error creating major:", error);
+      res.status(500).json({ message: "فشل في إضافة التخصص" });
+    }
+  });
+
+  app.put("/api/majors/:id", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const { name, facultyId } = req.body;
+      
+      if (!name || !name.trim()) {
+        return res.status(400).json({ message: "اسم التخصص مطلوب" });
+      }
+
+      if (!facultyId) {
+        return res.status(400).json({ message: "يجب تحديد الكلية" });
+      }
+
+      // Check if faculty exists
+      const faculty = await storage.getFaculty(facultyId);
+      if (!faculty) {
+        return res.status(400).json({ message: "الكلية المحددة غير موجودة" });
+      }
+
+      const major = await storage.updateMajor(id, { name: name.trim(), facultyId });
+      if (!major) {
+        return res.status(404).json({ message: "التخصص غير موجود" });
+      }
+
+      await logActivity(req.user!.username, "تعديل تخصص", "تخصص", id, { name, facultyName: faculty.name });
+      
+      res.json(major);
+    } catch (error) {
+      console.error("Error updating major:", error);
+      res.status(500).json({ message: "فشل في تحديث التخصص" });
+    }
   });
 
   // Level Routes
