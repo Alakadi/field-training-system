@@ -717,7 +717,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // تحديث الحالة فقط إذا لم يتم التحديث اليوم (تحسين الأداء)
       const { courseStatusUpdater } = await import('./schedulers/course-status-updater');
       await courseStatusUpdater.updateIfNeeded();
-      
+
       const facultyId = req.query.facultyId ? Number(req.query.facultyId) : undefined;
       const status = req.query.status as string | undefined;
       const userRole = req.user?.role;
@@ -731,14 +731,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (studentRecord) {
           // Get available courses for registration (upcoming + active only)
           const availableCourses = await storage.getAvailableCoursesForStudents();
-          
+
           // Get enrolled courses (all statuses including completed)
           const enrolledCourses = await storage.getEnrolledCoursesForStudent(studentRecord.id);
-          
+
           // Combine courses, marking which ones the student is enrolled in
           const allCourseIds = new Set();
           const combinedCourses = [];
-          
+
           // Add available courses first
           for (const course of availableCourses) {
             if (!allCourseIds.has(course.id)) {
@@ -746,7 +746,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               combinedCourses.push({ ...course, isEnrolled: false });
             }
           }
-          
+
           // Add enrolled courses (even if completed)
           for (const course of enrolledCourses) {
             if (!allCourseIds.has(course.id)) {
@@ -760,7 +760,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             }
           }
-          
+
           courses = combinedCourses;
         } else {
           courses = await storage.getAvailableCoursesForStudents();
@@ -889,7 +889,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Get groups assigned to this supervisor with full details
         const allGroups = await storage.getAllTrainingCourseGroups();
         const supervisorGroups = allGroups.filter(group => group.supervisorId === supervisorId);
-        
+
         // Fetch complete details for each group
         const result = await Promise.all(
           supervisorGroups.map(async (group) => {
@@ -911,6 +911,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   const student = await storage.getStudentWithDetails(assignment.studentId);
                   const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
                   const evaluation = evaluations.length > 0 ? evaluations[0] : null;
+                  ```javascript
                   return {
                     ...student,
                     grade: evaluation?.score || null
@@ -953,9 +954,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Get current enrollment for each group
               const assignments = await storage.getAssignmentsByGroup(group.id);
               const availableSpots = group.capacity - assignments.length;
-              
+
               if (availableSpots <= 0) return null; // Skip full groups
-              
+
               // Get course, site, and supervisor details
               const [course, site, supervisor] = await Promise.all([
                 storage.getTrainingCourse(group.courseId),
@@ -977,7 +978,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           })
         );
-        
+
         const validGroups = groupsWithDetails.filter(group => group !== null);
         res.json(validGroups);
       } else if (available || (facultyId && majorId && levelId)) {
@@ -1406,7 +1407,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // تحديث الحالة فقط إذا لم يتم التحديث اليوم
       const { courseStatusUpdater } = await import('./schedulers/course-status-updater');
       await courseStatusUpdater.updateIfNeeded();
-      
+
       // Re-fetch course to get updated status
       const updatedCourse = await storage.getTrainingCourse(course.id);
       if (!updatedCourse) {
@@ -1468,7 +1469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/training-assignments/group/:groupId", authMiddleware, requireRole("student"), async (req: Request, res: Response) => {
     try {
       const groupId = Number(req.params.groupId);
-      
+
       // Get student info
       const student = await storage.getStudentByUserId(req.user!.id);
       if (!student) {
@@ -1478,7 +1479,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Find the assignment for this student and group
       const assignments = await storage.getTrainingAssignmentsByStudent(student.id);
       const assignment = assignments.find(a => a.groupId === groupId);
-      
+
       if (!assignment) {
         return res.status(404).json({ message: "لا يوجد تسجيل في هذه المجموعة" });
       }
@@ -1633,7 +1634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/training-courses/:id/students", authMiddleware, async (req: Request, res: Response) => {
     try {
       const courseId = Number(req.params.id);
-      
+
       // Get all groups for this course
       const groups = await storage.getTrainingCourseGroupsByCourse(courseId);
       const courseStudents = [];
@@ -1664,7 +1665,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/training-courses/:id/evaluations", authMiddleware, async (req: Request, res: Response) => {
     try {
       const courseId = Number(req.params.id);
-      
+
       // Get all groups for this course
       const groups = await storage.getTrainingCourseGroupsByCourse(courseId);
       const courseEvaluations = [];
@@ -1704,7 +1705,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const group = assignment.groupId ? await storage.getTrainingCourseGroupWithStudents(assignment.groupId) : null;
             if (group) {
               const supervisorDetails = await storage.getSupervisorWithUser(group.supervisorId);
-              
+
               // Get the latest evaluation for this assignment (to avoid duplicates)
               const latestEvaluation = evaluations[evaluations.length - 1];
               courses.push({
@@ -1777,7 +1778,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           const supervisorDetails = await storage.getSupervisorWithUser(group.supervisorId);
-          
+
           courseGroups.push({
             id: group.id,
             name: group.groupName,
@@ -1819,7 +1820,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get all groups assigned to this supervisor with course and site details
-      const allGroups = await storage.getAllTrainingCourseGroups();
+const allGroups = await storage.getAllTrainingCourseGroups();
       const supervisorGroups = allGroups.filter(group => group.supervisorId === supervisor.id);
 
       const courseAssignments = [];
@@ -1829,7 +1830,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (groupWithDetails) {
           // Get course details
           const courseDetails = await storage.getTrainingCourseWithDetails(groupWithDetails.courseId);
-          
+
           courseAssignments.push({
             id: group.id,
             supervisorId: supervisor.id,
@@ -1859,7 +1860,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/training-course-groups/:groupId", authMiddleware, async (req: Request, res: Response) => {
     try {
       const groupId = parseInt(req.params.groupId);
-      
+
       // Get group with basic details
       const group = await storage.getTrainingCourseGroupWithStudents(groupId);
       if (!group) {
@@ -1868,7 +1869,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get course details
       const courseDetails = await storage.getTrainingCourseWithDetails(group.courseId);
-      
+
       // Get supervisor details
       const supervisorDetails = await storage.getSupervisorWithUser(group.supervisorId);
 
@@ -1933,7 +1934,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/students/for-course/:courseId", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
       const courseId = parseInt(req.params.courseId);
-      
+
       // Get course details to filter students by faculty, major, and level
       const course = await storage.getTrainingCourseWithDetails(courseId);
       if (!course) {
@@ -1952,7 +1953,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (studentDetails.faculty?.id === course.facultyId && 
             studentDetails.major?.id === course.majorId &&
             studentDetails.level?.id === course.levelId) {
-          
+
           // Check if student is already enrolled in this course
           const assignments = await storage.getTrainingAssignmentsByStudent(student.id);
           let isEnrolled = false;
@@ -2045,7 +2046,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Find assignment for this student and group
       const assignments = await storage.getTrainingAssignmentsByGroup(groupId);
       const assignment = assignments.find(a => a.studentId === studentId);
-      
+
       if (!assignment) {
         return res.status(404).json({ message: "لا يوجد تعيين للطالب في هذه المجموعة" });
       }
@@ -2056,7 +2057,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if evaluation already exists for this assignment
       const existingEvaluations = await storage.getAllEvaluations();
       const existingEvaluation = existingEvaluations.find(evaluation => evaluation.assignmentId === assignment.id);
-      
+
       let evaluation;
       if (existingEvaluation) {
         // Update existing evaluation instead of creating a new one
@@ -2147,7 +2148,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get supervisor details
       const supervisorWithUser = await storage.getSupervisorWithUser(supervisor.id);
-      
+
       const savedEvaluations = [];
       const studentDetails = [];
 
@@ -2170,7 +2171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Find assignment for this student and group
         const assignments = await storage.getTrainingAssignmentsByGroup(groupId);
         const assignment = assignments.find(a => a.studentId === studentId);
-        
+
         if (!assignment) {
           continue; // Skip students without assignments
         }
@@ -2178,7 +2179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Check if evaluation already exists for this assignment
         const existingEvaluations = await storage.getAllEvaluations();
         const existingEvaluation = existingEvaluations.find(evaluation => evaluation.assignmentId === assignment.id);
-        
+
         let evaluation;
         if (existingEvaluation) {
           // Update existing evaluation instead of creating a new one
@@ -2238,6 +2239,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error saving bulk grades:", error);
       res.status(500).json({ message: "خطأ في حفظ الدرجات" });
+    }
+  });
+
+  // Get student by ID
+  app.get("/api/students/:id", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
+    try {
+      const studentId = Number(req.params.id);
+      const student = await storage.getStudent(studentId);
+      if (!student) {
+        return res.status(404).json({ message: "الطالب غير موجود" });
+      }
+      res.json(student);
+    } catch (error) {
+      res.status(500).json({ message: "خطأ في استرجاع بيانات الطالب" });
+    }
+  });
+
+  // Get student courses by student ID
+  app.get("/api/students/:id/courses", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
+    try {
+      const studentId = Number(req.params.id);
+
+      // Get all training assignments for this student
+      const assignments = await storage.getAllTrainingAssignments();
+      const studentAssignments = assignments.filter(assignment => assignment.studentId === studentId);
+
+      // Get course groups for each assignment
+      const courseGroups = await storage.getAllTrainingCourseGroups();
+
+      // Build courses data with full details
+      const studentCourses = await Promise.all(
+        studentAssignments.map(async (assignment) => {
+          const group = courseGroups.find(g => g.id === assignment.groupId);
+          if (!group) return null;
+
+          // Get course details
+          const course = await storage.getTrainingCourse(group.courseId);
+          if (!course) return null;
+
+          // Get supervisor details
+          let supervisor = null;
+          if (group.supervisorId) {
+            supervisor = await storage.getSupervisor(group.supervisorId);
+          }
+
+          // Get training site details
+          let trainingSite = null;
+          if (group.siteId) {
+            trainingSite = await storage.getTrainingSite(group.siteId);
+          }
+
+          return {
+            id: assignment.id,
+            assignmentId: assignment.id,
+            status: assignment.status,
+            course: {
+              ...course,
+              startDate: group.startDate,
+              endDate: group.endDate,
+              supervisor: supervisor,
+              trainingSite: trainingSite
+            }
+          };
+        })
+      );
+
+      // Filter out null results
+      const validCourses = studentCourses.filter(course => course !== null);
+
+      res.json(validCourses);
+    } catch (error) {
+      console.error("Error fetching student courses:", error);
+      res.status(500).json({ message: "خطأ في استرجاع دورات الطالب" });
+    }
+  });
+
+  // Get student evaluations by student ID
+  app.get("/api/students/:id/evaluations", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
+    try {
+      const studentId = Number(req.params.id);
+
+      // Get all training assignments for this student
+      const assignments = await storage.getAllTrainingAssignments();
+      const studentAssignments = assignments.filter(assignment => assignment.studentId === studentId);
+
+      // Get all evaluations
+      const allEvaluations = await storage.getAllEvaluations();
+
+      // Get course groups for context
+      const courseGroups = await storage.getAllTrainingCourseGroups();
+
+      // Build evaluations data with full details
+      const studentEvaluations = await Promise.all(
+        studentAssignments.map(async (assignment) => {
+          // Find evaluation for this assignment
+          const evaluation = allEvaluations.find(eval => eval.assignmentId === assignment.id);
+          if (!evaluation) return null;
+
+          // Get group and course details
+          const group = courseGroups.find(g => g.id === assignment.groupId);
+          if (!group) return null;
+
+          const course = await storage.getTrainingCourse(group.courseId);
+          if (!course) return null;
+
+          // Get supervisor details
+          let supervisor = null;
+          if (group.supervisorId) {
+            supervisor = await storage.getSupervisor(group.supervisorId);
+          }
+
+          return {
+            id: evaluation.id,
+            assignmentId: assignment.id,
+            score: evaluation.score,
+            comments: evaluation.comments,
+            evaluationDate: evaluation.createdAt,
+            evaluatorName: evaluation.evaluatorName,
+            // Calculate individual scores (if needed for display)
+            attendanceScore: Math.round(evaluation.score * 0.3), // 30% for attendance
+            skillsScore: Math.round(evaluation.score * 0.4), // 40% for skills
+            reportScore: Math.round(evaluation.score * 0.3), // 30% for report
+            totalScore: evaluation.score,
+            notes: evaluation.comments,
+            course: {
+              ...course,
+              startDate: group.startDate,
+              endDate: group.endDate
+            },
+            supervisor: supervisor
+          };
+        })
+      );
+
+      // Filter out null results
+      const validEvaluations = studentEvaluations.filter(evaluation => evaluation !== null);
+
+      res.json(validEvaluations);
+    } catch (error) {
+      console.error("Error fetching student evaluations:", error);
+      res.status(500).json({ message: "خطأ في استرجاع تقييمات الطالب" });
     }
   });
 
