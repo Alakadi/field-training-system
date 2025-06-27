@@ -148,14 +148,14 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                     <div className="flex items-center space-x-2 space-x-reverse">
                       <RadioGroupItem value="excel" id="excel" />
                       <Label htmlFor="excel" className="flex items-center gap-2">
-                        <Icon name="file-spreadsheet" size={16} />
+                        <Icon name="file_text" size={16} />
                         Excel (.xlsx)
                       </Label>
                     </div>
                     <div className="flex items-center space-x-2 space-x-reverse">
                       <RadioGroupItem value="pdf" id="pdf" />
                       <Label htmlFor="pdf" className="flex items-center gap-2">
-                        <Icon name="file-text" size={16} />
+                        <Icon name="file_text" size={16} />
                         PDF (.pdf)
                       </Label>
                     </div>
@@ -197,7 +197,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                     onClick={handleSelectAll}
                     className="flex items-center gap-1"
                   >
-                    <Icon name="check-all" size={14} />
+                    <Icon name="check" size={14} />
                     تحديد الكل
                   </Button>
                   <Button
@@ -261,7 +261,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
               disabled={selectedColumns.length === 0}
               className="flex items-center gap-2"
             >
-              <Icon name="printer" size={16} />
+              <Icon name="file_text" size={16} />
               طباعة
             </Button>
           </div>
@@ -280,7 +280,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
             >
               {isExporting ? (
                 <>
-                  <Icon name="loader" size={16} className="animate-spin" />
+                  <Icon name="clock" size={16} className="animate-spin" />
                   جاري التصدير...
                 </>
               ) : (
