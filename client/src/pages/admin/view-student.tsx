@@ -142,14 +142,14 @@ const ViewStudent: React.FC = () => {
                       <p className="text-sm font-medium text-neutral-500">المستوى</p>
                       <p>{level?.name || "-"}</p>
                     </div>
-                    <div>
+                    {/* <div>
                       <p className="text-sm font-medium text-neutral-500">المعدل التراكمي</p>
                       <p>{student?.gpa || "-"}</p>
-                    </div>
-                    <div>
+                    </div> */}
+                    {/* <div>
                       <p className="text-sm font-medium text-neutral-500">المشرف الحالي</p>
                       <p>{student?.supervisor?.user?.name || "-"}</p>
-                    </div>
+                    </div> */}
                     <div>
                       <p className="text-sm font-medium text-neutral-500">تاريخ التسجيل</p>
                       <p>{new Date(student?.user.createdAt).toLocaleDateString('ar-SA')}</p>

@@ -117,7 +117,7 @@ export default function AdminReports() {
             level: student.level?.name || 'غير محدد',
             courses: studentCourses
           });
-        }</old_str>
+        }
 
         }
 
