@@ -21,7 +21,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-
 // Validation schemas
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, { message: "كلمة المرور الحالية مطلوبة" }),

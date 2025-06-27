@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import ImportExcel from "@/components/admin/import-excel";
 import { Link } from "wouter";
 import { formatDate } from "@/lib/utils";
-
+import { Settings, BookOpen} from "@/components/ui/icons";
 const AdminDashboard: React.FC = () => {
   // Fetch statistics
   const { data: students, isLoading: isLoadingStudents } = useQuery({
