@@ -30,6 +30,13 @@ export const getQueryFn: <T>(options: {
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
     const url = queryKey[0] as string;
+    
+    // التحقق من صحة URL
+    if (!url || !url.startsWith('/api/')) {
+      console.error('Invalid API URL:', url);
+      throw new Error(`Invalid API URL: ${url}`);
+    }
+    
     const res = await fetch(url, {
       method: "GET",
       credentials: "include",
