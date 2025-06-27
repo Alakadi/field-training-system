@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { exportToExcel, exportToPDF, printData, ExportColumn, ExportOptions } from '@/lib/export-utils';
+import { exportToExcel, exportToPDF, exportToPDFWithCanvas, printData, ExportColumn, ExportOptions } from '@/lib/export-utils';
 import { Icon } from '@/components/ui/icon-map';
 
 interface ExportDialogProps {
@@ -31,6 +31,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
   const [format, setFormat] = useState<'excel' | 'pdf'>('excel');
   const [selectedColumns, setSelectedColumns] = useState<string[]>(columns.map(col => col.key));
   const [pageOrientation, setPageOrientation] = useState<'portrait' | 'landscape'>('landscape');
+  const [pdfLanguage, setPdfLanguage] = useState<'arabic' | 'english'>('english');
   const [isExporting, setIsExporting] = useState(false);
 
   const handleColumnToggle = (columnKey: string) => {
@@ -71,7 +72,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
       if (format === 'excel') {
         exportToExcel(exportOptions);
       } else {
-        exportToPDF(exportOptions);
+        // Use the new Canvas-based PDF export for better Arabic support
+        await exportToPDFWithCanvas(exportOptions);
       }
       setIsOpen(false);
     } catch (error) {
