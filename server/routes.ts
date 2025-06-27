@@ -2334,7 +2334,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
       const studentEvaluations = await Promise.all(
         studentAssignments.map(async (assignment) => {
           // Find evaluation for this assignment
-          const evaluation = allEvaluations.find(eval => eval.assignmentId === assignment.id);
+          const evaluation = allEvaluations.find(evalItem => evalItem.assignmentId === assignment.id);
           if (!evaluation) return null;
 
           // Get group and course details

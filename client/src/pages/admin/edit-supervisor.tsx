@@ -19,7 +19,7 @@ const editSupervisorSchema = z.object({
   name: z.string().min(3, { message: "يجب أن يحتوي الاسم على الأقل على 3 أحرف" }),
   email: z.string().email({ message: "يرجى إدخال بريد إلكتروني صالح" }).optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
-  facultyId: z.string().min(1, { message: "يرجى اختيار الكلية" }),
+  // facultyId: z.string().min(1, { message: "يرجى اختيار الكلية" }),
   department: z.string().optional().or(z.literal("")),
   active: z.boolean().default(true),
 });
