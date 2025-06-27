@@ -13,15 +13,15 @@ const AdminTrainingSites: React.FC = () => {
   const [location, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
+
   // Parse query parameters
   const params = new URLSearchParams(location.split("?")[1]);
   const action = params.get("action");
-  
+
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showAddSiteForm, setShowAddSiteForm] = useState(action === "new");
-  
+
   const itemsPerPage = 10;
 
   // Fetch training sites
@@ -32,7 +32,7 @@ const AdminTrainingSites: React.FC = () => {
   // Filter sites by search query
   const filteredSites = trainingSites?.filter((site: any) => {
     if (!searchQuery) return true;
-    
+
     const query = searchQuery.toLowerCase();
     return (
       site.name.toLowerCase().includes(query) || 
@@ -52,11 +52,11 @@ const AdminTrainingSites: React.FC = () => {
     if (window.confirm("هل أنت متأكد من حذف جهة التدريب هذه؟")) {
       try {
         await apiRequest("DELETE", `/api/training-sites/${siteId}`);
-        
+
         toast({
           title: "تم حذف جهة التدريب بنجاح",
         });
-        
+
         queryClient.invalidateQueries({ queryKey: ["/api/training-sites"] });
       } catch (error) {
         toast({
@@ -159,9 +159,27 @@ const AdminTrainingSites: React.FC = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
                         {site.name}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                        {site.address || "-"}
-                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
+                      {site.address ? (
+                        site.address.includes('maps.google.com') || 
+                        site.address.includes('goo.gl/maps') ||
+                        site.address.includes('maps.app.goo.gl') ? (
+                          <a 
+                            href={site.address}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
+                          >
+                            <span className="material-icons text-sm">place</span>
+                            عرض في الخريطة
+                          </a>
+                        ) : (
+                          site.address
+                        )
+                      ) : (
+                        'غير محدد'
+                      )}
+                    </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
                         {site.contactName || "-"}
                       </td>
@@ -198,7 +216,7 @@ const AdminTrainingSites: React.FC = () => {
               </tbody>
             </table>
           </div>
-          
+
           {/* Pagination */}
           {filteredSites.length > 0 && (
             <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-neutral-200 sm:px-6">
@@ -245,7 +263,7 @@ const AdminTrainingSites: React.FC = () => {
                       <span className="sr-only">السابق</span>
                       <span className="material-icons text-sm">chevron_right</span>
                     </Button>
-                    
+
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                       let pageNum = i + 1;
                       if (totalPages > 5 && currentPage > 3) {
@@ -265,7 +283,7 @@ const AdminTrainingSites: React.FC = () => {
                       }
                       return null;
                     })}
-                    
+
                     <Button
                       variant="outline"
                       className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-neutral-300 text-sm font-medium"

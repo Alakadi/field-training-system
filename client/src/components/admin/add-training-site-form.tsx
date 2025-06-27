@@ -101,9 +101,17 @@ const AddTrainingSiteForm: React.FC<AddTrainingSiteFormProps> = ({ onSuccess }) 
             name="address"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>العنوان</FormLabel>
+                <FormLabel>العنوان / الموقع</FormLabel>
                 <FormControl>
-                  <Textarea placeholder="أدخل عنوان جهة التدريب" {...field} />
+                  <div className="space-y-2">
+                    <Textarea 
+                      placeholder="أدخل عنوان جهة التدريب أو رابط الموقع في الخريطة"
+                      {...field} 
+                    />
+                    <div className="text-xs text-neutral-500">
+                      يمكنك إدخال العنوان النصي أو رابط Google Maps للموقع
+                    </div>
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>

@@ -420,8 +420,28 @@ export default function ViewGroup() {
                 <p className="text-sm">{groupDetails.site?.name || 'غير محدد'}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-neutral-500">العنوان</p>
-                <p className="text-sm">{groupDetails.site?.address || 'غير محدد'}</p>
+                <p className="text-sm font-medium text-neutral-500">العنوان / الموقع</p>
+                {groupDetails.site?.address ? (
+                  <>
+                    {groupDetails.site.address.includes('maps.google.com') || 
+                     groupDetails.site.address.includes('goo.gl/maps') ||
+                     groupDetails.site.address.includes('maps.app.goo.gl') ? (
+                      <a 
+                        href={groupDetails.site.address}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
+                      >
+                        <MapPin className="h-3 w-3" />
+                        عرض في الخريطة
+                      </a>
+                    ) : (
+                      <p className="text-sm">{groupDetails.site.address}</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-neutral-500">غير محدد</p>
+                )}
               </div>
               {groupDetails.site?.contactPerson && (
                 <div>
