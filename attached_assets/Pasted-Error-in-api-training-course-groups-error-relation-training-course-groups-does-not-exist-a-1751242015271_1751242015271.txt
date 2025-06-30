@@ -1,0 +1,66 @@
+Error in /api/training-course-groups: error: relation "training_course_groups" does not exist
+    at /home/runner/workspace/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/node_modules/src/node-postgres/session.ts:104:19)
+    at async DatabaseStorage.getAllTrainingCourseGroups (/home/runner/workspace/server/storage.ts:636:20)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:1094:24) {
+  length: 122,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '183',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1449',
+  routine: 'parserOpenTable'
+}
+11:50:27 PM [express] GET /api/training-course-groups 500 in 289ms :: {"message":"خطأ في استرجاع بيان…
+11:50:57 PM [express] GET /api/activity-logs 500 in 1140ms :: {"message":"خطأ في استرجاع سجلات النشاط…
+Creating course with groups in single transaction: { name: 'IT2', groupsCount: 1 }
+Creating training course with groups in transaction: {
+  courseData: {
+    name: 'IT2',
+    facultyId: 1,
+    majorId: 1,
+    levelId: 1,
+    description: '',
+    status: 'active',
+    createdBy: 1
+  },
+  groupsCount: 1
+}
+Error creating course with groups: error: column "major_id" of relation "training_courses" does not exist
+    at /home/runner/workspace/node_modules/pg/lib/client.js:545:17
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/node_modules/src/node-postgres/session.ts:104:19)
+    at async <anonymous> (/home/runner/workspace/server/storage.ts:479:27)
+    at async NodePgSession.transaction (/home/runner/workspace/node_modules/src/node-postgres/session.ts:193:19)
+    at async DatabaseStorage.createTrainingCourseWithGroups (/home/runner/workspace/server/storage.ts:477:12)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:949:22) {
+  length: 137,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '61',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_target.c',
+  line: '1066',
+  routine: 'checkInsertTargets'
+}
+11:51:03 PM [express] POST /api/training-courses 500 in 1418ms :: {"message":"خطأ في إنشاء دورة تدريب…
