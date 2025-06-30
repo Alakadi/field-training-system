@@ -223,7 +223,18 @@ export default function FacultiesPage() {
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">إدارة الكليات والتخصصات</h1>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => window.history.back()}
+            className="flex items-center gap-2"
+          >
+            <Icon name="arrow-right" className="w-4 h-4" />
+            عودة
+          </Button>
+          <h1 className="text-2xl font-bold">إدارة الكليات والتخصصات</h1>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
