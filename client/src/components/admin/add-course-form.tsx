@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2 } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
-
+// import { queryClient } from "@/lib/queryClient";
 const addCourseSchema = z.object({
   name: z.string().min(1, "اسم الدورة مطلوب"),
   facultyId: z.string().min(1, "الكلية مطلوبة"),
@@ -58,6 +58,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
 
   const { data: faculties, isLoading: isLoadingFaculties } = useQuery({
     queryKey: ["/api/faculties"],
+    // queryFn: getQueryFn({ on401: "throw" })// هذا ما كان ناقصًا فقط
   });
 
   const { data: supervisors, isLoading: isLoadingSupervisors } = useQuery({
