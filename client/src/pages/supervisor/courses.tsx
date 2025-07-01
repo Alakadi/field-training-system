@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -68,6 +67,8 @@ const SupervisorCourses: React.FC = () => {
   } }>({});
   const [savingGrades, setSavingGrades] = useState(false);
 
+  const [selectedGroups, setSelectedGroups] = useState<CourseGroup[]>([]);
+
   // Fetch supervisor data
   const { data: supervisorData } = useQuery({
     queryKey: ["/api/supervisors/me"],
@@ -82,6 +83,12 @@ const SupervisorCourses: React.FC = () => {
       return res.json();
     },
   });
+
+  React.useEffect(() => {
+    if (courseGroups) {
+      setSelectedGroups(courseGroups);
+    }
+  }, [courseGroups]);
 
   // Fetch course groups assigned to this supervisor
   const { data: courseGroups, isLoading } = useQuery({
@@ -112,7 +119,7 @@ const SupervisorCourses: React.FC = () => {
           grade,
         }),
       });
-      
+
       if (!response.ok) {
         let errorMessage = "Failed to save grade";
         try {
@@ -124,7 +131,7 @@ const SupervisorCourses: React.FC = () => {
         }
         throw new Error(errorMessage);
       }
-      
+
       try {
         return await response.json();
       } catch (e) {
@@ -156,7 +163,7 @@ const SupervisorCourses: React.FC = () => {
   const updateDetailedGradesMutation = useMutation({
     mutationFn: async (updates: { assignmentId: number; attendanceGrade: number; behaviorGrade: number; finalExamGrade: number }[]) => {
       console.log("Sending detailed grades request:", updates);
-      
+
       const response = await fetch("/api/students/detailed-grades/bulk", {
         method: "POST",
         headers: {
@@ -165,9 +172,9 @@ const SupervisorCourses: React.FC = () => {
         credentials: "include",
         body: JSON.stringify({ updates }),
       });
-      
+
       console.log("Response status:", response.status);
-      
+
       if (!response.ok) {
         let errorMessage = "Failed to save detailed grades";
         try {
@@ -178,7 +185,7 @@ const SupervisorCourses: React.FC = () => {
         }
         throw new Error(errorMessage);
       }
-      
+
       try {
         const result = await response.json();
         console.log("Response data:", result);
@@ -210,20 +217,20 @@ const SupervisorCourses: React.FC = () => {
 
   const handleDetailedGradeChange = (studentId: number, field: 'attendanceGrade' | 'behaviorGrade' | 'finalExamGrade', value: string, assignmentId?: number) => {
     const gradeNumber = value === '' ? undefined : parseFloat(value);
-    
+
     // Check specific ranges for each field
     let maxValue = 100;
     if (field === 'attendanceGrade') maxValue = 20;
     else if (field === 'behaviorGrade') maxValue = 30;
     else if (field === 'finalExamGrade') maxValue = 50;
-    
+
     if (value === '' || (!isNaN(gradeNumber!) && gradeNumber! >= 0 && gradeNumber! <= maxValue)) {
       console.log(`Setting grade for student ${studentId}, field ${field}, value ${gradeNumber}, assignmentId ${assignmentId}`);
-      
+
       setEditingGrades(prev => {
         const finalAssignmentId = assignmentId || prev[studentId]?.assignmentId;
         console.log(`Final assignmentId for student ${studentId}: ${finalAssignmentId}`);
-        
+
         return {
           ...prev,
           [studentId]: {
@@ -302,47 +309,66 @@ const SupervisorCourses: React.FC = () => {
   };
 
   const saveAllDetailedGrades = async (groupId: number) => {
-    console.log("Starting saveAllDetailedGrades for group:", groupId);
-    console.log("Current editing grades:", editingGrades);
-    
-    // ابحث عن المجموعة للحصول على بيانات واجبات الطلاب
-    const targetGroup = courseGroups?.find(group => group.id === groupId);
-    console.log("Target group:", targetGroup);
-    
-    const gradesToSave = Object.entries(editingGrades)
-      .filter(([_, gradeData]) => 
-        gradeData.attendanceGrade !== undefined && 
-        gradeData.behaviorGrade !== undefined && 
-        gradeData.finalExamGrade !== undefined
-      )
-      .map(([studentId, gradeData]) => {
-        console.log(`Processing student ${studentId}:`, gradeData);
-        
-        // احصل على معرف المهمة من gradeData أو ابحث عنه من بيانات الطالب
-        let assignmentId = gradeData.assignmentId;
-        if (!assignmentId && targetGroup) {
-          const student = targetGroup.students?.find(s => s.id === parseInt(studentId));
-          assignmentId = student?.assignment?.id;
-          console.log(`Found assignmentId from student data: ${assignmentId}`);
-        }
-        
-        if (!assignmentId) {
-          console.error(`No assignmentId found for student ${studentId}`);
-          return null;
-        }
-        
-        return {
-          assignmentId: assignmentId,
-          attendanceGrade: gradeData.attendanceGrade!,
-          behaviorGrade: gradeData.behaviorGrade!,
-          finalExamGrade: gradeData.finalExamGrade!
-        };
-      })
-      .filter(grade => grade !== null);
+          console.log("Starting saveAllDetailedGrades for group:", groupId);
+          console.log("Current editing grades:", editingGrades);
 
-    console.log("Detailed grades to save:", gradesToSave);
+          const targetGroup = selectedGroups.find(g => g.id === groupId);
+          console.log("Target group:", targetGroup);
 
-    if (gradesToSave.length === 0) {
+          if (!targetGroup) {
+            toast({
+              title: "خطأ",
+              description: "لم يتم العثور على المجموعة",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          const updates = [];
+
+          // Get assignments for this group to find assignment IDs
+          const assignmentsResponse = await fetch(`/api/training-assignments?groupId=${groupId}`, {
+            credentials: "include",
+          });
+
+          if (!assignmentsResponse.ok) {
+            toast({
+              title: "خطأ",
+              description: "فشل في جلب بيانات التعيينات",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          const assignments = await assignmentsResponse.json();
+
+          for (const student of targetGroup.students) {
+            console.log("Processing student:", student.id, editingGrades[student.id]);
+
+            if (editingGrades[student.id]) {
+              const grades = editingGrades[student.id];
+
+              // Find assignment for this student in this group
+              const assignment = assignments.find((a: any) => a.studentId === student.id);
+              console.log("Found assignment for student", student.id, ":", assignment);
+
+              if (assignment && 
+                  grades.attendanceGrade !== undefined && 
+                  grades.behaviorGrade !== undefined && 
+                  grades.finalExamGrade !== undefined) {
+                updates.push({
+                  assignmentId: assignment.id,
+                  attendanceGrade: grades.attendanceGrade,
+                  behaviorGrade: grades.behaviorGrade,
+                  finalExamGrade: grades.finalExamGrade
+                });
+              }
+            }
+          }
+
+          console.log("Detailed grades to save:", updates);
+
+    if (updates.length === 0) {
       toast({
         title: "تنبيه",
         description: "لا توجد درجات صالحة للحفظ (يجب إدخال جميع الدرجات الثلاث)",
@@ -353,7 +379,7 @@ const SupervisorCourses: React.FC = () => {
 
     setSavingGrades(true);
     try {
-      await updateDetailedGradesMutation.mutateAsync(gradesToSave);
+      await updateDetailedGradesMutation.mutateAsync(updates);
     } catch (error) {
       console.error("Error saving detailed grades:", error);
     } finally {
@@ -587,7 +613,7 @@ const SupervisorCourses: React.FC = () => {
                               {savingGrades ? "جاري الحفظ..." : "حفظ جميع الدرجات المفصلة"}
                             </Button>
                           </div>
-                          
+
                           <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
@@ -631,7 +657,7 @@ const SupervisorCourses: React.FC = () => {
                                         {student.universityId}
                                       </div>
                                     </td>
-                                    
+
                                     {/* Attendance Grade */}
                                     <td className="px-3 py-4 whitespace-nowrap text-center">
                                       <Input
