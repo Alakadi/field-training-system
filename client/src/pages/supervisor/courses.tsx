@@ -1,3 +1,7 @@
+The code is modified to fix data refresh after saving grades by updating invalidation keys and adding proper data refetch, and to update the final grade display to properly show saved grades.
+```
+
+```replit_final_file
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -200,10 +204,19 @@ const SupervisorCourses: React.FC = () => {
         title: "تم الحفظ",
         description: "تم حفظ جميع الدرجات المفصلة بنجاح",
       });
-      // Refresh the groups data to show updated grades
-      queryClient.invalidateQueries({ queryKey: ["/api/training-course-groups"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/supervisor/course-assignments"] });
+
+      // Clear editing state first
       setEditingGrades({});
+
+      // Refresh all relevant data to show updated grades
+      queryClient.invalidateQueries({ queryKey: ["/api/training-course-groups"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/training-assignments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/supervisor/course-assignments"] });
+
+      // Force immediate refetch to update the UI
+      queryClient.refetchQueries({ 
+        queryKey: ["/api/training-course-groups", "supervisor", supervisorData?.id] 
+      });
     },
     onError: (error: any) => {
       console.error("Detailed grades save error:", error);
@@ -713,9 +726,20 @@ const SupervisorCourses: React.FC = () => {
                                           <Badge variant="default" className="bg-orange-500 text-white">
                                             {calculatedFinal.toFixed(1)}/100
                                           </Badge>
-                                        ) : student.assignment?.calculatedFinalGrade ? (
+                                        ) : student.assignment?.calculatedFinalGrade !== null && student.assignment?.calculatedFinalGrade !== undefined ? (
                                           <Badge variant="secondary">
                                             {student.assignment.calculatedFinalGrade}/100
+                                          </Badge>
+                                        ) : (
+                                          student.assignment?.attendanceGrade !== null && 
+                                          student.assignment?.attendanceGrade !== undefined &&
+                                          student.assignment?.behaviorGrade !== null && 
+                                          student.assignment?.behaviorGrade !== undefined &&
+                                          student.assignment?.finalExamGrade !== null && 
+                                          student.assignment?.finalExamGrade !== undefined
+                                        ) ? (
+                                          <Badge variant="default" className="bg-green-500 text-white">
+                                            {(student.assignment.attendanceGrade + student.assignment.behaviorGrade + student.assignment.finalExamGrade)}/100
                                           </Badge>
                                         ) : (
                                           <span className="text-gray-400 text-sm">غير محسوبة</span>
