@@ -305,7 +305,7 @@ const SupervisorCourses: React.FC = () => {
     console.log("Starting saveAllDetailedGrades for group:", groupId);
     console.log("Current editing grades:", editingGrades);
     
-    // Find the group to get student assignment data
+    // ابحث عن المجموعة للحصول على بيانات واجبات الطلاب
     const targetGroup = courseGroups?.find(group => group.id === groupId);
     console.log("Target group:", targetGroup);
     
@@ -318,7 +318,7 @@ const SupervisorCourses: React.FC = () => {
       .map(([studentId, gradeData]) => {
         console.log(`Processing student ${studentId}:`, gradeData);
         
-        // Get assignmentId from gradeData or find it from student data
+        // احصل على معرف المهمة من gradeData أو ابحث عنه من بيانات الطالب
         let assignmentId = gradeData.assignmentId;
         if (!assignmentId && targetGroup) {
           const student = targetGroup.students?.find(s => s.id === parseInt(studentId));
