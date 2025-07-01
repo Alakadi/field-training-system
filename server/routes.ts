@@ -2358,18 +2358,18 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         return res.status(400).json({ message: "بيانات غير صحيحة" });
       }
 
-      // Validate detailed grades - all grades should be out of 100
+      // Validate detailed grades - specific ranges for each grade
       for (const update of updates) {
         if (
           !update.assignmentId || 
           update.attendanceGrade === undefined || 
           update.behaviorGrade === undefined || 
           update.finalExamGrade === undefined ||
-          update.attendanceGrade < 0 || update.attendanceGrade > 100 ||
-          update.behaviorGrade < 0 || update.behaviorGrade > 100 ||
-          update.finalExamGrade < 0 || update.finalExamGrade > 100
+          update.attendanceGrade < 0 || update.attendanceGrade > 20 ||
+          update.behaviorGrade < 0 || update.behaviorGrade > 30 ||
+          update.finalExamGrade < 0 || update.finalExamGrade > 50
         ) {
-          return res.status(400).json({ message: "درجات غير صحيحة - يجب أن تكون الدرجات من 0 إلى 100" });
+          return res.status(400).json({ message: "درجات غير صحيحة - الحضور (0-20)، السلوك (0-30)، النهائي (0-50)" });
         }
       }
 
@@ -2391,8 +2391,8 @@ const allGroups = await storage.getAllTrainingCourseGroups();
             continue;
           }
 
-          // Calculate final grade
-          const calculatedFinalGrade = (update.attendanceGrade * 0.2) + (update.behaviorGrade * 0.3) + (update.finalExamGrade * 0.5);
+          // Calculate final grade (simple addition: 20 + 30 + 50 = 100)
+          const calculatedFinalGrade = update.attendanceGrade + update.behaviorGrade + update.finalExamGrade;
 
           // Update the assignment with detailed grades
           const updatedAssignment = await storage.updateTrainingAssignmentGrades(assignment.id, {

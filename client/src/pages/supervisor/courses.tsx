@@ -271,11 +271,11 @@ const SupervisorCourses: React.FC = () => {
       behavior !== undefined &&
       finalExam !== undefined
     ) {
-      // التحقق من أن القيم لا تتجاوز الحد الأقصى
+      // التحقق من أن القيم ضمن الحدود المسموحة
       if (
-        attendance <= 20 &&
-        behavior <= 30 &&
-        finalExam <= 50
+        attendance >= 0 && attendance <= 20 &&
+        behavior >= 0 && behavior <= 30 &&
+        finalExam >= 0 && finalExam <= 50
       ) {
         return attendance + behavior + finalExam;
       } else {
@@ -520,8 +520,8 @@ const SupervisorCourses: React.FC = () => {
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                           <h4 className="font-medium text-blue-900 mb-2">إدراج الدرجات المفصلة</h4>
                           <p className="text-sm text-blue-700">
-                            جميع الدرجات من 100: الحضور (وزن 20%)، السلوك (وزن 30%)، الاختبار النهائي (وزن 50%). 
-                            سيتم حساب الدرجة النهائية تلقائياً بناءً على هذه الأوزان.
+                            الحضور من 20، السلوك من 30، الاختبار النهائي من 50. 
+                            سيتم حساب الدرجة النهائية تلقائياً بجمع الدرجات الثلاث (إجمالي من 100).
                           </p>
                         </div>
 
@@ -560,13 +560,13 @@ const SupervisorCourses: React.FC = () => {
                                   اسم الطالب
                                 </th>
                                 <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  الحضور<br/><span className="text-blue-600">(من 100، وزن 20%)</span>
+                                  الحضور<br/><span className="text-blue-600">(من 20)</span>
                                 </th>
                                 <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  السلوك<br/><span className="text-green-600">(من 100، وزن 30%)</span>
+                                  السلوك<br/><span className="text-green-600">(من 30)</span>
                                 </th>
                                 <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  الاختبار النهائي<br/><span className="text-purple-600">(من 100، وزن 50%)</span>
+                                  الاختبار النهائي<br/><span className="text-purple-600">(من 50)</span>
                                 </th>
                                 <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                   الدرجة النهائية<br/><span className="text-orange-600">(محسوبة)</span>
@@ -601,7 +601,7 @@ const SupervisorCourses: React.FC = () => {
                                       <Input
                                         type="number"
                                         min="0"
-                                        max="100"
+                                        max="20"
                                         step="0.5"
                                         placeholder={getDetailedGradePlaceholder(student, 'attendanceGrade')}
                                         className={`w-20 text-center ${hasChanges ? 'border-blue-400 bg-blue-50' : ''}`}
@@ -627,7 +627,7 @@ const SupervisorCourses: React.FC = () => {
                                       <Input
                                         type="number"
                                         min="0"
-                                        max="100"
+                                        max="30"
                                         step="0.5"
                                         placeholder={getDetailedGradePlaceholder(student, 'behaviorGrade')}
                                         className={`w-20 text-center ${hasChanges ? 'border-green-400 bg-green-50' : ''}`}
@@ -653,7 +653,7 @@ const SupervisorCourses: React.FC = () => {
                                       <Input
                                         type="number"
                                         min="0"
-                                        max="100"
+                                        max="50"
                                         step="0.5"
                                         placeholder={getDetailedGradePlaceholder(student, 'finalExamGrade')}
                                         className={`w-20 text-center ${hasChanges ? 'border-purple-400 bg-purple-50' : ''}`}
