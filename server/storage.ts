@@ -505,9 +505,46 @@ export class DatabaseStorage implements IStorage {
       throw new Error("اسم الدورة مطلوب");
     }
 
+    // حساب تاريخ البدء والانتهاء من المجموعات
+    const groupDates = groupsData.map(group => ({
+      startDate: new Date(group.startDate),
+      endDate: new Date(group.endDate)
+    }));
+
+    const earliestStartDate = new Date(Math.min(...groupDates.map(d => d.startDate.getTime())));
+    const latestEndDate = new Date(Math.max(...groupDates.map(d => d.endDate.getTime())));
+
+    // تحديد السنة الدراسية المناسبة بناءً على تاريخ البدء
+    const academicYears = await this.getAllAcademicYears();
+    let appropriateAcademicYearId = courseData.academicYearId;
+
+    if (academicYears && academicYears.length > 0) {
+      for (const year of academicYears) {
+        const yearStart = new Date(year.startDate);
+        const yearEnd = new Date(year.endDate);
+        
+        if (earliestStartDate >= yearStart && earliestStartDate <= yearEnd) {
+          appropriateAcademicYearId = year.id;
+          console.log(`تم تعيين الكورس للسنة الدراسية: ${year.name} بناءً على تاريخ البدء: ${earliestStartDate.toISOString().split('T')[0]}`);
+          break;
+        }
+      }
+    } else {
+      console.log('لم يتم العثور على سنوات دراسية في النظام');
+    }
+
+    console.log(`تواريخ الكورس المحسوبة: البدء ${earliestStartDate.toISOString().split('T')[0]} - الانتهاء ${latestEndDate.toISOString().split('T')[0]}`);
+
+    // إعداد بيانات الدورة مع التواريخ والسنة الدراسية المحسوبة
+    const finalCourseData = {
+      ...courseData,
+      academicYearId: appropriateAcademicYearId,
+      // يمكن إضافة حقول startDate و endDate إذا كانت موجودة في schema
+    };
+
     return await db.transaction(async (tx: any) => {
       // 1. إنشاء الدورة أولاً
-      const [newCourse] = await tx.insert(trainingCourses).values(courseData).returning();
+      const [newCourse] = await tx.insert(trainingCourses).values(finalCourseData).returning();
 
       if (!newCourse) {
         throw new Error("فشل في إنشاء الدورة");
