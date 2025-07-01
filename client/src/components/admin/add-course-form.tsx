@@ -18,6 +18,7 @@ const addCourseSchema = z.object({
   facultyId: z.string().min(1, "الكلية مطلوبة"),
   majorId: z.string().min(1, "التخصص مطلوب"),
   levelId: z.string().min(1, "المستوى مطلوب"),
+  academicYearId: z.string().min(1, "السنة الدراسية مطلوبة"),
   description: z.string().optional(),
   // إزالة حقل الحالة - سيتم تحديدها تلقائياً بناءً على تواريخ المجموعات
 });
@@ -68,6 +69,11 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
   // Fetch levels
   const { data: levels } = useQuery({
     queryKey: ["/api/levels"],
+  });
+
+  // Fetch academic years
+  const { data: academicYears } = useQuery({
+    queryKey: ["/api/academic-years"],
   });
 
   // Fetch majors based on selected faculty
@@ -212,7 +218,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
               </div>
 
               {/* Academic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <FormField
                   control={form.control}
                   name="facultyId"
@@ -290,6 +296,31 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                           {levels && Array.isArray(levels) && levels.map((level: any) => (
                             <SelectItem key={level.id} value={level.id.toString()}>
                               <span>{level.name}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="academicYearId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>السنة الدراسية</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="اختر السنة الدراسية" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {academicYears && Array.isArray(academicYears) && academicYears.map((year: any) => (
+                            <SelectItem key={year.id} value={year.id.toString()}>
+                              {year.name}
                             </SelectItem>
                           ))}
                         </SelectContent>

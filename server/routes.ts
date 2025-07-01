@@ -821,6 +821,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await courseStatusUpdater.updateIfNeeded();
 
       const facultyId = req.query.facultyId ? Number(req.query.facultyId) : undefined;
+      const academicYearId = req.query.academicYearId ? Number(req.query.academicYearId) : undefined;
       const status = req.query.status as string | undefined;
       const userRole = req.user?.role;
 
@@ -874,6 +875,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (facultyId) {
         courses = courses.filter(course => course.facultyId === facultyId);
+      }
+
+      if (academicYearId) {
+        courses = courses.filter(course => course.academicYearId === academicYearId);
       }
 
       if (status) {

@@ -40,7 +40,19 @@ const AdminCourses: React.FC = () => {
 
   // Fetch data
   const { data: courses, isLoading: isLoadingCourses } = useQuery({
-    queryKey: ["/api/training-courses"]
+    queryKey: ["/api/training-courses", academicYearFilter, facultyFilter, statusFilter],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (academicYearFilter) params.append('academicYearId', academicYearFilter);
+      if (facultyFilter) params.append('facultyId', facultyFilter);
+      if (statusFilter) params.append('status', statusFilter);
+      
+      const res = await fetch(`/api/training-courses?${params.toString()}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch courses");
+      return res.json();
+    }
   });
 
   const { data: faculties } = useQuery({
@@ -83,34 +95,16 @@ const AdminCourses: React.FC = () => {
     enabled: !!selectedCourse?.id,
   });
 
-  // Filter courses
+  // Filter courses (only client-side search now, other filters are server-side)
   const filteredCourses = Array.isArray(courses) ? courses.filter((course: any) => {
-    let matches = true;
-
-    // Search query
+    // Search query (client-side)
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      matches = course.name.toLowerCase().includes(query) || 
-                (course.faculty?.name || "").toLowerCase().includes(query) ||
-                (course.major?.name || "").toLowerCase().includes(query);
+      return course.name.toLowerCase().includes(query) || 
+             (course.faculty?.name || "").toLowerCase().includes(query) ||
+             (course.major?.name || "").toLowerCase().includes(query);
     }
-
-    // Faculty filter
-    if (facultyFilter && matches) {
-      matches = course.facultyId === parseInt(facultyFilter);
-    }
-
-    // Status filter
-    if (statusFilter && matches) {
-      matches = course.status === statusFilter;
-    }
-
-    // Academic year filter
-    if (academicYearFilter && matches) {
-      matches = course.academicYearId === parseInt(academicYearFilter);
-    }
-
-    return matches;
+    return true;
   }) : [];
 
   // Pagination
