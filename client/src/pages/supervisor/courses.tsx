@@ -1,7 +1,4 @@
-The code is modified to fix data refresh after saving grades by updating invalidation keys and adding proper data refetch, and to update the final grade display to properly show saved grades.
-```
 
-```replit_final_file
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
