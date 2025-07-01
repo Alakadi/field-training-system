@@ -264,10 +264,26 @@ const SupervisorCourses: React.FC = () => {
     );
   };
 
-  const calculateFinalGrade = (attendance?: number, behavior?: number, finalExam?: number) => {
-    if (attendance !== undefined && behavior !== undefined && finalExam !== undefined) {
-      return (attendance * 0.2) + (behavior * 0.3) + (finalExam * 0.5);
+  const calculateFinalGrade = (attendance?: number, behavior?:number, finalExam?: number) => {
+    // التأكد من أن كل القيم موجودة
+    if (
+      attendance !== undefined &&
+      behavior !== undefined &&
+      finalExam !== undefined
+    ) {
+      // التحقق من أن القيم لا تتجاوز الحد الأقصى
+      if (
+        attendance <= 20 &&
+        behavior <= 30 &&
+        finalExam <= 50
+      ) {
+        return attendance + behavior + finalExam;
+      } else {
+        throw new Error("إحدى الدرجات تتجاوز الحد المسموح به");
+      }
     }
+
+    // في حال نقص أي قيمة
     return undefined;
   };
 
@@ -504,8 +520,8 @@ const SupervisorCourses: React.FC = () => {
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                           <h4 className="font-medium text-blue-900 mb-2">إدراج الدرجات المفصلة</h4>
                           <p className="text-sm text-blue-700">
-                            يتم إدراج الدرجات بشكل مفصل: الحضور (20%)، السلوك (30%)، الاختبار النهائي (50%). 
-                            سيتم حساب الدرجة النهائية تلقائياً بناءً على هذه النسب.
+                            {/* يتم إدراج الدرجات بشكل مفصل: الحضور (20%)، السلوك (30%)، الاختبار النهائي (50%). 
+                            سيتم حساب الدرجة النهائية تلقائياً بناءً على هذه النسب. */}
                           </p>
                         </div>
 

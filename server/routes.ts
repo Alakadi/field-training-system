@@ -2360,14 +2360,16 @@ const allGroups = await storage.getAllTrainingCourseGroups();
 
       // Validate detailed grades
       for (const update of updates) {
-        if (!update.assignmentId || 
-            update.attendanceGrade === undefined || 
-            update.behaviorGrade === undefined || 
-            update.finalExamGrade === undefined ||
-            update.attendanceGrade < 0 || update.attendanceGrade > 100 ||
-            update.behaviorGrade < 0 || update.behaviorGrade > 100 ||
-            update.finalExamGrade < 0 || update.finalExamGrade > 100) {
-          return res.status(400).json({ message: "درجات غير صحيحة - يجب أن تكون بين 0 و 100" });
+        if (
+          !update.assignmentId || 
+          update.attendanceGrade === undefined || 
+          update.behaviorGrade === undefined || 
+          update.finalExamGrade === undefined ||
+          update.attendanceGrade < 0 || update.attendanceGrade > 20 ||
+          update.behaviorGrade < 0 || update.behaviorGrade > 30 ||
+          update.finalExamGrade < 0 || update.finalExamGrade > 50
+        ) {
+          return res.status(400).json({ message: "درجات غير صحيحة - الحضور (20)، السلوك (30)، النهائي (50)" });
         }
       }
 
