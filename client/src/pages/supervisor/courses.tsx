@@ -306,7 +306,7 @@ const SupervisorCourses: React.FC = () => {
     console.log("Current editing grades:", editingGrades);
     
     // Find the group to get student assignment data
-    const targetGroup = groupsData?.find(group => group.id === groupId);
+    const targetGroup = courseGroups?.find(group => group.id === groupId);
     console.log("Target group:", targetGroup);
     
     const gradesToSave = Object.entries(editingGrades)
