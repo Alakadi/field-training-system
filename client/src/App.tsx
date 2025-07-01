@@ -26,6 +26,7 @@ import AdminFaculties from "@/pages/admin/faculties";
 import AdminReports from "@/pages/admin/reports";
 import AdminSettings from "@/pages/admin/settings";
 import AdminActivityLogs from "@/pages/admin/activity-logs";
+import AdminAcademicYears from "@/pages/admin/academic-years";
 import EditCourse from "@/pages/admin/edit-course";
 import ViewCourse from "@/pages/admin/view-course";
 import EditSupervisor from "@/pages/admin/edit-supervisor";
@@ -38,6 +39,7 @@ import StudentGroupAssignments from "@/pages/admin/student-group-assignments";
 // Supervisor pages
 import SupervisorDashboard from "@/pages/supervisor/dashboard";
 import SupervisorCourses from "@/pages/supervisor/courses";
+import SupervisorDetailedGrading from "@/pages/supervisor/detailed-grading";
 import SupervisorEvaluations from "@/pages/supervisor/evaluations";
 
 // Student pages
@@ -184,6 +186,11 @@ function Router() {
           <AdminActivityLogs />
         </AdminOnly>
       </Route>
+      <Route path="/admin/academic-years">
+        <AdminOnly>
+          <AdminAcademicYears />
+        </AdminOnly>
+      </Route>
 
       {/* Supervisor Routes */}
       <Route path="/supervisor">
@@ -199,6 +206,11 @@ function Router() {
       <Route path="/supervisor/courses">
         <SupervisorOnly>
           <SupervisorCourses />
+        </SupervisorOnly>
+      </Route>
+      <Route path="/supervisor/detailed-grading">
+        <SupervisorOnly>
+          <SupervisorDetailedGrading />
         </SupervisorOnly>
       </Route>
       <Route path="/supervisor/evaluations">

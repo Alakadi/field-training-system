@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, date, uniqueIndex, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, date, uniqueIndex, jsonb, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -32,6 +32,27 @@ export const majors = pgTable("majors", {
 export const levels = pgTable("levels", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(), // e.g. "First Level", "Second Level", etc.
+});
+
+// Academic Years table - إدارة السنوات الدراسية
+export const academicYears = pgTable("academic_years", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // مثل "2024/2025"
+  startDate: date("start_date").notNull(), // تاريخ بداية السنة الدراسية
+  endDate: date("end_date").notNull(), // تاريخ نهاية السنة الدراسية
+  isCurrent: boolean("is_current").default(false), // السنة الحالية
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Notifications table - نظام الإشعارات
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type").default("info"), // info, warning, error, success
+  isRead: boolean("is_read").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Supervisors table - extends users
@@ -69,6 +90,7 @@ export const trainingCourses = pgTable("training_courses", {
   facultyId: integer("faculty_id").references(() => faculties.id),
   majorId: integer("major_id").references(() => majors.id), // ربط الدورة بتخصص معين
   levelId: integer("level_id").references(() => levels.id), // ربط الدورة بمستوى دراسي معين
+  academicYearId: integer("academic_year_id").references(() => academicYears.id), // ربط بالسنة الدراسية
   description: text("description"),
   status: text("status").default("upcoming"), // "upcoming", "active", "completed", "cancelled", "registration_closed"
   createdAt: timestamp("created_at").defaultNow(),
@@ -104,6 +126,11 @@ export const trainingAssignments = pgTable("training_assignments", {
   status: text("status").default("pending"), // "pending", "active", "completed"
   confirmed: boolean("confirmed").default(false), // Student confirmation
   assignedAt: timestamp("assigned_at").defaultNow(),
+  // الدرجات المفصلة
+  attendanceGrade: numeric("attendance_grade", { precision: 5, scale: 2 }), // درجة الحضور (20%)
+  behaviorGrade: numeric("behavior_grade", { precision: 5, scale: 2 }), // درجة السلوك (30%)
+  finalExamGrade: numeric("final_exam_grade", { precision: 5, scale: 2 }), // درجة الاختبار النهائي (50%)
+  calculatedFinalGrade: numeric("calculated_final_grade", { precision: 5, scale: 2 }), // الدرجة النهائية المحسوبة
 }, (table) => [
   uniqueIndex("student_course_unique").on(table.studentId, table.courseId), // منع التسجيل المتكرر في نفس الكورس
 ]);
@@ -135,6 +162,8 @@ export const insertUserSchema = createInsertSchema(users);
 export const insertFacultySchema = createInsertSchema(faculties);
 export const insertMajorSchema = createInsertSchema(majors);
 export const insertLevelSchema = createInsertSchema(levels);
+export const insertAcademicYearSchema = createInsertSchema(academicYears);
+export const insertNotificationSchema = createInsertSchema(notifications);
 export const insertSupervisorSchema = createInsertSchema(supervisors);
 export const insertStudentSchema = createInsertSchema(students);
 export const insertTrainingSiteSchema = createInsertSchema(trainingSites);
@@ -156,6 +185,12 @@ export type InsertMajor = z.infer<typeof insertMajorSchema>;
 
 export type Level = typeof levels.$inferSelect;
 export type InsertLevel = z.infer<typeof insertLevelSchema>;
+
+export type AcademicYear = typeof academicYears.$inferSelect;
+export type InsertAcademicYear = z.infer<typeof insertAcademicYearSchema>;
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
 
 export type Supervisor = typeof supervisors.$inferSelect;
 export type InsertSupervisor = z.infer<typeof insertSupervisorSchema>;

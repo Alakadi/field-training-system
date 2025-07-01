@@ -108,7 +108,13 @@ export const iconMap: Record<string, React.ComponentType<IconProps>> = {
   file_spreadsheet: FileSpreadsheet,
   printer: Printer,
   check_all: CheckAll,
-  loader: Loader
+  loader: Loader,
+  // إضافة الأيقونات المفقودة
+  dashboard: Home,
+  person: User,
+  menu_book: BookOpen,
+  school: GraduationCap,
+  grading: Trophy
 };
 
 // Simple Icon component for string-based references

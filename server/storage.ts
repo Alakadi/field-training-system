@@ -3,6 +3,8 @@ import {
   faculties,
   majors,
   levels,
+  academicYears,
+  notifications,
   supervisors,
   students,
   trainingSites,
@@ -19,6 +21,10 @@ import {
   type InsertMajor,
   type Level,
   type InsertLevel,
+  type AcademicYear,
+  type InsertAcademicYear,
+  type Notification,
+  type InsertNotification,
   type Supervisor,
   type InsertSupervisor,
   type Student,
@@ -163,6 +169,30 @@ export interface IStorage {
 
   // Update course status based on dates
   updateCourseStatusBasedOnDates(): Promise<void>;
+
+  // Academic Years operations
+  getAllAcademicYears(): Promise<AcademicYear[]>;
+  getAcademicYear(id: number): Promise<AcademicYear | undefined>;
+  createAcademicYear(academicYear: InsertAcademicYear): Promise<AcademicYear>;
+  updateAcademicYear(id: number, academicYear: Partial<AcademicYear>): Promise<AcademicYear | undefined>;
+  setAllAcademicYearsNonCurrent(): Promise<void>;
+
+  // Notifications operations
+  getAllNotifications(): Promise<Notification[]>;
+  getNotificationsByUserId(userId: number): Promise<Notification[]>;
+  createNotification(notification: InsertNotification): Promise<Notification>;
+  markNotificationAsRead(id: number, userId: number): Promise<Notification | undefined>;
+
+  // Training Assignment Grades operations
+  updateTrainingAssignmentGrades(assignmentId: number, grades: {
+    attendanceGrade?: number;
+    behaviorGrade?: number;
+    finalExamGrade?: number;
+    calculatedFinalGrade?: number;
+  }): Promise<TrainingAssignment | undefined>;
+
+  // Update Evaluation operations
+  updateEvaluation(id: number, evaluation: Partial<Evaluation>): Promise<Evaluation | undefined>;
 
   // Import/Export operations
   importStudents(students: {
@@ -1220,6 +1250,77 @@ export class DatabaseStorage implements IStorage {
     );
 
     return result;
+  }
+
+  // Academic Years operations
+  async getAllAcademicYears(): Promise<AcademicYear[]> {
+    return await db.select().from(academicYears).orderBy(desc(academicYears.isCurrent), desc(academicYears.startDate));
+  }
+
+  async getAcademicYear(id: number): Promise<AcademicYear | undefined> {
+    const result = await db.select().from(academicYears).where(eq(academicYears.id, id));
+    return result[0];
+  }
+
+  async createAcademicYear(academicYear: InsertAcademicYear): Promise<AcademicYear> {
+    const result = await db.insert(academicYears).values(academicYear).returning();
+    return result[0];
+  }
+
+  async updateAcademicYear(id: number, academicYear: Partial<AcademicYear>): Promise<AcademicYear | undefined> {
+    const result = await db.update(academicYears).set(academicYear).where(eq(academicYears.id, id)).returning();
+    return result[0];
+  }
+
+  async setAllAcademicYearsNonCurrent(): Promise<void> {
+    await db.update(academicYears).set({ isCurrent: false });
+  }
+
+  // Notifications operations
+  async getAllNotifications(): Promise<Notification[]> {
+    return await db.select().from(notifications).orderBy(desc(notifications.createdAt));
+  }
+
+  async getNotificationsByUserId(userId: number): Promise<Notification[]> {
+    return await db.select().from(notifications)
+      .where(eq(notifications.userId, userId))
+      .orderBy(desc(notifications.createdAt));
+  }
+
+  async createNotification(notification: InsertNotification): Promise<Notification> {
+    const result = await db.insert(notifications).values(notification).returning();
+    return result[0];
+  }
+
+  async markNotificationAsRead(id: number, userId: number): Promise<Notification | undefined> {
+    const result = await db.update(notifications)
+      .set({ isRead: true })
+      .where(and(eq(notifications.id, id), eq(notifications.userId, userId)))
+      .returning();
+    return result[0];
+  }
+
+  // Training Assignment Grades operations
+  async updateTrainingAssignmentGrades(assignmentId: number, grades: {
+    attendanceGrade?: number;
+    behaviorGrade?: number;
+    finalExamGrade?: number;
+    calculatedFinalGrade?: number;
+  }): Promise<TrainingAssignment | undefined> {
+    const result = await db.update(trainingAssignments)
+      .set(grades)
+      .where(eq(trainingAssignments.id, assignmentId))
+      .returning();
+    return result[0];
+  }
+
+  // Update Evaluation operations
+  async updateEvaluation(id: number, evaluation: Partial<Evaluation>): Promise<Evaluation | undefined> {
+    const result = await db.update(evaluations)
+      .set(evaluation)
+      .where(eq(evaluations.id, id))
+      .returning();
+    return result[0];
   }
 }
 

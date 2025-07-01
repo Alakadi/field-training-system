@@ -2,8 +2,7 @@ import React, { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { getUserAvatarUrl } from "@/lib/utils";
-import { NotificationBell } from "@/components/ui/notification-bell";
-import { SupervisorNotificationBell } from "@/components/ui/supervisor-notification-bell";
+import NotificationBell from "@/components/notifications/notification-bell";
 import Icon from "@/components/ui/icon-map";
 
 interface HeaderProps {
@@ -49,14 +48,9 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
         </div>
         
         <div className="flex items-center space-x-4 space-x-reverse">
-          {user?.role === 'admin' && (
+          {user && (
             <div className="relative">
               <NotificationBell />
-            </div>
-          )}
-          {user?.role === 'supervisor' && (
-            <div className="relative">
-              <SupervisorNotificationBell />
             </div>
           )}
           
