@@ -1203,6 +1203,7 @@ export class DatabaseStorage implements IStorage {
       facultyId: trainingCourses.facultyId,
       majorId: trainingCourses.majorId,
       levelId: trainingCourses.levelId,
+      academicYearId: trainingCourses.academicYearId,
       description: trainingCourses.description,
       status: trainingCourses.status,
       createdAt: trainingCourses.createdAt,
@@ -1211,11 +1212,12 @@ export class DatabaseStorage implements IStorage {
 
     const result = await Promise.all(
       courses.map(async (course: any) => {
-        // Get course details (faculty, major, level)
-        const [faculty, major, level] = await Promise.all([
+        // Get course details (faculty, major, level, academic year)
+        const [faculty, major, level, academicYear] = await Promise.all([
           course.facultyId ? this.getFaculty(course.facultyId) : undefined,
           course.majorId ? this.getMajor(course.majorId) : undefined,
-          course.levelId ? this.getLevel(course.levelId) : undefined
+          course.levelId ? this.getLevel(course.levelId) : undefined,
+          course.academicYearId ? this.getAcademicYear(course.academicYearId) : undefined
         ]);
 
         // Get course groups
@@ -1245,6 +1247,7 @@ export class DatabaseStorage implements IStorage {
           faculty,
           major,
           level,
+          academicYear,
           groups: groupsWithDetails
         };
       })

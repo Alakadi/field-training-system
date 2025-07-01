@@ -2344,6 +2344,103 @@ const allGroups = await storage.getAllTrainingCourseGroups();
     }
   });
 
+  // API endpoint to save detailed grades (attendance, behavior, final exam)
+  app.post("/api/students/detailed-grades/bulk", authMiddleware, requireRole("supervisor"), async (req: Request, res: Response) => {
+    try {
+      const { updates } = req.body;
+
+      if (!updates || !Array.isArray(updates)) {
+        return res.status(400).json({ message: "بيانات غير صحيحة" });
+      }
+
+      // Validate detailed grades
+      for (const update of updates) {
+        if (!update.assignmentId || 
+            update.attendanceGrade === undefined || 
+            update.behaviorGrade === undefined || 
+            update.finalExamGrade === undefined ||
+            update.attendanceGrade < 0 || update.attendanceGrade > 100 ||
+            update.behaviorGrade < 0 || update.behaviorGrade > 100 ||
+            update.finalExamGrade < 0 || update.finalExamGrade > 100) {
+          return res.status(400).json({ message: "درجات غير صحيحة - يجب أن تكون بين 0 و 100" });
+        }
+      }
+
+      // Get supervisor info
+      const supervisor = await storage.getSupervisorByUserId(req.user!.id);
+      if (!supervisor) {
+        return res.status(403).json({ message: "غير مصرح بالوصول" });
+      }
+
+      let savedCount = 0;
+      const savedUpdates = [];
+
+      for (const update of updates) {
+        try {
+          // Get assignment details
+          const assignment = await storage.getTrainingAssignment(update.assignmentId);
+          if (!assignment) {
+            console.warn(`Assignment ${update.assignmentId} not found`);
+            continue;
+          }
+
+          // Calculate final grade
+          const calculatedFinalGrade = (update.attendanceGrade * 0.2) + (update.behaviorGrade * 0.3) + (update.finalExamGrade * 0.5);
+
+          // Update the assignment with detailed grades
+          const updatedAssignment = await storage.updateTrainingAssignmentGrades(assignment.id, {
+            attendanceGrade: update.attendanceGrade,
+            behaviorGrade: update.behaviorGrade,
+            finalExamGrade: update.finalExamGrade,
+            calculatedFinalGrade: calculatedFinalGrade
+          });
+
+          if (updatedAssignment) {
+            savedCount++;
+            savedUpdates.push({
+              assignmentId: assignment.id,
+              attendanceGrade: update.attendanceGrade,
+              behaviorGrade: update.behaviorGrade,
+              finalExamGrade: update.finalExamGrade,
+              finalGrade: (update.attendanceGrade * 0.2) + (update.behaviorGrade * 0.3) + (update.finalExamGrade * 0.5)
+            });
+          }
+        } catch (error) {
+          console.error(`Error updating assignment ${update.assignmentId}:`, error);
+        }
+      }
+
+      // Log activity for detailed grading
+      if (savedCount > 0) {
+        await logActivity(
+          req.user!.username,
+          "detailed_grade_entry",
+          "training_assignment",
+          null,
+          {
+            message: `المشرف قد أدخل الدرجات المفصلة لـ ${savedCount} طالب`,
+            details: {
+              supervisorId: supervisor.id,
+              savedCount: savedCount,
+              gradingType: "detailed",
+              components: ["attendance (20%)", "behavior (30%)", "final exam (50%)"]
+            }
+          }
+        );
+      }
+
+      res.json({
+        message: `تم حفظ الدرجات المفصلة لـ ${savedCount} طالب بنجاح`,
+        savedCount: savedCount,
+        updates: savedUpdates
+      });
+
+    } catch (error) {
+      console.error("Error saving detailed grades:", error);
+      res.status(500).json({ message: "خطأ في حفظ الدرجات المفصلة" });
+    }
+  });
+
   // Get student by ID
   app.get("/api/students/:id", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
