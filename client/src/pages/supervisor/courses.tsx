@@ -218,14 +218,21 @@ const SupervisorCourses: React.FC = () => {
     else if (field === 'finalExamGrade') maxValue = 50;
     
     if (value === '' || (!isNaN(gradeNumber!) && gradeNumber! >= 0 && gradeNumber! <= maxValue)) {
-      setEditingGrades(prev => ({
-        ...prev,
-        [studentId]: {
-          ...prev[studentId],
-          [field]: gradeNumber,
-          assignmentId: assignmentId || prev[studentId]?.assignmentId // Keep existing assignmentId
-        }
-      }));
+      console.log(`Setting grade for student ${studentId}, field ${field}, value ${gradeNumber}, assignmentId ${assignmentId}`);
+      
+      setEditingGrades(prev => {
+        const finalAssignmentId = assignmentId || prev[studentId]?.assignmentId;
+        console.log(`Final assignmentId for student ${studentId}: ${finalAssignmentId}`);
+        
+        return {
+          ...prev,
+          [studentId]: {
+            ...prev[studentId],
+            [field]: gradeNumber,
+            assignmentId: finalAssignmentId
+          }
+        };
+      });
     }
   };
 
@@ -298,18 +305,40 @@ const SupervisorCourses: React.FC = () => {
     console.log("Starting saveAllDetailedGrades for group:", groupId);
     console.log("Current editing grades:", editingGrades);
     
+    // Find the group to get student assignment data
+    const targetGroup = groupsData?.find(group => group.id === groupId);
+    console.log("Target group:", targetGroup);
+    
     const gradesToSave = Object.entries(editingGrades)
       .filter(([_, gradeData]) => 
         gradeData.attendanceGrade !== undefined && 
         gradeData.behaviorGrade !== undefined && 
         gradeData.finalExamGrade !== undefined
       )
-      .map(([studentId, gradeData]) => ({
-        assignmentId: gradeData.assignmentId!,
-        attendanceGrade: gradeData.attendanceGrade!,
-        behaviorGrade: gradeData.behaviorGrade!,
-        finalExamGrade: gradeData.finalExamGrade!
-      }));
+      .map(([studentId, gradeData]) => {
+        console.log(`Processing student ${studentId}:`, gradeData);
+        
+        // Get assignmentId from gradeData or find it from student data
+        let assignmentId = gradeData.assignmentId;
+        if (!assignmentId && targetGroup) {
+          const student = targetGroup.students?.find(s => s.id === parseInt(studentId));
+          assignmentId = student?.assignment?.id;
+          console.log(`Found assignmentId from student data: ${assignmentId}`);
+        }
+        
+        if (!assignmentId) {
+          console.error(`No assignmentId found for student ${studentId}`);
+          return null;
+        }
+        
+        return {
+          assignmentId: assignmentId,
+          attendanceGrade: gradeData.attendanceGrade!,
+          behaviorGrade: gradeData.behaviorGrade!,
+          finalExamGrade: gradeData.finalExamGrade!
+        };
+      })
+      .filter(grade => grade !== null);
 
     console.log("Detailed grades to save:", gradesToSave);
 
