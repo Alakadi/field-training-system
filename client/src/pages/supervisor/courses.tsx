@@ -208,15 +208,22 @@ const SupervisorCourses: React.FC = () => {
     },
   });
 
-  const handleDetailedGradeChange = (studentId: number, field: 'attendanceGrade' | 'behaviorGrade' | 'finalExamGrade', value: string) => {
+  const handleDetailedGradeChange = (studentId: number, field: 'attendanceGrade' | 'behaviorGrade' | 'finalExamGrade', value: string, assignmentId?: number) => {
     const gradeNumber = value === '' ? undefined : parseFloat(value);
-    if (value === '' || (!isNaN(gradeNumber!) && gradeNumber! >= 0 && gradeNumber! <= 100)) {
+    
+    // Check specific ranges for each field
+    let maxValue = 100;
+    if (field === 'attendanceGrade') maxValue = 20;
+    else if (field === 'behaviorGrade') maxValue = 30;
+    else if (field === 'finalExamGrade') maxValue = 50;
+    
+    if (value === '' || (!isNaN(gradeNumber!) && gradeNumber! >= 0 && gradeNumber! <= maxValue)) {
       setEditingGrades(prev => ({
         ...prev,
         [studentId]: {
           ...prev[studentId],
           [field]: gradeNumber,
-          assignmentId: prev[studentId]?.assignmentId // Keep existing assignmentId
+          assignmentId: assignmentId || prev[studentId]?.assignmentId // Keep existing assignmentId
         }
       }));
     }
@@ -607,17 +614,7 @@ const SupervisorCourses: React.FC = () => {
                                         className={`w-20 text-center ${hasChanges ? 'border-blue-400 bg-blue-50' : ''}`}
                                         value={currentAttendance}
                                         onChange={(e) => {
-                                          handleDetailedGradeChange(student.id, 'attendanceGrade', e.target.value);
-                                          // Set assignment ID for first time
-                                          if (student.assignment?.id && !editingGrades[student.id]?.assignmentId) {
-                                            setEditingGrades(prev => ({
-                                              ...prev,
-                                              [student.id]: {
-                                                ...prev[student.id],
-                                                assignmentId: student.assignment!.id
-                                              }
-                                            }));
-                                          }
+                                          handleDetailedGradeChange(student.id, 'attendanceGrade', e.target.value, student.assignment?.id);
                                         }}
                                       />
                                     </td>
@@ -633,17 +630,7 @@ const SupervisorCourses: React.FC = () => {
                                         className={`w-20 text-center ${hasChanges ? 'border-green-400 bg-green-50' : ''}`}
                                         value={currentBehavior}
                                         onChange={(e) => {
-                                          handleDetailedGradeChange(student.id, 'behaviorGrade', e.target.value);
-                                          // Set assignment ID for first time
-                                          if (student.assignment?.id && !editingGrades[student.id]?.assignmentId) {
-                                            setEditingGrades(prev => ({
-                                              ...prev,
-                                              [student.id]: {
-                                                ...prev[student.id],
-                                                assignmentId: student.assignment!.id
-                                              }
-                                            }));
-                                          }
+                                          handleDetailedGradeChange(student.id, 'behaviorGrade', e.target.value, student.assignment?.id);
                                         }}
                                       />
                                     </td>
@@ -659,17 +646,7 @@ const SupervisorCourses: React.FC = () => {
                                         className={`w-20 text-center ${hasChanges ? 'border-purple-400 bg-purple-50' : ''}`}
                                         value={currentFinalExam}
                                         onChange={(e) => {
-                                          handleDetailedGradeChange(student.id, 'finalExamGrade', e.target.value);
-                                          // Set assignment ID for first time
-                                          if (student.assignment?.id && !editingGrades[student.id]?.assignmentId) {
-                                            setEditingGrades(prev => ({
-                                              ...prev,
-                                              [student.id]: {
-                                                ...prev[student.id],
-                                                assignmentId: student.assignment!.id
-                                              }
-                                            }));
-                                          }
+                                          handleDetailedGradeChange(student.id, 'finalExamGrade', e.target.value, student.assignment?.id);
                                         }}
                                       />
                                     </td>
