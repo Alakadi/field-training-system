@@ -182,6 +182,7 @@ export interface IStorage {
   getNotificationsByUserId(userId: number): Promise<Notification[]>;
   createNotification(notification: InsertNotification): Promise<Notification>;
   markNotificationAsRead(id: number, userId: number): Promise<Notification | undefined>;
+  getTrainingAssignmentById(id: number): Promise<TrainingAssignment | undefined>;
 
   // Training Assignment Grades operations
   updateTrainingAssignmentGrades(assignmentId: number, grades: {
@@ -1320,6 +1321,14 @@ export class DatabaseStorage implements IStorage {
       .set(evaluation)
       .where(eq(evaluations.id, id))
       .returning();
+    return result[0];
+  }
+
+  // Get Training Assignment by ID
+  async getTrainingAssignmentById(id: number): Promise<TrainingAssignment | undefined> {
+    const result = await db.select()
+      .from(trainingAssignments)
+      .where(eq(trainingAssignments.id, id));
     return result[0];
   }
 }

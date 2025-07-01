@@ -1,283 +1,314 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import SupervisorLayout from "@/components/layout/supervisor-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Users, BookOpen, AlertCircle } from "lucide-react";
-import SupervisorLayout from "@/components/layout/supervisor-layout";
+import { formatDate } from "@/lib/utils";
+import Icon from "@/components/ui/icon-map";
 
-interface Student {
-  id: number;
-  user?: { name: string };
-  universityId: string;
-}
-
-interface Assignment {
-  id: number;
-  student: Student;
-  attendanceGrade?: number;
-  behaviorGrade?: number;
-  finalExamGrade?: number;
-  calculatedFinalGrade?: number;
-}
-
-interface CourseGroup {
-  id: number;
-  groupName: string;
-  course: {
-    id: number;
-    name: string;
-  };
-  site: {
-    name: string;
-  };
-  assignments: Assignment[];
-}
-
-interface GradeUpdate {
+interface DetailedGrades {
   assignmentId: number;
   attendanceGrade: number;
   behaviorGrade: number;
   finalExamGrade: number;
 }
 
-const DetailedGradingPage: React.FC = () => {
-  const [gradeChanges, setGradeChanges] = useState<Map<number, GradeUpdate>>(new Map());
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+const SupervisorDetailedGrading: React.FC = () => {
   const { toast } = useToast();
+  const [selectedCourseId, setSelectedCourseId] = useState<string>("");
+  const [grades, setGrades] = useState<{ [key: number]: DetailedGrades }>({});
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [changesCount, setChangesCount] = useState(0);
 
-  // جلب بيانات المشرف ومجموعاته
-  const { data: courseGroups = [], isLoading } = useQuery({
+  // Fetch supervisor's course assignments
+  const { data: courseAssignments = [] } = useQuery({
     queryKey: ["/api/supervisor/course-assignments"],
-    queryFn: async () => {
-      const res = await fetch("/api/supervisor/course-assignments", {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to fetch course assignments");
-      return res.json();
-    },
   });
 
-  // حفظ الدرجات المفصلة
-  const saveMutation = useMutation({
-    mutationFn: (updates: GradeUpdate[]) =>
+  // Fetch students for selected course
+  const { data: studentsData = [], isLoading: isLoadingStudents } = useQuery({
+    queryKey: ["/api/training-courses", selectedCourseId, "students"],
+    queryFn: async () => {
+      if (!selectedCourseId) return [];
+      const res = await fetch(`/api/training-courses/${selectedCourseId}/students`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch students");
+      return res.json();
+    },
+    enabled: !!selectedCourseId,
+  });
+
+  // Save detailed grades mutation
+  const saveGradesMutation = useMutation({
+    mutationFn: (updates: DetailedGrades[]) =>
       apiRequest("POST", "/api/students/detailed-grades/bulk", { updates }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/supervisor/course-assignments"] });
-      setGradeChanges(new Map());
-      setHasUnsavedChanges(false);
       toast({
-        title: "تم الحفظ",
-        description: "تم حفظ جميع الدرجات بنجاح",
+        title: "تم الحفظ بنجاح",
+        description: "تم حفظ جميع الدرجات المفصلة بنجاح",
       });
+      setHasUnsavedChanges(false);
+      setChangesCount(0);
+      setGrades({});
+      queryClient.invalidateQueries({ queryKey: ["/api/training-courses", selectedCourseId, "students"] });
     },
     onError: (error: any) => {
       toast({
+        title: "خطأ في الحفظ",
+        description: error.message || "حدث خطأ أثناء حفظ الدرجات",
         variant: "destructive",
-        title: "خطأ",
-        description: error.response?.data?.message || "حدث خطأ أثناء حفظ الدرجات",
       });
     },
   });
 
-  // تحديث الدرجة وحساب الدرجة النهائية
-  const updateGrade = (assignmentId: number, field: keyof GradeUpdate, value: number) => {
-    const currentChanges = gradeChanges.get(assignmentId) || {
-      assignmentId,
-      attendanceGrade: 0,
-      behaviorGrade: 0,
-      finalExamGrade: 0,
-    };
+  const handleGradeChange = (assignmentId: number, field: keyof DetailedGrades, value: number) => {
+    if (value < 0 || value > 100) return;
 
-    // العثور على التعيين الحالي للحصول على القيم الحالية
-    const assignment = courseGroups
-      .flatMap((group: CourseGroup) => group.assignments)
-      .find((assign: Assignment) => assign.id === assignmentId);
+    setGrades(prev => ({
+      ...prev,
+      [assignmentId]: {
+        ...prev[assignmentId],
+        assignmentId,
+        [field]: value
+      }
+    }));
 
-    if (!assignment) return;
-
-    const updatedChanges = {
-      ...currentChanges,
-      attendanceGrade: field === 'attendanceGrade' ? value : (currentChanges.attendanceGrade || assignment.attendanceGrade || 0),
-      behaviorGrade: field === 'behaviorGrade' ? value : (currentChanges.behaviorGrade || assignment.behaviorGrade || 0),
-      finalExamGrade: field === 'finalExamGrade' ? value : (currentChanges.finalExamGrade || assignment.finalExamGrade || 0),
-    };
-
-    setGradeChanges(new Map(gradeChanges.set(assignmentId, updatedChanges)));
     setHasUnsavedChanges(true);
+    setChangesCount(Object.keys({
+      ...grades,
+      [assignmentId]: {
+        ...grades[assignmentId],
+        assignmentId,
+        [field]: value
+      }
+    }).length);
   };
 
-  // حساب الدرجة النهائية (20% حضور + 30% سلوك + 50% اختبار نهائي)
-  const calculateFinalGrade = (attendance: number, behavior: number, finalExam: number): number => {
+  const calculateFinalGrade = (attendance: number, behavior: number, finalExam: number) => {
     return (attendance * 0.2) + (behavior * 0.3) + (finalExam * 0.5);
   };
 
-  // الحصول على الدرجة الحالية أو المحدثة
-  const getGradeValue = (assignment: Assignment, field: keyof GradeUpdate): number => {
-    const changes = gradeChanges.get(assignment.id);
-    if (changes && changes[field] !== undefined) {
-      return changes[field];
-    }
-    return (assignment as any)[field] || 0;
-  };
+  const handleSaveAllGrades = () => {
+    const updates = Object.values(grades).filter(grade => 
+      grade.attendanceGrade !== undefined && 
+      grade.behaviorGrade !== undefined && 
+      grade.finalExamGrade !== undefined
+    );
 
-  // حفظ جميع التغييرات
-  const handleSaveAll = () => {
-    const updates = Array.from(gradeChanges.values());
     if (updates.length === 0) {
       toast({
         title: "لا توجد تغييرات",
-        description: "لم يتم إجراء أي تغييرات للحفظ",
+        description: "لا توجد درجات جديدة للحفظ",
+        variant: "destructive",
       });
       return;
     }
-    saveMutation.mutate(updates);
+
+    saveGradesMutation.mutate(updates);
   };
 
-  // إعادة تعيين التغييرات
   const handleResetChanges = () => {
-    setGradeChanges(new Map());
+    setGrades({});
     setHasUnsavedChanges(false);
-    toast({
-      title: "تم الإلغاء",
-      description: "تم إلغاء جميع التغييرات غير المحفوظة",
-    });
+    setChangesCount(0);
   };
 
-  if (isLoading) {
-    return (
-      <SupervisorLayout>
-        <div className="text-center py-8">جاري التحميل...</div>
-      </SupervisorLayout>
-    );
-  }
+  const selectedCourse = courseAssignments.find((assignment: any) => assignment.course?.id === parseInt(selectedCourseId));
 
   return (
     <SupervisorLayout>
-      <div className="container mx-auto p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">إدراج الدرجات المفصلة</h1>
-          <div className="flex gap-2">
-            {hasUnsavedChanges && (
-              <div className="flex items-center gap-2 text-amber-600">
-                <AlertCircle className="w-4 h-4" />
-                <span className="text-sm">
-                  {gradeChanges.size} تغيير غير محفوظ
-                </span>
-              </div>
-            )}
-            <Button
-              variant="outline"
-              onClick={handleResetChanges}
-              disabled={!hasUnsavedChanges}
-            >
-              إلغاء التغييرات
-            </Button>
-            <Button
-              onClick={handleSaveAll}
-              disabled={!hasUnsavedChanges || saveMutation.isPending}
-            >
-              <Save className="w-4 h-4 ml-2" />
-              حفظ جميع الدرجات
-            </Button>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-neutral-900">الدرجات المفصلة</h1>
+            <p className="text-neutral-600 mt-2">إدارة الدرجات المفصلة للطلاب (حضور 20% + سلوك 30% + اختبار نهائي 50%)</p>
           </div>
         </div>
 
-        <div className="space-y-6">
-          {courseGroups.map((group: CourseGroup) => (
-            <Card key={group.id}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="w-5 h-5" />
-                  {group.course.name} - {group.groupName}
-                  <Badge variant="outline">
-                    <Users className="w-3 h-3 ml-1" />
-                    {group.assignments?.length || 0} طالب
-                  </Badge>
-                </CardTitle>
-                <p className="text-sm text-gray-600">موقع التدريب: {group.site.name}</p>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-4 p-4 bg-blue-50 rounded-lg">
-                  <h4 className="font-medium mb-2">نظام التقييم:</h4>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
-                    <div>درجة الحضور: 20% (من 100)</div>
-                    <div>درجة السلوك: 30% (من 100)</div>
-                    <div>الاختبار النهائي: 50% (من 100)</div>
+        {/* Course Selection */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Icon name="book" size={20} />
+              اختيار الدورة التدريبية
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Select value={selectedCourseId} onValueChange={setSelectedCourseId}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="اختر الدورة التدريبية..." />
+              </SelectTrigger>
+              <SelectContent>
+                {courseAssignments.map((assignment: any) => (
+                  <SelectItem key={assignment.course?.id} value={String(assignment.course?.id)}>
+                    {assignment.course?.name} - {assignment.group?.groupName || `المجموعة ${assignment.groupId}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+
+        {/* Unsaved Changes Alert */}
+        {hasUnsavedChanges && (
+          <Card className="border-orange-200 bg-orange-50">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Icon name="alert_triangle" size={20} className="text-orange-600" />
+                  <span className="text-orange-800">
+                    لديك {changesCount} تغيير غير محفوظ
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResetChanges}
+                    className="text-gray-600"
+                  >
+                    إلغاء التغييرات
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSaveAllGrades}
+                    disabled={saveGradesMutation.isPending}
+                    className="bg-orange-600 hover:bg-orange-700 text-white"
+                  >
+                    {saveGradesMutation.isPending ? "جاري الحفظ..." : "حفظ جميع التغييرات"}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Students Grading Table */}
+        {selectedCourseId && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Icon name="users" size={20} />
+                الطلاب المسجلين - {selectedCourse?.course?.name}
+              </CardTitle>
+              <div className="text-sm text-gray-600">
+                <div className="grid grid-cols-3 gap-4 mt-2">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                    <span>درجة الحضور (20%)</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-green-500 rounded"></div>
+                    <span>درجة السلوك (30%)</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 bg-purple-500 rounded"></div>
+                    <span>الاختبار النهائي (50%)</span>
                   </div>
                 </div>
-
+              </div>
+            </CardHeader>
+            <CardContent>
+              {isLoadingStudents ? (
+                <div className="text-center py-8">
+                  <Icon name="spinner" size={24} className="animate-spin mx-auto mb-2" />
+                  <p>جاري تحميل بيانات الطلاب...</p>
+                </div>
+              ) : studentsData.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Icon name="users" size={48} className="mx-auto mb-4 opacity-50" />
+                  <p>لا توجد طلاب مسجلين في هذه الدورة</p>
+                </div>
+              ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full border-collapse border border-gray-300">
+                  <table className="w-full">
                     <thead>
-                      <tr className="bg-gray-50">
-                        <th className="border border-gray-300 p-2 text-right">الطالب</th>
-                        <th className="border border-gray-300 p-2">الرقم الجامعي</th>
-                        <th className="border border-gray-300 p-2">الحضور (20%)</th>
-                        <th className="border border-gray-300 p-2">السلوك (30%)</th>
-                        <th className="border border-gray-300 p-2">الاختبار النهائي (50%)</th>
-                        <th className="border border-gray-300 p-2">الدرجة النهائية</th>
+                      <tr className="border-b bg-gray-50">
+                        <th className="text-right p-3 font-medium">#</th>
+                        <th className="text-right p-3 font-medium">اسم الطالب</th>
+                        <th className="text-right p-3 font-medium">الرقم الجامعي</th>
+                        <th className="text-right p-3 font-medium text-blue-600">
+                          درجة الحضور
+                          <br />
+                          <span className="text-xs font-normal">(20%)</span>
+                        </th>
+                        <th className="text-right p-3 font-medium text-green-600">
+                          درجة السلوك
+                          <br />
+                          <span className="text-xs font-normal">(30%)</span>
+                        </th>
+                        <th className="text-right p-3 font-medium text-purple-600">
+                          الاختبار النهائي
+                          <br />
+                          <span className="text-xs font-normal">(50%)</span>
+                        </th>
+                        <th className="text-right p-3 font-medium text-orange-600">
+                          الدرجة النهائية
+                          <br />
+                          <span className="text-xs font-normal">(المجموع)</span>
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {group.assignments?.map((assignment: Assignment) => {
-                        const attendanceGrade = getGradeValue(assignment, 'attendanceGrade');
-                        const behaviorGrade = getGradeValue(assignment, 'behaviorGrade');
-                        const finalExamGrade = getGradeValue(assignment, 'finalExamGrade');
-                        const calculatedGrade = calculateFinalGrade(attendanceGrade, behaviorGrade, finalExamGrade);
-                        const hasChanges = gradeChanges.has(assignment.id);
+                      {studentsData.map((student: any, index: number) => {
+                        const currentGrades = grades[student.assignmentId] || {};
+                        const attendanceGrade = currentGrades.attendanceGrade ?? (student.attendanceGrade ? parseFloat(student.attendanceGrade) : 0);
+                        const behaviorGrade = currentGrades.behaviorGrade ?? (student.behaviorGrade ? parseFloat(student.behaviorGrade) : 0);
+                        const finalExamGrade = currentGrades.finalExamGrade ?? (student.finalExamGrade ? parseFloat(student.finalExamGrade) : 0);
+                        const calculatedFinal = calculateFinalGrade(attendanceGrade, behaviorGrade, finalExamGrade);
+                        const hasChanges = !!grades[student.assignmentId];
 
                         return (
-                          <tr key={assignment.id} className={hasChanges ? "bg-yellow-50" : ""}>
-                            <td className="border border-gray-300 p-2 font-medium">
-                              {assignment.student.user?.name || "غير محدد"}
-                              {hasChanges && (
-                                <span className="text-amber-600 text-xs block">مُعدل</span>
-                              )}
-                            </td>
-                            <td className="border border-gray-300 p-2 text-center">
-                              {assignment.student.universityId}
-                            </td>
-                            <td className="border border-gray-300 p-2">
+                          <tr key={student.assignmentId} className={`border-b hover:bg-gray-50 ${hasChanges ? 'bg-blue-50' : ''}`}>
+                            <td className="p-3">{index + 1}</td>
+                            <td className="p-3 font-medium">{student.studentName}</td>
+                            <td className="p-3 text-gray-600">{student.universityId}</td>
+                            <td className="p-3">
                               <Input
                                 type="number"
                                 min="0"
                                 max="100"
                                 value={attendanceGrade}
-                                onChange={(e) => updateGrade(assignment.id, 'attendanceGrade', parseFloat(e.target.value) || 0)}
-                                className="w-20 text-center"
-                                placeholder="0"
+                                onChange={(e) => handleGradeChange(student.assignmentId, 'attendanceGrade', parseFloat(e.target.value) || 0)}
+                                className="w-20 text-center border-blue-300 focus:border-blue-500"
+                                placeholder="0-100"
                               />
                             </td>
-                            <td className="border border-gray-300 p-2">
+                            <td className="p-3">
                               <Input
                                 type="number"
                                 min="0"
                                 max="100"
                                 value={behaviorGrade}
-                                onChange={(e) => updateGrade(assignment.id, 'behaviorGrade', parseFloat(e.target.value) || 0)}
-                                className="w-20 text-center"
-                                placeholder="0"
+                                onChange={(e) => handleGradeChange(student.assignmentId, 'behaviorGrade', parseFloat(e.target.value) || 0)}
+                                className="w-20 text-center border-green-300 focus:border-green-500"
+                                placeholder="0-100"
                               />
                             </td>
-                            <td className="border border-gray-300 p-2">
+                            <td className="p-3">
                               <Input
                                 type="number"
                                 min="0"
                                 max="100"
                                 value={finalExamGrade}
-                                onChange={(e) => updateGrade(assignment.id, 'finalExamGrade', parseFloat(e.target.value) || 0)}
-                                className="w-20 text-center"
-                                placeholder="0"
+                                onChange={(e) => handleGradeChange(student.assignmentId, 'finalExamGrade', parseFloat(e.target.value) || 0)}
+                                className="w-20 text-center border-purple-300 focus:border-purple-500"
+                                placeholder="0-100"
                               />
                             </td>
-                            <td className="border border-gray-300 p-2 text-center font-medium">
-                              <span className={calculatedGrade >= 60 ? "text-green-600" : "text-red-600"}>
-                                {calculatedGrade.toFixed(2)}
-                              </span>
+                            <td className="p-3">
+                              <Badge 
+                                variant={calculatedFinal >= 60 ? "default" : "destructive"}
+                                className="px-3 py-1"
+                              >
+                                {calculatedFinal.toFixed(1)}
+                              </Badge>
                             </td>
                           </tr>
                         );
@@ -285,27 +316,28 @@ const DetailedGradingPage: React.FC = () => {
                     </tbody>
                   </table>
                 </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
-                {(!group.assignments || group.assignments.length === 0) && (
-                  <div className="text-center py-8 text-gray-500">
-                    لا يوجد طلاب مسجلون في هذه المجموعة
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
-
-          {courseGroups.length === 0 && (
-            <Card>
-              <CardContent className="text-center py-8">
-                <p className="text-gray-500">لا توجد مجموعات مُعينة لك حالياً</p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        {/* Save Button */}
+        {hasUnsavedChanges && (
+          <div className="fixed bottom-6 right-6 z-50">
+            <Button
+              onClick={handleSaveAllGrades}
+              disabled={saveGradesMutation.isPending}
+              className="bg-primary hover:bg-primary-dark text-white shadow-lg"
+              size="lg"
+            >
+              <Icon name="save" size={16} className="ml-2" />
+              {saveGradesMutation.isPending ? "جاري الحفظ..." : `حفظ ${changesCount} تغيير`}
+            </Button>
+          </div>
+        )}
       </div>
     </SupervisorLayout>
   );
 };
 
-export default DetailedGradingPage;
+export default SupervisorDetailedGrading;

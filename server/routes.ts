@@ -2604,6 +2604,23 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         }
       }
 
+      // Create notifications for students
+      for (const assignment of savedAssignments) {
+        const studentAssignment = await storage.getTrainingAssignmentById(assignment.id);
+        if (studentAssignment) {
+          const student = await storage.getStudent(studentAssignment.studentId);
+          if (student) {
+            await storage.createNotification({
+              userId: student.userId,
+              title: "تم تحديث درجاتك",
+              message: `تم إدراج الدرجات المفصلة لك (حضور: ${assignment.attendanceGrade}، سلوك: ${assignment.behaviorGrade}، اختبار: ${assignment.finalExamGrade})`,
+              type: "success",
+              isRead: false
+            });
+          }
+        }
+      }
+
       // Log activity
       await logActivity(
         req.user!.username,

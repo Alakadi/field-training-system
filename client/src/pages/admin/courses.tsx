@@ -27,6 +27,7 @@ const AdminCourses: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [facultyFilter, setFacultyFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [academicYearFilter, setAcademicYearFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showAddCourseForm, setShowAddCourseForm] = useState(action === "new");
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
@@ -44,6 +45,10 @@ const AdminCourses: React.FC = () => {
 
   const { data: faculties } = useQuery({
     queryKey: ["/api/faculties"]
+  });
+
+  const { data: academicYears } = useQuery({
+    queryKey: ["/api/academic-years"]
   });
 
   const { data: courseGroups } = useQuery({
@@ -98,6 +103,11 @@ const AdminCourses: React.FC = () => {
     // Status filter
     if (statusFilter && matches) {
       matches = course.status === statusFilter;
+    }
+
+    // Academic year filter
+    if (academicYearFilter && matches) {
+      matches = course.academicYearId === parseInt(academicYearFilter);
     }
 
     return matches;
@@ -261,7 +271,7 @@ const AdminCourses: React.FC = () => {
 
         {/* Search and Filters */}
         <Card className="bg-white p-4 rounded-lg shadow">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="md:col-span-2">
               <div className="relative">
                 <Input
@@ -284,6 +294,21 @@ const AdminCourses: React.FC = () => {
                   {Array.isArray(faculties) && faculties.map((faculty: any) => (
                     <SelectItem key={faculty.id} value={String(faculty.id)}>
                       {faculty.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Select value={academicYearFilter} onValueChange={setAcademicYearFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="كل السنوات" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">كل السنوات</SelectItem>
+                  {Array.isArray(academicYears) && academicYears.map((year: any) => (
+                    <SelectItem key={year.id} value={String(year.id)}>
+                      {year.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
