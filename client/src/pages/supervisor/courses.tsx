@@ -520,8 +520,8 @@ const SupervisorCourses: React.FC = () => {
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                           <h4 className="font-medium text-blue-900 mb-2">إدراج الدرجات المفصلة</h4>
                           <p className="text-sm text-blue-700">
-                            {/* يتم إدراج الدرجات بشكل مفصل: الحضور (20%)، السلوك (30%)، الاختبار النهائي (50%). 
-                            سيتم حساب الدرجة النهائية تلقائياً بناءً على هذه النسب. */}
+                            جميع الدرجات من 100: الحضور (وزن 20%)، السلوك (وزن 30%)، الاختبار النهائي (وزن 50%). 
+                            سيتم حساب الدرجة النهائية تلقائياً بناءً على هذه الأوزان.
                           </p>
                         </div>
 
@@ -560,13 +560,13 @@ const SupervisorCourses: React.FC = () => {
                                   اسم الطالب
                                 </th>
                                 <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  الحضور<br/><span className="text-blue-600">(20%)</span>
+                                  الحضور<br/><span className="text-blue-600">(من 100، وزن 20%)</span>
                                 </th>
                                 <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  السلوك<br/><span className="text-green-600">(30%)</span>
+                                  السلوك<br/><span className="text-green-600">(من 100، وزن 30%)</span>
                                 </th>
                                 <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  الاختبار النهائي<br/><span className="text-purple-600">(50%)</span>
+                                  الاختبار النهائي<br/><span className="text-purple-600">(من 100، وزن 50%)</span>
                                 </th>
                                 <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                   الدرجة النهائية<br/><span className="text-orange-600">(محسوبة)</span>

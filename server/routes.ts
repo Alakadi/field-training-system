@@ -2358,18 +2358,18 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         return res.status(400).json({ message: "بيانات غير صحيحة" });
       }
 
-      // Validate detailed grades
+      // Validate detailed grades - all grades should be out of 100
       for (const update of updates) {
         if (
           !update.assignmentId || 
           update.attendanceGrade === undefined || 
           update.behaviorGrade === undefined || 
           update.finalExamGrade === undefined ||
-          update.attendanceGrade < 0 || update.attendanceGrade > 20 ||
-          update.behaviorGrade < 0 || update.behaviorGrade > 30 ||
-          update.finalExamGrade < 0 || update.finalExamGrade > 50
+          update.attendanceGrade < 0 || update.attendanceGrade > 100 ||
+          update.behaviorGrade < 0 || update.behaviorGrade > 100 ||
+          update.finalExamGrade < 0 || update.finalExamGrade > 100
         ) {
-          return res.status(400).json({ message: "درجات غير صحيحة - الحضور (20)، السلوك (30)، النهائي (50)" });
+          return res.status(400).json({ message: "درجات غير صحيحة - يجب أن تكون الدرجات من 0 إلى 100" });
         }
       }
 
@@ -2664,89 +2664,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
     }
   });
 
-  // Detailed Grading API Routes
-  app.post("/api/students/detailed-grades/bulk", authMiddleware, requireRole("supervisor"), async (req: Request, res: Response) => {
-    try {
-      const { updates } = req.body;
 
-      if (!updates || !Array.isArray(updates)) {
-        return res.status(400).json({ message: "بيانات غير صحيحة" });
-      }
-
-      // Get supervisor info
-      const supervisor = await storage.getSupervisorByUserId(req.user!.id);
-      if (!supervisor) {
-        return res.status(403).json({ message: "غير مصرح بالوصول" });
-      }
-
-      const savedAssignments = [];
-
-      // Process each update
-      for (const update of updates) {
-        const { assignmentId, attendanceGrade, behaviorGrade, finalExamGrade } = update;
-
-        // Validate grades
-        if (attendanceGrade < 0 || attendanceGrade > 100 ||
-            behaviorGrade < 0 || behaviorGrade > 100 ||
-            finalExamGrade < 0 || finalExamGrade > 100) {
-          continue; // Skip invalid grades
-        }
-
-        // Calculate final grade (20% attendance + 30% behavior + 50% final exam)
-        const calculatedFinalGrade = (attendanceGrade * 0.2) + (behaviorGrade * 0.3) + (finalExamGrade * 0.5);
-
-        // Update assignment with detailed grades
-        const updatedAssignment = await storage.updateTrainingAssignmentGrades(assignmentId, {
-          attendanceGrade,
-          behaviorGrade,
-          finalExamGrade,
-          calculatedFinalGrade
-        });
-
-        if (updatedAssignment) {
-          savedAssignments.push(updatedAssignment);
-        }
-      }
-
-      // Create notifications for students
-      for (const assignment of savedAssignments) {
-        const studentAssignment = await storage.getTrainingAssignmentById(assignment.id);
-        if (studentAssignment) {
-          const student = await storage.getStudent(studentAssignment.studentId);
-          if (student) {
-            await storage.createNotification({
-              userId: student.userId,
-              title: "تم تحديث درجاتك",
-              message: `تم إدراج الدرجات المفصلة لك (حضور: ${assignment.attendanceGrade}، سلوك: ${assignment.behaviorGrade}، اختبار: ${assignment.finalExamGrade})`,
-              type: "success",
-              isRead: false
-            });
-          }
-        }
-      }
-
-      // Log activity
-      await logActivity(
-        req.user!.username,
-        "update_detailed_grades",
-        "training_assignment",
-        null,
-        { 
-          message: `تحديث الدرجات المفصلة لعدد ${savedAssignments.length} طالب`,
-          updatesCount: savedAssignments.length
-        }
-      );
-
-      res.json({
-        message: `تم حفظ الدرجات المفصلة لعدد ${savedAssignments.length} طالب بنجاح`,
-        savedCount: savedAssignments.length
-      });
-
-    } catch (error) {
-      console.error("Error saving detailed grades:", error);
-      res.status(500).json({ message: "خطأ في حفظ الدرجات المفصلة" });
-    }
-  });
 
   // Notifications API Routes
   app.get("/api/notifications", authMiddleware, async (req: Request, res: Response) => {
