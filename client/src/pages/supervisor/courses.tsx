@@ -84,12 +84,6 @@ const SupervisorCourses: React.FC = () => {
     },
   });
 
-  React.useEffect(() => {
-    if (courseGroups) {
-      setSelectedGroups(courseGroups);
-    }
-  }, [courseGroups]);
-
   // Fetch course groups assigned to this supervisor
   const { data: courseGroups, isLoading } = useQuery({
     queryKey: ["/api/training-course-groups", "supervisor", supervisorData?.id],
@@ -103,6 +97,12 @@ const SupervisorCourses: React.FC = () => {
     },
     enabled: !!supervisorData?.id,
   });
+
+  React.useEffect(() => {
+    if (courseGroups) {
+      setSelectedGroups(courseGroups);
+    }
+  }, [courseGroups]);
 
   // Update student grade mutation
   const updateGradeMutation = useMutation({
