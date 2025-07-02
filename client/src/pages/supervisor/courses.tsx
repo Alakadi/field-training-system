@@ -336,15 +336,13 @@ const SupervisorCourses: React.FC = () => {
 
           const assignments = await assignmentsResponse.json();
 
-          for (const student of targetGroup.students) {
-            console.log("Processing student:", student.id, editingGrades[student.id]);
+          for (const assignment of assignments) {
+            console.log("Processing student:", assignment.studentId, editingGrades[assignment.studentId]);
 
-            if (editingGrades[student.id]) {
-              const grades = editingGrades[student.id];
+            if (editingGrades[assignment.studentId]) {
+              const grades = editingGrades[assignment.studentId];
 
-              // Find assignment for this student in this group
-              const assignment = assignments.find((a: any) => a.studentId === student.id);
-              console.log("Found assignment for student", student.id, ":", assignment);
+              console.log("Found assignment for student", assignment.studentId, ":", assignment);
 
               if (assignment && 
                   grades.attendanceGrade !== undefined && 
