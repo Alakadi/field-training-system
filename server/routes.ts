@@ -2576,6 +2576,14 @@ const allGroups = await storage.getAllTrainingCourseGroups();
             reportScore: Math.round(evaluation.score * 0.3), // 30% for report
             totalScore: evaluation.score,
             notes: evaluation.comments,
+            // Add assignment data with detailed grades
+            assignment: {
+              id: assignment.id,
+              attendanceGrade: assignment.attendanceGrade,
+              behaviorGrade: assignment.behaviorGrade,
+              finalExamGrade: assignment.finalExamGrade,
+              calculatedFinalGrade: assignment.calculatedFinalGrade
+            },
             course: {
               ...course,
               startDate: group.startDate,

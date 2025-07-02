@@ -19,6 +19,7 @@ interface StudentReport {
     id: number;
     name: string;
     grade: number | null;
+    calculatedFinal: number | null;
     groupName: string;
     site: string;
     supervisor: string;
@@ -100,6 +101,7 @@ export default function AdminReports() {
               id: course?.id || group.courseId || assignment.groupId,
               name: course?.name || 'دورة غير محددة',
               grade: evaluation?.score || null,
+              calculatedFinal: assignment?.calculatedFinalGrade ? parseFloat(assignment.calculatedFinalGrade) : null,
               groupName: group.groupName,
               site: group.site?.name || 'غير محدد',
               supervisor: group.supervisor?.user?.name || 'غير محدد'
@@ -247,8 +249,8 @@ export default function AdminReports() {
                                   <div className="space-y-3">
                                     {student.courses.map((course) => (
                                       <div key={course.id} className="border rounded-lg p-4">
-                                        <div className="flex justify-between items-center">
-                                          <div className="text-right">
+                                        <div className="flex justify-between items-start">
+                                          <div className="text-right flex-1">
                                             <div className="font-medium">{course.name}</div>
                                             <div className="text-sm text-gray-600">
                                               {course.groupName} - {course.site}
@@ -257,15 +259,26 @@ export default function AdminReports() {
                                               المشرف: {course.supervisor}
                                             </div>
                                           </div>
-                                          <div className="text-center">
-                                            {course.grade !== null ? (
-                                              <Badge variant={course.grade >= 75 ? "default" : course.grade >= 60 ? "secondary" : "destructive"}>
-                                                {course.grade}/100
-                                              </Badge>
-                                            ) : (
-                                              <Badge variant="outline">
-                                                لم يتم التقييم
-                                              </Badge>
+                                          <div className="text-center space-y-2">
+                                            <div>
+                                              <div className="text-xs text-gray-500 mb-1">درجة التقييم</div>
+                                              {course.grade !== null ? (
+                                                <Badge variant={course.grade >= 75 ? "default" : course.grade >= 60 ? "secondary" : "destructive"}>
+                                                  {course.grade}/100
+                                                </Badge>
+                                              ) : (
+                                                <Badge variant="outline">
+                                                  لم يتم التقييم
+                                                </Badge>
+                                              )}
+                                            </div>
+                                            {course.calculatedFinal !== null && (
+                                              <div>
+                                                <div className="text-xs text-gray-500 mb-1">الدرجة النهائية</div>
+                                                <Badge variant={course.calculatedFinal >= 75 ? "default" : course.calculatedFinal >= 60 ? "secondary" : "destructive"}>
+                                                  {course.calculatedFinal}/100
+                                                </Badge>
+                                              </div>
                                             )}
                                           </div>
                                         </div>
@@ -285,9 +298,16 @@ export default function AdminReports() {
                           </div>
                           <div className="flex flex-wrap gap-2 justify-end">
                             {student.courses.slice(0, 3).map((course) => (
-                              <Badge key={course.id} variant="outline" className="text-xs">
-                                {course.name}: {course.grade !== null ? `${course.grade}/100` : 'لم يتم التقييم'}
-                              </Badge>
+                              <div key={course.id} className="flex flex-col gap-1">
+                                <Badge variant="outline" className="text-xs">
+                                  {course.name}: {course.grade !== null ? `${course.grade}/100` : 'لم يتم التقييم'}
+                                </Badge>
+                                {course.calculatedFinal !== null && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    نهائية: {course.calculatedFinal}/100
+                                  </Badge>
+                                )}
+                              </div>
                             ))}
                             {student.courses.length > 3 && (
                               <Badge variant="secondary" className="text-xs">

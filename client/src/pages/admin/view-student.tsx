@@ -69,9 +69,9 @@ const ViewStudent: React.FC = () => {
     );
   }
 
-  const faculty = faculties?.find((f: any) => f.id === student?.facultyId);
-  const major = majors?.find((m: any) => m.id === student?.majorId);
-  const level = levels?.find((l: any) => l.id === student?.levelId);
+  const faculty = (faculties as any)?.find((f: any) => f.id === (student as any)?.facultyId);
+  const major = (majors as any)?.find((m: any) => m.id === (student as any)?.majorId);
+  const level = (levels as any)?.find((l: any) => l.id === (student as any)?.levelId);
 
   return (
     <AdminLayout>
@@ -108,28 +108,28 @@ const ViewStudent: React.FC = () => {
                     <div className="h-24 w-24 rounded-full bg-neutral-100 flex items-center justify-center mx-auto mb-3">
                       <Icon name="user" size={24} />
                     </div>
-                    <h3 className="text-xl font-semibold">{student?.user.name}</h3>
-                    <Badge className={student?.user.active ? "bg-green-100 text-green-800" : "bg-neutral-100 text-neutral-800"}>
-                      {student?.user.active ? "نشط" : "غير نشط"}
+                    <h3 className="text-xl font-semibold">{(student as any)?.user?.name}</h3>
+                    <Badge className={(student as any)?.user?.active ? "bg-green-100 text-green-800" : "bg-neutral-100 text-neutral-800"}>
+                      {(student as any)?.user?.active ? "نشط" : "غير نشط"}
                     </Badge>
                   </div>
 
                   <div className="space-y-3">
                     <div>
                       <p className="text-sm font-medium text-neutral-500">الرقم الجامعي</p>
-                      <p>{student?.universityId}</p>
+                      <p>{(student as any)?.universityId}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-neutral-500">اسم المستخدم</p>
-                      <p>{student?.user.username}</p>
+                      <p>{(student as any)?.user?.username}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-neutral-500">البريد الإلكتروني</p>
-                      <p>{student?.user.email || "-"}</p>
+                      <p>{(student as any)?.user?.email || "-"}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-neutral-500">رقم الهاتف</p>
-                      <p>{student?.user.phone || "-"}</p>
+                      <p>{(student as any)?.user?.phone || "-"}</p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-neutral-500">الكلية</p>
@@ -273,30 +273,68 @@ const ViewStudent: React.FC = () => {
                                   <p>{evaluation.supervisor?.user?.name || "-"}</p>
                                 </div>
                                 
+                                {/* الدرجات المفصلة */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                  <div className="text-center p-3 bg-neutral-50 rounded-lg">
-                                    <p className="text-sm font-medium text-neutral-500">الحضور والانضباط</p>
-                                    <p className="text-2xl font-bold text-primary">{evaluation.attendanceScore} / 30</p>
+                                  <div className="text-center p-3 bg-blue-50 rounded-lg">
+                                    <p className="text-sm font-medium text-blue-600">درجة الحضور</p>
+                                    <p className="text-2xl font-bold text-blue-700">
+                                      {evaluation.assignment?.attendanceGrade || 0} / 20
+                                    </p>
+                                    <p className="text-xs text-blue-500">(20%)</p>
                                   </div>
-                                  <div className="text-center p-3 bg-neutral-50 rounded-lg">
-                                    <p className="text-sm font-medium text-neutral-500">المهارات المكتسبة</p>
-                                    <p className="text-2xl font-bold text-primary">{evaluation.skillsScore} / 40</p>
+                                  <div className="text-center p-3 bg-green-50 rounded-lg">
+                                    <p className="text-sm font-medium text-green-600">درجة السلوك</p>
+                                    <p className="text-2xl font-bold text-green-700">
+                                      {evaluation.assignment?.behaviorGrade || 0} / 30
+                                    </p>
+                                    <p className="text-xs text-green-500">(30%)</p>
                                   </div>
-                                  <div className="text-center p-3 bg-neutral-50 rounded-lg">
-                                    <p className="text-sm font-medium text-neutral-500">التقرير النهائي</p>
-                                    <p className="text-2xl font-bold text-primary">{evaluation.reportScore} / 30</p>
+                                  <div className="text-center p-3 bg-purple-50 rounded-lg">
+                                    <p className="text-sm font-medium text-purple-600">الاختبار النهائي</p>
+                                    <p className="text-2xl font-bold text-purple-700">
+                                      {evaluation.assignment?.finalExamGrade || 0} / 50
+                                    </p>
+                                    <p className="text-xs text-purple-500">(50%)</p>
                                   </div>
                                 </div>
 
-                                <div>
-                                  <p className="text-sm font-medium text-neutral-500">التقييم الإجمالي ({evaluation.totalScore} / 100)</p>
-                                  <div className="w-full bg-neutral-200 rounded-full h-2.5 mt-2">
+                                {/* الدرجة النهائية المحسوبة */}
+                                <div className="bg-orange-50 p-4 rounded-lg">
+                                  <div className="flex justify-between items-center mb-2">
+                                    <p className="text-sm font-medium text-orange-600">الدرجة النهائية المحسوبة</p>
+                                    <div className="text-2xl font-bold text-orange-700">
+                                      {evaluation.assignment?.calculatedFinalGrade ? 
+                                        parseFloat(evaluation.assignment.calculatedFinalGrade).toFixed(1) : 0} / 100
+                                    </div>
+                                  </div>
+                                  <div className="w-full bg-orange-200 rounded-full h-3">
                                     <div 
-                                      className="bg-primary h-2.5 rounded-full" 
-                                      style={{ width: `${evaluation.totalScore}%` }}
+                                      className="bg-orange-500 h-3 rounded-full transition-all duration-300" 
+                                      style={{ 
+                                        width: `${evaluation.assignment?.calculatedFinalGrade || 0}%` 
+                                      }}
                                     ></div>
                                   </div>
                                 </div>
+
+                                {/* التقييم التقليدي (إن وجد) */}
+                                {evaluation.score && (
+                                  <div className="bg-gray-50 p-4 rounded-lg">
+                                    <p className="text-sm font-medium text-gray-600 mb-2">تقييم المشرف التقليدي</p>
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-gray-700">النتيجة</span>
+                                      <div className="text-xl font-bold text-gray-800">
+                                        {evaluation.score} / 100
+                                      </div>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                                      <div 
+                                        className="bg-gray-500 h-2 rounded-full" 
+                                        style={{ width: `${evaluation.score}%` }}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                )}
 
                                 {evaluation.notes && (
                                   <div>
