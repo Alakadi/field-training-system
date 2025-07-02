@@ -1021,7 +1021,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   
                   return {
                     ...student,
-                    grade: evaluation?.score || null
+                    grade: evaluation?.score || null,
+                    assignment: {
+                      id: assignment.id,
+                      attendanceGrade: assignment.attendanceGrade,
+                      behaviorGrade: assignment.behaviorGrade,
+                      finalExamGrade: assignment.finalExamGrade,
+                      calculatedFinalGrade: assignment.calculatedFinalGrade
+                    }
                   };
                 })
               );

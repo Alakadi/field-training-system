@@ -228,7 +228,21 @@ const SupervisorCourses: React.FC = () => {
       console.log(`Setting grade for student ${studentId}, field ${field}, value ${gradeNumber}, assignmentId ${assignmentId}`);
 
       setEditingGrades(prev => {
-        const finalAssignmentId = assignmentId || prev[studentId]?.assignmentId;
+        // Try to get assignmentId from multiple sources
+        let finalAssignmentId = assignmentId;
+        
+        if (!finalAssignmentId) {
+          // Try to get from previous state
+          finalAssignmentId = prev[studentId]?.assignmentId;
+        }
+        
+        if (!finalAssignmentId) {
+          // Try to get from student assignment data
+          const targetGroup = selectedGroups.find(g => g.students.some(s => s.id === studentId));
+          const student = targetGroup?.students.find(s => s.id === studentId);
+          finalAssignmentId = student?.assignment?.id;
+        }
+
         console.log(`Final assignmentId for student ${studentId}: ${finalAssignmentId}`);
 
         return {
