@@ -267,21 +267,24 @@ const SupervisorCourses: React.FC = () => {
       return edited;
     }
     // 2. خلاف ذلك، أرجع الدرجة المحفوظة (بما فيها الصفر)، أو '' إن لم توجد:
-    return student.assignment?.[field] ?? '';
+    const savedGrade = student.assignment?.[field];
+    return savedGrade !== undefined && savedGrade !== null ? Number(savedGrade) : '';
   };
 
   const getDetailedGradePlaceholder = (student: Student, field: 'attendanceGrade' | 'behaviorGrade' | 'finalExamGrade') => {
-    if (student.assignment) {
-      switch (field) {
-        case 'attendanceGrade':
-          return student.assignment.attendanceGrade ? `الدرجة الحالية: ${student.assignment.attendanceGrade}` : "أدخل درجة الحضور";
-        case 'behaviorGrade':
-          return student.assignment.behaviorGrade ? `الدرجة الحالية: ${student.assignment.behaviorGrade}` : "أدخل درجة السلوك";
-        case 'finalExamGrade':
-          return student.assignment.finalExamGrade ? `الدرجة الحالية: ${student.assignment.finalExamGrade}` : "أدخل درجة الاختبار";
-      }
-    }
-    return "أدخل الدرجة الجديدة";
+    const maxValues = {
+      'attendanceGrade': 20,
+      'behaviorGrade': 30,
+      'finalExamGrade': 50
+    };
+    
+    const fieldNames = {
+      'attendanceGrade': 'الحضور',
+      'behaviorGrade': 'السلوك', 
+      'finalExamGrade': 'الاختبار النهائي'
+    };
+
+    return `أدخل درجة ${fieldNames[field]} (من ${maxValues[field]})`;
   };
 
   const hasDetailedGradeChanged = (student: Student) => {
@@ -674,12 +677,14 @@ const SupervisorCourses: React.FC = () => {
                                       <Input
                                         type="number"
                                         min="0"
-                                        max={fieldMax['attendanceGrade']}
+                                        max="20"
                                         step="0.5"
-                                        value={getCurrentDetailedGrade(student, 'attendanceGrade')}
-                                          onChange={e => handleDetailedGradeChange(
-                                            student.id, 'attendanceGrade', e.target.value, student.assignment?.id
-                                          )}
+                                        placeholder={getDetailedGradePlaceholder(student, 'attendanceGrade')}
+                                        className={`w-20 text-center ${hasChanges ? 'border-blue-400 bg-blue-50' : ''}`}
+                                        value={currentAttendance}
+                                        onChange={(e) => {
+                                          handleDetailedGradeChange(student.id, 'attendanceGrade', e.target.value, student.assignment?.id);
+                                        }}
                                       />
                                     </td>
 
@@ -724,7 +729,7 @@ const SupervisorCourses: React.FC = () => {
                                           </Badge>
                                         ) : student.assignment?.calculatedFinalGrade ? (
                                           <Badge variant="secondary">
-                                            {student.assignment.calculatedFinalGrade}/100
+                                            {Number(student.assignment.calculatedFinalGrade).toFixed(1)}/100
                                           </Badge>
                                         ) : (
                                           <span className="text-gray-400 text-sm">غير محسوبة</span>
