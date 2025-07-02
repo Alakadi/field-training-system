@@ -243,23 +243,17 @@ const SupervisorCourses: React.FC = () => {
     }
   };
 
-  const getCurrentDetailedGrade = (student: Student, field: 'attendanceGrade' | 'behaviorGrade' | 'finalExamGrade') => {
-    // If there's an editing grade, use it
-    if (editingGrades[student.id]?.[field] !== undefined) {
-      return editingGrades[student.id][field];
+  const getCurrentDetailedGrade = (
+    student: Student,
+    field: 'attendanceGrade' | 'behaviorGrade' | 'finalExamGrade'
+  ): number | '' => {
+    // 1. إذا حررتَ الدرجة مؤخرًا، اعرضها:
+    const edited = editingGrades[student.id]?.[field];
+    if (edited !== undefined) {
+      return edited;
     }
-    // Otherwise use the saved grade from assignment
-    if (student.assignment) {
-      switch (field) {
-        case 'attendanceGrade':
-          return student.assignment.attendanceGrade || '';
-        case 'behaviorGrade':
-          return student.assignment.behaviorGrade || '';
-        case 'finalExamGrade':
-          return student.assignment.finalExamGrade || '';
-      }
-    }
-    return '';
+    // 2. خلاف ذلك، أرجع الدرجة المحفوظة (بما فيها الصفر)، أو '' إن لم توجد:
+    return student.assignment?.[field] ?? '';
   };
 
   const getDetailedGradePlaceholder = (student: Student, field: 'attendanceGrade' | 'behaviorGrade' | 'finalExamGrade') => {
@@ -400,6 +394,11 @@ const SupervisorCourses: React.FC = () => {
     };
 
     return statusMap[status as keyof typeof statusMap] || { label: status, variant: "secondary" as const };
+  };
+  const fieldMax = {
+    attendanceGrade: 20,
+    behaviorGrade: 30,
+    finalExamGrade: 50,
   };
 
   if (isLoading) {
@@ -663,14 +662,12 @@ const SupervisorCourses: React.FC = () => {
                                       <Input
                                         type="number"
                                         min="0"
-                                        max="20"
+                                        max={fieldMax['attendanceGrade']}
                                         step="0.5"
-                                        placeholder={getDetailedGradePlaceholder(student, 'attendanceGrade')}
-                                        className={`w-20 text-center ${hasChanges ? 'border-blue-400 bg-blue-50' : ''}`}
-                                        value={currentAttendance}
-                                        onChange={(e) => {
-                                          handleDetailedGradeChange(student.id, 'attendanceGrade', e.target.value, student.assignment?.id);
-                                        }}
+                                        value={getCurrentDetailedGrade(student, 'attendanceGrade')}
+                                          onChange={e => handleDetailedGradeChange(
+                                            student.id, 'attendanceGrade', e.target.value, student.assignment?.id
+                                          )}
                                       />
                                     </td>
 

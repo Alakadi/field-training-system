@@ -1917,7 +1917,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get supervisor's course assignments (when admin assigns supervisor to courses/groups)
+  // الحصول على مهام الدورات الخاصة بالمشرف (عندما يقوم المدير بتعيين المشرف على الدورات/المجموعات)
   app.get("/api/supervisor/course-assignments", authMiddleware, requireRole("supervisor"), async (req: Request, res: Response) => {
     try {
       // Get supervisor info
@@ -1963,7 +1963,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
     }
   });
 
-  // Get detailed information about a specific training group
+  // الحصول على معلومات تفصيلية حول مجموعة تدريب معينة
   app.get("/api/training-course-groups/:groupId", authMiddleware, async (req: Request, res: Response) => {
     try {
       const groupId = parseInt(req.params.groupId);
@@ -2161,7 +2161,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
       // Get supervisor details
       const supervisorWithUser = await storage.getSupervisorWithUser(supervisor.id);
 
-      // Check if evaluation already exists for this assignment
+      // تحقق مما إذا كان التقييم موجودًا بالفعل لهذه المهمة
       const existingEvaluations = await storage.getAllEvaluations();
       const existingEvaluation = existingEvaluations.find(evaluation => evaluation.assignmentId === assignment.id);
 
@@ -2220,7 +2220,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
     }
   });
 
-  // API endpoint to save multiple student grades at once
+  // نقطة نهاية API لحفظ درجات عدة طلاب دفعة واحدة
   app.post("/api/students/grades/bulk", authMiddleware, requireRole("supervisor"), async (req: Request, res: Response) => {
     try {
       const { grades, groupId } = req.body;
