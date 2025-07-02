@@ -2528,7 +2528,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
     }
   });
 
-  // Get student evaluations by student ID
+  // Get student evaluations by student ID  
   app.get("/api/students/:id/evaluations", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
       const studentId = Number(req.params.id);
@@ -2543,12 +2543,11 @@ const allGroups = await storage.getAllTrainingCourseGroups();
       // Get course groups for context
       const courseGroups = await storage.getAllTrainingCourseGroups();
 
-      // Build evaluations data with full details
+      // Build evaluations/assignments data with full details
       const studentEvaluations = await Promise.all(
         studentAssignments.map(async (assignment) => {
-          // Find evaluation for this assignment
+          // Find evaluation for this assignment (may not exist yet)
           const evaluation = allEvaluations.find(evalItem => evalItem.assignmentId === assignment.id);
-          if (!evaluation) return null;
 
           // Get group and course details
           const group = courseGroups.find(g => g.id === assignment.groupId);
@@ -2563,33 +2562,37 @@ const allGroups = await storage.getAllTrainingCourseGroups();
             supervisor = await storage.getSupervisor(group.supervisorId);
           }
 
+          // Return data whether evaluation exists or not
           return {
-            id: evaluation.id,
+            id: evaluation?.id || `assignment_${assignment.id}`,
             assignmentId: assignment.id,
-            score: evaluation.score,
-            comments: evaluation.comments,
-            evaluationDate: evaluation.createdAt,
-            evaluatorName: evaluation.evaluatorName,
-            // Calculate individual scores (if needed for display)
-            attendanceScore: Math.round(evaluation.score * 0.3), // 30% for attendance
-            skillsScore: Math.round(evaluation.score * 0.4), // 40% for skills
-            reportScore: Math.round(evaluation.score * 0.3), // 30% for report
-            totalScore: evaluation.score,
-            notes: evaluation.comments,
+            score: evaluation?.score || null,
+            comments: evaluation?.comments || null,
+            evaluationDate: evaluation?.createdAt || null,
+            evaluatorName: evaluation?.evaluatorName || null,
+            // Calculate individual scores from assignment data (if needed for display)
+            attendanceScore: assignment.attendanceGrade ? Number(assignment.attendanceGrade) : 0,
+            skillsScore: assignment.behaviorGrade ? Number(assignment.behaviorGrade) : 0,
+            reportScore: assignment.finalExamGrade ? Number(assignment.finalExamGrade) : 0,
+            totalScore: assignment.calculatedFinalGrade ? parseFloat(assignment.calculatedFinalGrade) : 0,
+            notes: evaluation?.comments || null,
             // Add assignment data with detailed grades
             assignment: {
               id: assignment.id,
               attendanceGrade: assignment.attendanceGrade,
               behaviorGrade: assignment.behaviorGrade,
               finalExamGrade: assignment.finalExamGrade,
-              calculatedFinalGrade: assignment.calculatedFinalGrade
+              calculatedFinalGrade: assignment.calculatedFinalGrade,
+              status: assignment.status,
+              confirmed: assignment.confirmed
             },
             course: {
               ...course,
               startDate: group.startDate,
               endDate: group.endDate
             },
-            supervisor: supervisor
+            supervisor: supervisor,
+            hasGrades: !!(assignment.attendanceGrade || assignment.behaviorGrade || assignment.finalExamGrade)
           };
         })
       );
