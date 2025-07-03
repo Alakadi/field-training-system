@@ -394,6 +394,10 @@ export default function AdminReports() {
           )}
         </div>
       </div>
+       {/* Report Date Footer */}
+       <div className="text-center text-gray-500 text-sm">
+          تم إنشاء هذا التقرير في: {new Date().toLocaleDateString('en-GB')} - {new Date().toLocaleTimeString('en-GB')}
+        </div>
     </AdminLayout>
   );
 }

@@ -376,7 +376,7 @@ const createArabicTableHTML = (title: string, columns: any[], data: any[]): stri
         border-top: 1px solid #eee;
         padding-top: 10px;
       ">
-        تم إنشاء هذا التقرير في: ${new Date().toLocaleDateString('ar-SA')} - ${new Date().toLocaleTimeString('ar-SA')}
+        تم إنشاء هذا التقرير في: ${new Date().toLocaleDateString('en-GB')} - ${new Date().toLocaleTimeString('en-GB')}
         <br>
         عدد السجلات: ${data.length}
       </div>

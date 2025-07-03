@@ -153,7 +153,7 @@ const ViewStudent: React.FC = () => {
                     </div> */}
                     <div>
                       <p className="text-sm font-medium text-neutral-500">تاريخ التسجيل</p>
-                      <p>{new Date(student?.user.createdAt).toLocaleDateString('ar-SA')}</p>
+                      <p>{new Date(student?.user.createdAt).toLocaleDateString('en-GB')}</p>
                     </div>
                   </div>
                 </div>
@@ -216,7 +216,7 @@ const ViewStudent: React.FC = () => {
                                   {registration.course.supervisor?.user?.name || "-"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                                  {new Date(registration.course.startDate).toLocaleDateString('ar-SA')}
+                                  {new Date(registration.course.startDate).toLocaleDateString('en-GB')}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <Badge className={`
@@ -262,7 +262,7 @@ const ViewStudent: React.FC = () => {
                               <div className="flex justify-between items-center">
                                 <CardTitle className="text-lg">{evaluation.course.name}</CardTitle>
                                 <Badge className="bg-blue-100 text-blue-800">
-                                  {new Date(evaluation.evaluationDate).toLocaleDateString('ar-SA')}
+                                  {new Date(evaluation.evaluationDate).toLocaleDateString('en-GB')}
                                 </Badge>
                               </div>
                             </CardHeader>
