@@ -1823,15 +1823,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
             const latestEvaluation = evaluations.length > 0 ? evaluations[evaluations.length - 1] : null;
             
-            // Parse detailed grades from assignment
-            const attendanceGrade = assignment.attendanceGrade ? parseFloat(assignment.attendanceGrade) : null;
-            const behaviorGrade = assignment.behaviorGrade ? parseFloat(assignment.behaviorGrade) : null;
-            const finalExamGrade = assignment.finalExamGrade ? parseFloat(assignment.finalExamGrade) : null;
-            const calculatedFinalGrade = assignment.calculatedFinalGrade ? parseFloat(assignment.calculatedFinalGrade) : null;
+            // Parse detailed grades from assignment - ensuring they are properly converted
+            const attendanceGrade = assignment.attendanceGrade ? parseFloat(String(assignment.attendanceGrade)) : null;
+            const behaviorGrade = assignment.behaviorGrade ? parseFloat(String(assignment.behaviorGrade)) : null;
+            const finalExamGrade = assignment.finalExamGrade ? parseFloat(String(assignment.finalExamGrade)) : null;
+            const calculatedFinalGrade = assignment.calculatedFinalGrade ? parseFloat(String(assignment.calculatedFinalGrade)) : null;
+
+            // Debug logging to see what we're getting
+            console.log(`Student ${studentDetails.user.name} - Course ${group.course.name}:`, {
+              attendanceGrade: assignment.attendanceGrade,
+              behaviorGrade: assignment.behaviorGrade,
+              finalExamGrade: assignment.finalExamGrade,
+              calculatedFinalGrade: assignment.calculatedFinalGrade,
+              parsed: { attendanceGrade, behaviorGrade, finalExamGrade, calculatedFinalGrade }
+            });
 
             // Use calculated final grade if available, otherwise use evaluation score
             let displayGrade = null;
-            if (calculatedFinalGrade !== null && calculatedFinalGrade > 0) {
+            if (calculatedFinalGrade !== null && calculatedFinalGrade >= 0) {
               displayGrade = calculatedFinalGrade;
             } else if (latestEvaluation?.score && latestEvaluation.score > 0) {
               displayGrade = latestEvaluation.score;
@@ -1847,7 +1856,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               finalExamGrade: finalExamGrade,
               groupName: group.groupName,
               site: group.site.name,
-              supervisor: supervisorDetails?.user?.name || 'غير محدد'
+              supervisor: supervisorDetails?.user?.name || 'غير محدد',
+              hasDetailedGrades: !!(attendanceGrade !== null || behaviorGrade !== null || finalExamGrade !== null)
             });
           }
         }
@@ -1866,6 +1876,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      console.log(`Reports API returning ${studentsReport.length} students with courses`);
       res.json(studentsReport);
     } catch (error) {
       console.error("Error fetching students report:", error);

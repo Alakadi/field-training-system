@@ -26,6 +26,7 @@ interface StudentReport {
     attendanceGrade?: number | null;
     behaviorGrade?: number | null;
     finalExamGrade?: number | null;
+    hasDetailedGrades?: boolean;
   }[];
 }
 
@@ -111,7 +112,7 @@ export default function AdminReports() {
               attendanceGrade: assignment?.attendanceGrade ? parseFloat(assignment?.attendanceGrade) : null,
               behaviorGrade: assignment?.behaviorGrade ? parseFloat(assignment.behaviorGrade) : null,
               finalExamGrade: assignment?.finalExamGrade ? parseFloat(assignment.finalExamGrade) : null,
-
+              hasDetailedGrades: assignment.attendanceGrade !== null || assignment.behaviorGrade !== null || assignment.finalExamGrade !== null
             });
           }
         }
@@ -267,18 +268,25 @@ export default function AdminReports() {
                                             </div>
                                           </div>
                                           <div className="text-center space-y-2">
-                                            {course.calculatedFinal !== null && course.calculatedFinal !== undefined ? (
+                                            {course.calculatedFinal !== null && course.calculatedFinal !== undefined && course.calculatedFinal >= 0 ? (
                                               <div>
                                                 <div className="text-xs text-gray-500 mb-1">الدرجة النهائية المحسوبة</div>
                                                 <Badge variant={course.calculatedFinal >= 75 ? "default" : course.calculatedFinal >= 60 ? "secondary" : "destructive"}>
-                                                  {Math.round(course.calculatedFinal)}/100
+                                                  {Number(course.calculatedFinal).toFixed(1)}/100
                                                 </Badge>
                                               </div>
-                                            ) : course.grade !== null && course.grade !== undefined ? (
+                                            ) : course.grade !== null && course.grade !== undefined && course.grade > 0 ? (
                                               <div>
                                                 <div className="text-xs text-gray-500 mb-1">درجة التقييم</div>
                                                 <Badge variant={course.grade >= 75 ? "default" : course.grade >= 60 ? "secondary" : "destructive"}>
                                                   {Math.round(course.grade)}/100
+                                                </Badge>
+                                              </div>
+                                            ) : (course.attendanceGrade !== null || course.behaviorGrade !== null || course.finalExamGrade !== null) ? (
+                                              <div>
+                                                <div className="text-xs text-gray-500 mb-1">تقييم جزئي</div>
+                                                <Badge variant="secondary">
+                                                  قيد التقييم
                                                 </Badge>
                                               </div>
                                             ) : (
@@ -291,11 +299,15 @@ export default function AdminReports() {
                                             )}
 
                                             {/* عرض الدرجات المفصلة إذا كانت متوفرة */}
-                                            {(course.attendanceGrade !== null || course.behaviorGrade !== null || course.finalExamGrade !== null) && (
-                                              <div className="mt-2 text-xs text-gray-600">
-                                                <div>الحضور: {course.attendanceGrade !== null ? course.attendanceGrade : 0}/20</div>
-                                                <div>السلوك: {course.behaviorGrade !== null ? course.behaviorGrade : 0}/30</div>
-                                                <div>الاختبار: {course.finalExamGrade !== null ? course.finalExamGrade : 0}/50</div>
+                                            {(course.attendanceGrade !== null || course.behaviorGrade !== null || course.finalExamGrade !== null || course.hasDetailedGrades) && (
+                                              <div className="mt-2 text-xs text-gray-600 space-y-1">
+                                                <div className="font-medium text-gray-700">الدرجات المفصلة:</div>
+                                                <div>الحضور: {course.attendanceGrade !== null && course.attendanceGrade !== undefined ? course.attendanceGrade : '-'}/20</div>
+                                                <div>السلوك: {course.behaviorGrade !== null && course.behaviorGrade !== undefined ? course.behaviorGrade : '-'}/30</div>
+                                                <div>الاختبار النهائي: {course.finalExamGrade !== null && course.finalExamGrade !== undefined ? course.finalExamGrade : '-'}/50</div>
+                                                {course.calculatedFinal && (
+                                                  <div className="font-medium text-green-600">المجموع: {course.calculatedFinal}/100</div>
+                                                )}
                                               </div>
                                             )}
                                           </div>
