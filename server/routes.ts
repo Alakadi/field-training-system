@@ -1814,49 +1814,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const courses = [];
 
         for (const assignment of assignments) {
-          // Check if this assignment has detailed grades or evaluations
-          const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
-          
-          // Include course if it has detailed grades OR evaluations OR is just enrolled
-          const hasDetailedGrades = !!(assignment.attendanceGrade || assignment.behaviorGrade || assignment.finalExamGrade || assignment.calculatedFinalGrade);
-          const hasEvaluations = evaluations.length > 0;
-          
-          // Show all enrolled courses, but prioritize those with grades
           const group = assignment.groupId ? await storage.getTrainingCourseGroupWithStudents(assignment.groupId) : null;
           if (group) {
+            // Get supervisor details
             const supervisorDetails = await storage.getSupervisorWithUser(group.supervisorId);
 
-            // Get the latest evaluation for this assignment (if any)
+            // Get evaluations (if any)
+            const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
             const latestEvaluation = evaluations.length > 0 ? evaluations[evaluations.length - 1] : null;
             
-            // Use calculated final grade from assignment if available, otherwise use evaluation score
-            let finalGrade = null;
-            if (assignment.calculatedFinalGrade && assignment.calculatedFinalGrade !== '0') {
-              finalGrade = parseFloat(assignment.calculatedFinalGrade);
-            } else if (latestEvaluation?.score && latestEvaluation.score !== 0) {
-              finalGrade = latestEvaluation.score;
+            // Parse detailed grades from assignment
+            const attendanceGrade = assignment.attendanceGrade ? parseFloat(assignment.attendanceGrade) : null;
+            const behaviorGrade = assignment.behaviorGrade ? parseFloat(assignment.behaviorGrade) : null;
+            const finalExamGrade = assignment.finalExamGrade ? parseFloat(assignment.finalExamGrade) : null;
+            const calculatedFinalGrade = assignment.calculatedFinalGrade ? parseFloat(assignment.calculatedFinalGrade) : null;
+
+            // Use calculated final grade if available, otherwise use evaluation score
+            let displayGrade = null;
+            if (calculatedFinalGrade !== null && calculatedFinalGrade > 0) {
+              displayGrade = calculatedFinalGrade;
+            } else if (latestEvaluation?.score && latestEvaluation.score > 0) {
+              displayGrade = latestEvaluation.score;
             }
             
             courses.push({
               id: group.course.id,
               name: group.course.name,
               grade: latestEvaluation?.score || null,
-              // Prioritize calculated final grade from detailed grades
-              calculatedFinal: finalGrade,
-              // Add detailed grades
-              attendanceGrade: assignment.attendanceGrade ? Number(assignment.attendanceGrade) : null,
-              behaviorGrade: assignment.behaviorGrade ? Number(assignment.behaviorGrade) : null,
-              finalExamGrade: assignment.finalExamGrade ? Number(assignment.finalExamGrade) : null,
+              calculatedFinal: displayGrade,
+              attendanceGrade: attendanceGrade,
+              behaviorGrade: behaviorGrade,
+              finalExamGrade: finalExamGrade,
               groupName: group.groupName,
               site: group.site.name,
-              supervisor: supervisorDetails?.user?.name || 'غير محدد',
-              hasDetailedGrades: hasDetailedGrades,
-              hasEvaluations: hasEvaluations
+              supervisor: supervisorDetails?.user?.name || 'غير محدد'
             });
           }
         }
 
-        // Include students even if they don't have grades yet (for comprehensive reporting)
+        // Include all students with assignments (even without grades for comprehensive reporting)
         if (courses.length > 0) {
           studentsReport.push({
             id: student.id,
