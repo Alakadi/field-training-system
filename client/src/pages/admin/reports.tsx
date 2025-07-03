@@ -57,80 +57,9 @@ export default function AdminReports() {
   const { data: studentsReport, isLoading: loadingStudents } = useQuery({
     queryKey: ["/api/reports/students"],
     queryFn: async () => {
-      // Get all students
-      const studentsRes = await fetch("/api/students", { credentials: "include" });
-      if (!studentsRes.ok) throw new Error("Failed to fetch students");
-      const students = await studentsRes.json();
-
-      // Get all training assignments
-      const assignmentsRes = await fetch("/api/training-assignments", { credentials: "include" });
-      if (!assignmentsRes.ok) throw new Error("Failed to fetch assignments");
-      const assignments = await assignmentsRes.json();
-
-      // Get all evaluations
-      const evaluationsRes = await fetch("/api/evaluations", { credentials: "include" });
-      if (!evaluationsRes.ok) throw new Error("Failed to fetch evaluations");
-      const evaluations = await evaluationsRes.json();
-
-      // Get all training course groups with full details
-      const groupsRes = await fetch("/api/training-course-groups", { credentials: "include" });
-      if (!groupsRes.ok) throw new Error("Failed to fetch groups");
-      const groups = await groupsRes.json();
-
-      // Get all courses for proper course names
-      const coursesRes = await fetch("/api/training-courses", { credentials: "include" });
-      if (!coursesRes.ok) throw new Error("Failed to fetch courses");
-      const courses = await coursesRes.json();
-
-      const studentsReport = [];
-
-      for (const student of students) {
-        // Get student assignments
-        const studentAssignments = assignments.filter((a: any) => a.studentId === student.id);
-        const studentCourses = [];
-
-        for (const assignment of studentAssignments) {
-          // Find evaluation for this assignment
-          const evaluation = evaluations.find((e: any) => e.assignmentId === assignment.id);
-
-          // Find group details
-          const group = groups.find((g: any) => g.id === assignment.groupId);
-
-          if (group) {
-            // Find the actual course details
-            const course = courses.find((c: any) => c.id === group.courseId);
-
-            studentCourses.push({
-              id: course?.id || group.courseId || assignment.groupId,
-              name: course?.name || 'دورة غير محددة',
-              grade: evaluation?.score || null,
-              calculatedFinal: assignment?.calculatedFinalGrade ? parseFloat(assignment.calculatedFinalGrade) : null,
-              groupName: group.groupName,
-              site: group.site?.name || 'غير محدد',
-              supervisor: group.supervisor?.user?.name || 'غير محدد',
-              attendanceGrade: assignment?.attendanceGrade ? parseFloat(assignment?.attendanceGrade) : null,
-              behaviorGrade: assignment?.behaviorGrade ? parseFloat(assignment.behaviorGrade) : null,
-              finalExamGrade: assignment?.finalExamGrade ? parseFloat(assignment.finalExamGrade) : null,
-
-            });
-          }
-        }
-
-        if (studentCourses.length > 0) {
-          studentsReport.push({
-            id: student.id,
-            name: student.user?.name || 'غير محدد',
-            universityId: student.universityId,
-            faculty: student.faculty?.name || 'غير محدد',
-            major: student.major?.name || 'غير محدد',
-            level: student.level?.name || 'غير محدد',
-            courses: studentCourses
-          });
-        }
-
-        }
-
-      return studentsReport;
+      const res = await fetch("/api/reports/students", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch students report");
+      return res.json();
     },
   });
 
