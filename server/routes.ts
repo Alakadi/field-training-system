@@ -2544,9 +2544,19 @@ const allGroups = await storage.getAllTrainingCourseGroups();
   });
 
   // Get student evaluations by student ID  
-  app.get("/api/students/:id/evaluations", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
+  app.get("/api/students/:id/evaluations", authMiddleware, async (req: Request, res: Response) => {
     try {
       const studentId = Number(req.params.id);
+      
+      // Check permissions - admin can access all, students can access their own
+      if (req.user!.role === "student") {
+        const student = await storage.getStudentByUserId(req.user!.id);
+        if (!student || student.id !== studentId) {
+          return res.status(403).json({ message: "غير مصرح لك بالوصول إلى هذه الصفحة" });
+        }
+      } else if (req.user!.role !== "admin" && req.user!.role !== "supervisor") {
+        return res.status(403).json({ message: "غير مصرح لك بالوصول لهذه البيانات" });
+      }
 
       // Get all training assignments for this student
       const assignments = await storage.getAllTrainingAssignments();
