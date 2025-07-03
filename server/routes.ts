@@ -1814,21 +1814,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const courses = [];
 
         for (const assignment of assignments) {
+          // Check if this assignment has detailed grades or evaluations
           const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
-          if (evaluations.length > 0) {
+          
+          // Include course if it has detailed grades OR evaluations
+          const hasDetailedGrades = !!(assignment.attendanceGrade || assignment.behaviorGrade || assignment.finalExamGrade);
+          const hasEvaluations = evaluations.length > 0;
+          
+          if (hasDetailedGrades || hasEvaluations) {
             const group = assignment.groupId ? await storage.getTrainingCourseGroupWithStudents(assignment.groupId) : null;
             if (group) {
               const supervisorDetails = await storage.getSupervisorWithUser(group.supervisorId);
 
-              // Get the latest evaluation for this assignment (to avoid duplicates)
-              const latestEvaluation = evaluations[evaluations.length - 1];
+              // Get the latest evaluation for this assignment (if any)
+              const latestEvaluation = evaluations.length > 0 ? evaluations[evaluations.length - 1] : null;
+              
               courses.push({
                 id: group.course.id,
                 name: group.course.name,
-                grade: latestEvaluation.score,
+                grade: latestEvaluation?.score || null,
+                // Add calculated final grade from detailed grades
+                calculatedFinal: assignment.calculatedFinalGrade ? parseFloat(assignment.calculatedFinalGrade) : null,
+                // Add detailed grades
+                attendanceGrade: assignment.attendanceGrade ? Number(assignment.attendanceGrade) : null,
+                behaviorGrade: assignment.behaviorGrade ? Number(assignment.behaviorGrade) : null,
+                finalExamGrade: assignment.finalExamGrade ? Number(assignment.finalExamGrade) : null,
                 groupName: group.groupName,
                 site: group.site.name,
-                supervisor: supervisorDetails?.user?.name || 'غير محدد'
+                supervisor: supervisorDetails?.user?.name || 'غير محدد',
+                hasDetailedGrades: hasDetailedGrades,
+                hasEvaluations: hasEvaluations
               });
             }
           }
