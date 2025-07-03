@@ -23,6 +23,9 @@ interface StudentReport {
     groupName: string;
     site: string;
     supervisor: string;
+    attendanceGrade?: number | null;
+    behaviorGrade?: number | null;
+    finalExamGrade?: number | null;
   }[];
 }
 
@@ -89,14 +92,14 @@ export default function AdminReports() {
         for (const assignment of studentAssignments) {
           // Find evaluation for this assignment
           const evaluation = evaluations.find((e: any) => e.assignmentId === assignment.id);
-          
+
           // Find group details
           const group = groups.find((g: any) => g.id === assignment.groupId);
-          
+
           if (group) {
             // Find the actual course details
             const course = courses.find((c: any) => c.id === group.courseId);
-            
+
             studentCourses.push({
               id: course?.id || group.courseId || assignment.groupId,
               name: course?.name || 'دورة غير محددة',
@@ -104,7 +107,11 @@ export default function AdminReports() {
               calculatedFinal: assignment?.calculatedFinalGrade ? parseFloat(assignment.calculatedFinalGrade) : null,
               groupName: group.groupName,
               site: group.site?.name || 'غير محدد',
-              supervisor: group.supervisor?.user?.name || 'غير محدد'
+              supervisor: group.supervisor?.user?.name || 'غير محدد',
+              attendanceGrade: assignment?.attendanceGrade ? parseFloat(assignment?.attendanceGrade) : null,
+              behaviorGrade: assignment?.behaviorGrade ? parseFloat(assignment.behaviorGrade) : null,
+              finalExamGrade: assignment?.finalExamGrade ? parseFloat(assignment.finalExamGrade) : null,
+
             });
           }
         }
@@ -243,7 +250,7 @@ export default function AdminReports() {
                                     <strong>عدد الدورات:</strong> {student.courses.length}
                                   </div>
                                 </div>
-                                
+
                                 <div>
                                   <h3 className="font-semibold mb-3 text-right">الدورات والدرجات:</h3>
                                   <div className="space-y-3">
@@ -260,24 +267,35 @@ export default function AdminReports() {
                                             </div>
                                           </div>
                                           <div className="text-center space-y-2">
-                                            <div>
-                                              <div className="text-xs text-gray-500 mb-1">درجة التقييم</div>
-                                              {course.grade !== null ? (
-                                                <Badge variant={course.grade >= 75 ? "default" : course.grade >= 60 ? "secondary" : "destructive"}>
-                                                  {course.grade}/100
-                                                </Badge>
-                                              ) : (
-                                                <Badge variant="outline">
-                                                  لم يتم التقييم
-                                                </Badge>
-                                              )}
-                                            </div>
-                                            {course.calculatedFinal !== null && (
+                                            {course.calculatedFinal !== null ? (
                                               <div>
-                                                <div className="text-xs text-gray-500 mb-1">الدرجة النهائية</div>
+                                                <div className="text-xs text-gray-500 mb-1">الدرجة النهائية المحسوبة</div>
                                                 <Badge variant={course.calculatedFinal >= 75 ? "default" : course.calculatedFinal >= 60 ? "secondary" : "destructive"}>
                                                   {course.calculatedFinal}/100
                                                 </Badge>
+                                              </div>
+                                            ) : course.grade !== null ? (
+                                              <div>
+                                                <div className="text-xs text-gray-500 mb-1">درجة التقييم</div>
+                                                <Badge variant={course.grade >= 75 ? "default" : course.grade >= 60 ? "secondary" : "destructive"}>
+                                                  {course.grade}/100
+                                                </Badge>
+                                              </div>
+                                            ) : (
+                                              <div>
+                                                <div className="text-xs text-gray-500 mb-1">الدرجة</div>
+                                                <Badge variant="outline">
+                                                  لم يتم التقييم
+                                                </Badge>
+                                              </div>
+                                            )}
+
+                                            {/* عرض الدرجات المفصلة إذا كانت متوفرة */}
+                                            {(course.attendanceGrade || course.behaviorGrade || course.finalExamGrade) && (
+                                              <div className="mt-2 text-xs text-gray-600">
+                                                <div>الحضور: {course.attendanceGrade || 0}/20</div>
+                                                <div>السلوك: {course.behaviorGrade || 0}/30</div>
+                                                <div>الاختبار: {course.finalExamGrade || 0}/50</div>
                                               </div>
                                             )}
                                           </div>
@@ -378,7 +396,7 @@ export default function AdminReports() {
                                       <strong>التقييمات المكتملة:</strong> {course.groups.reduce((sum, group) => sum + group.completedEvaluations, 0)}
                                     </div>
                                   </div>
-                                  
+
                                   <div>
                                     <h3 className="font-semibold mb-3 text-right">مجموعات الدورة:</h3>
                                     <div className="space-y-3">
