@@ -1806,12 +1806,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const students = await storage.getAllStudents();
       const studentsReport = [];
 
+      console.log(`Processing ${students.length} students for reports`);
+
       for (const student of students) {
         const studentDetails = await storage.getStudentWithDetails(student.id);
         if (!studentDetails) continue;
 
         const assignments = await storage.getTrainingAssignmentsByStudent(student.id);
         const courses = [];
+
+        console.log(`Student ${studentDetails.user.name} has ${assignments.length} assignments`);
 
         for (const assignment of assignments) {
           const group = assignment.groupId ? await storage.getTrainingCourseGroupWithStudents(assignment.groupId) : null;
@@ -1823,28 +1827,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
             const latestEvaluation = evaluations.length > 0 ? evaluations[evaluations.length - 1] : null;
             
-            // Parse detailed grades from assignment - ensuring they are properly converted
-            const attendanceGrade = assignment.attendanceGrade ? parseFloat(String(assignment.attendanceGrade)) : null;
-            const behaviorGrade = assignment.behaviorGrade ? parseFloat(String(assignment.behaviorGrade)) : null;
-            const finalExamGrade = assignment.finalExamGrade ? parseFloat(String(assignment.finalExamGrade)) : null;
-            const calculatedFinalGrade = assignment.calculatedFinalGrade ? parseFloat(String(assignment.calculatedFinalGrade)) : null;
+            // Parse detailed grades from assignment directly as numbers
+            const attendanceGrade = assignment.attendanceGrade !== null && assignment.attendanceGrade !== undefined ? Number(assignment.attendanceGrade) : null;
+            const behaviorGrade = assignment.behaviorGrade !== null && assignment.behaviorGrade !== undefined ? Number(assignment.behaviorGrade) : null;
+            const finalExamGrade = assignment.finalExamGrade !== null && assignment.finalExamGrade !== undefined ? Number(assignment.finalExamGrade) : null;
+            const calculatedFinalGrade = assignment.calculatedFinalGrade !== null && assignment.calculatedFinalGrade !== undefined ? Number(assignment.calculatedFinalGrade) : null;
 
-            // Debug logging to see what we're getting
-            console.log(`Student ${studentDetails.user.name} - Course ${group.course.name}:`, {
-              attendanceGrade: assignment.attendanceGrade,
-              behaviorGrade: assignment.behaviorGrade,
-              finalExamGrade: assignment.finalExamGrade,
-              calculatedFinalGrade: assignment.calculatedFinalGrade,
+            // Debug logging
+            console.log(`Assignment ${assignment.id} grades:`, {
+              raw: {
+                attendanceGrade: assignment.attendanceGrade,
+                behaviorGrade: assignment.behaviorGrade,
+                finalExamGrade: assignment.finalExamGrade,
+                calculatedFinalGrade: assignment.calculatedFinalGrade
+              },
               parsed: { attendanceGrade, behaviorGrade, finalExamGrade, calculatedFinalGrade }
             });
 
-            // Use calculated final grade if available, otherwise use evaluation score
+            // Determine display grade priority: calculatedFinalGrade > evaluation score
             let displayGrade = null;
-            if (calculatedFinalGrade !== null && calculatedFinalGrade >= 0) {
+            if (calculatedFinalGrade !== null && !isNaN(calculatedFinalGrade)) {
               displayGrade = calculatedFinalGrade;
             } else if (latestEvaluation?.score && latestEvaluation.score > 0) {
               displayGrade = latestEvaluation.score;
             }
+
+            // Check if student has any detailed grades
+            const hasDetailedGrades = (attendanceGrade !== null && !isNaN(attendanceGrade)) || 
+                                    (behaviorGrade !== null && !isNaN(behaviorGrade)) || 
+                                    (finalExamGrade !== null && !isNaN(finalExamGrade));
             
             courses.push({
               id: group.course.id,
@@ -1857,7 +1868,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
               groupName: group.groupName,
               site: group.site.name,
               supervisor: supervisorDetails?.user?.name || 'غير محدد',
-              hasDetailedGrades: !!(attendanceGrade !== null || behaviorGrade !== null || finalExamGrade !== null)
+              hasDetailedGrades: hasDetailedGrades
+            });
+
+            console.log(`Added course ${group.course.name} with grades:`, {
+              calculatedFinal: displayGrade,
+              attendanceGrade,
+              behaviorGrade,
+              finalExamGrade,
+              hasDetailedGrades
             });
           }
         }
@@ -1873,6 +1892,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             level: studentDetails.level?.name || 'غير محدد',
             courses: courses
           });
+
+          console.log(`Added student ${studentDetails.user.name} with ${courses.length} courses`);
         }
       }
 
@@ -2391,6 +2412,8 @@ const allGroups = await storage.getAllTrainingCourseGroups();
     try {
       const { updates } = req.body;
 
+      console.log("Received detailed grades update request:", updates);
+
       if (!updates || !Array.isArray(updates)) {
         return res.status(400).json({ message: "بيانات غير صحيحة" });
       }
@@ -2431,6 +2454,13 @@ const allGroups = await storage.getAllTrainingCourseGroups();
           // Calculate final grade (simple addition: 20 + 30 + 50 = 100)
           const calculatedFinalGrade = update.attendanceGrade + update.behaviorGrade + update.finalExamGrade;
 
+          console.log(`Updating assignment ${assignment.id} with grades:`, {
+            attendanceGrade: update.attendanceGrade,
+            behaviorGrade: update.behaviorGrade,
+            finalExamGrade: update.finalExamGrade,
+            calculatedFinalGrade: calculatedFinalGrade
+          });
+
           // Update the assignment with detailed grades
           const updatedAssignment = await storage.updateTrainingAssignmentGrades(assignment.id, {
             attendanceGrade: update.attendanceGrade,
@@ -2440,14 +2470,17 @@ const allGroups = await storage.getAllTrainingCourseGroups();
           });
 
           if (updatedAssignment) {
+            console.log(`Successfully updated assignment ${assignment.id}`);
             savedCount++;
             savedUpdates.push({
               assignmentId: assignment.id,
               attendanceGrade: update.attendanceGrade,
               behaviorGrade: update.behaviorGrade,
               finalExamGrade: update.finalExamGrade,
-              finalGrade: (update.attendanceGrade * 0.2) + (update.behaviorGrade * 0.3) + (update.finalExamGrade * 0.5)
+              calculatedFinalGrade: calculatedFinalGrade
             });
+          } else {
+            console.error(`Failed to update assignment ${assignment.id}`);
           }
         } catch (error) {
           console.error(`Error updating assignment ${update.assignmentId}:`, error);
@@ -2467,11 +2500,13 @@ const allGroups = await storage.getAllTrainingCourseGroups();
               supervisorId: supervisor.id,
               savedCount: savedCount,
               gradingType: "detailed",
-              components: ["attendance (20%)", "behavior (30%)", "final exam (50%)"]
+              components: ["attendance (20)", "behavior (30)", "final exam (50)"]
             }
           }
         );
       }
+
+      console.log(`Detailed grades update completed: ${savedCount} assignments updated`);
 
       res.json({
         message: `تم حفظ الدرجات المفصلة لـ ${savedCount} طالب بنجاح`,
