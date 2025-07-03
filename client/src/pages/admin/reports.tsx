@@ -300,11 +300,11 @@ export default function AdminReports() {
                             {student.courses.slice(0, 3).map((course) => (
                               <div key={course.id} className="flex flex-col gap-1">
                                 <Badge variant="outline" className="text-xs">
-                                  {course.name}: {course.grade !== null ? `${course.grade}/100` : 'لم يتم التقييم'}
+                                  {course.name}: {course.calculatedFinal !== null ? `${course.calculatedFinal}/100` : 'لم يتم التقييم'}
                                 </Badge>
                                 {course.calculatedFinal !== null && (
-                                  <Badge variant="secondary" className="text-xs">
-                                    نهائية: {course.calculatedFinal}/100
+                                  <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                                    محسوبة: {course.calculatedFinal}/100
                                   </Badge>
                                 )}
                               </div>

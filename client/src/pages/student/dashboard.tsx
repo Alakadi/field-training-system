@@ -241,7 +241,9 @@ const StudentDashboard: React.FC = () => {
                         {assignment.course.supervisor?.user.name || "-"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                        {assignment.evaluation?.score ? `${assignment.evaluation.score}%` : "--"}
+                        {assignment.calculatedFinalGrade ? 
+                          `${parseFloat(assignment.calculatedFinalGrade).toFixed(1)}%` : 
+                          assignment.evaluation?.score ? `${assignment.evaluation.score}%` : "--"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full
