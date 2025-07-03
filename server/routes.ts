@@ -1831,9 +1831,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             // Use calculated final grade from assignment if available, otherwise use evaluation score
             let finalGrade = null;
-            if (assignment.calculatedFinalGrade) {
+            if (assignment.calculatedFinalGrade && assignment.calculatedFinalGrade !== '0') {
               finalGrade = parseFloat(assignment.calculatedFinalGrade);
-            } else if (latestEvaluation?.score) {
+            } else if (latestEvaluation?.score && latestEvaluation.score !== 0) {
               finalGrade = latestEvaluation.score;
             }
             

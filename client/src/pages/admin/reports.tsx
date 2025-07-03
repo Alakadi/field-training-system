@@ -267,18 +267,18 @@ export default function AdminReports() {
                                             </div>
                                           </div>
                                           <div className="text-center space-y-2">
-                                            {course.calculatedFinal !== null ? (
+                                            {course.calculatedFinal !== null && course.calculatedFinal !== undefined ? (
                                               <div>
                                                 <div className="text-xs text-gray-500 mb-1">الدرجة النهائية المحسوبة</div>
                                                 <Badge variant={course.calculatedFinal >= 75 ? "default" : course.calculatedFinal >= 60 ? "secondary" : "destructive"}>
-                                                  {course.calculatedFinal}/100
+                                                  {Math.round(course.calculatedFinal)}/100
                                                 </Badge>
                                               </div>
-                                            ) : course.grade !== null ? (
+                                            ) : course.grade !== null && course.grade !== undefined ? (
                                               <div>
                                                 <div className="text-xs text-gray-500 mb-1">درجة التقييم</div>
                                                 <Badge variant={course.grade >= 75 ? "default" : course.grade >= 60 ? "secondary" : "destructive"}>
-                                                  {course.grade}/100
+                                                  {Math.round(course.grade)}/100
                                                 </Badge>
                                               </div>
                                             ) : (
@@ -291,11 +291,11 @@ export default function AdminReports() {
                                             )}
 
                                             {/* عرض الدرجات المفصلة إذا كانت متوفرة */}
-                                            {(course.attendanceGrade || course.behaviorGrade || course.finalExamGrade) && (
+                                            {(course.attendanceGrade !== null || course.behaviorGrade !== null || course.finalExamGrade !== null) && (
                                               <div className="mt-2 text-xs text-gray-600">
-                                                <div>الحضور: {course.attendanceGrade || 0}/20</div>
-                                                <div>السلوك: {course.behaviorGrade || 0}/30</div>
-                                                <div>الاختبار: {course.finalExamGrade || 0}/50</div>
+                                                <div>الحضور: {course.attendanceGrade !== null ? course.attendanceGrade : 0}/20</div>
+                                                <div>السلوك: {course.behaviorGrade !== null ? course.behaviorGrade : 0}/30</div>
+                                                <div>الاختبار: {course.finalExamGrade !== null ? course.finalExamGrade : 0}/50</div>
                                               </div>
                                             )}
                                           </div>
@@ -318,11 +318,17 @@ export default function AdminReports() {
                             {student.courses.slice(0, 3).map((course) => (
                               <div key={course.id} className="flex flex-col gap-1">
                                 <Badge variant="outline" className="text-xs">
-                                  {course.name}: {course.calculatedFinal !== null ? `${course.calculatedFinal}/100` : 'لم يتم التقييم'}
+                                  {course.name}: {
+                                    course.calculatedFinal !== null && course.calculatedFinal !== undefined 
+                                      ? `${Math.round(course.calculatedFinal)}/100` 
+                                      : course.grade !== null && course.grade !== undefined 
+                                        ? `${Math.round(course.grade)}/100`
+                                        : 'لم يتم التقييم'
+                                  }
                                 </Badge>
-                                {course.calculatedFinal !== null && (
+                                {course.calculatedFinal !== null && course.calculatedFinal !== undefined && (
                                   <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
-                                    محسوبة: {course.calculatedFinal}/100
+                                    نهائية: {Math.round(course.calculatedFinal)}/100
                                   </Badge>
                                 )}
                               </div>
