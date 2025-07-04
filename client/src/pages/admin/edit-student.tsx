@@ -220,7 +220,7 @@ const EditStudent: React.FC = () => {
           const existingAssignment = currentAssignments.find(
             (assignment: any) => String(assignment.groupId) === groupId
           );
-          
+
           if (!existingAssignment) {
             await apiRequest("POST", "/api/training-assignments", {
               studentId: parseInt(id),
@@ -527,28 +527,7 @@ const EditStudent: React.FC = () => {
                 </div>
 
                 {/* إضافة خيار تفعيل/إلغاء تفعيل الحساب */}
-                <div className="mt-6">
-                  <FormField
-                    control={form.control}
-                    name="active"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-x-reverse space-y-0 rounded-md border p-4">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel>حساب نشط</FormLabel>
-                          <p className="text-sm text-neutral-500">
-                            تمكين أو تعطيل حساب الطالب
-                          </p>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                
 
                 <CardFooter className="flex justify-between px-0 pt-5 pb-0">
                   <Button
