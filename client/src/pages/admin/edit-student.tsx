@@ -86,6 +86,15 @@ const EditStudent: React.FC = () => {
   // الحصول على التخصصات بناءً على الكلية المختارة
   const { data: majors } = useQuery<MajorType[]>({
     queryKey: ["/api/majors", selectedFaculty],
+    queryFn: async () => {
+      if (!selectedFaculty) return [];
+      const params = new URLSearchParams({ facultyId: selectedFaculty });
+      const res = await fetch(`/api/majors?${params}`, {
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch majors");
+      return res.json();
+    },
     enabled: !!selectedFaculty,
   });
 
@@ -407,12 +416,11 @@ const EditStudent: React.FC = () => {
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="default" disabled>اختر التخصص</SelectItem>
-                            {majors?.filter((major: any) => major.facultyId === parseInt(selectedFaculty))
-                              .map((major: any) => (
-                                <SelectItem key={major.id} value={String(major.id)}>
-                                  {major.name}
-                                </SelectItem>
-                              ))}
+                            {majors?.map((major: any) => (
+                              <SelectItem key={major.id} value={String(major.id)}>
+                                {major.name}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <FormMessage />
