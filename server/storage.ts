@@ -585,8 +585,7 @@ export class DatabaseStorage implements IStorage {
           capacity: Number(group.capacity),
           currentEnrollment: 0,
           location: group.location || null,
-          status: groupStatus,
-          createdBy: courseData.createdBy
+          status: groupStatus
         };
 
         const [createdGroup] = await tx.insert(trainingCourseGroups).values(groupInsertData).returning();
@@ -724,7 +723,9 @@ export class DatabaseStorage implements IStorage {
       throw new Error(`الدورة التدريبية غير موجودة: ${data.courseId}`);
     }
 
-    const result = await db.insert(trainingCourseGroups).values(data).returning();
+    // Remove createdBy field if it exists to match schema
+    const { createdBy, ...cleanData } = data as any;
+    const result = await db.insert(trainingCourseGroups).values(cleanData).returning();
     return result[0];
   }
 

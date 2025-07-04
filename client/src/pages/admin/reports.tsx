@@ -191,7 +191,7 @@ export default function AdminReports() {
                 <SelectContent>
                   <SelectItem value="all">جميع السنوات</SelectItem>
                   {academicYears?.map((year: any) => (
-                    <SelectItem key={year.id} value={String(year.id)}>
+                    <SelectItem key={year.id} value={year.id.toString()}>
                       {year.name}
                     </SelectItem>
                   ))}

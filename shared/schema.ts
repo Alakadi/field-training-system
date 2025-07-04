@@ -111,7 +111,6 @@ export const trainingCourseGroups = pgTable("training_course_groups", {
   location: text("location"),
   status: text("status").default("active"), // "active", "full", "completed"
   createdAt: timestamp("created_at").defaultNow(),
-  createdBy: integer("created_by").references(() => users.id),
 }, (table) => [
   uniqueIndex("course_group_unique").on(table.courseId, table.groupName),
 ]);
