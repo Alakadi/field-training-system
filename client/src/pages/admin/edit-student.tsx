@@ -329,7 +329,6 @@ const EditStudent: React.FC = () => {
                     )}
                   />
 
-                  {/* خيار تفعيل/إلغاء تفعيل الحساب */}
                   <FormField
                     control={form.control}
                     name="active"
