@@ -82,7 +82,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // التحقق من أن الحساب نشط
-      if (!user.active) {
+      if (user.active === false) {
         console.log("Login failed: Account is inactive for user:", user.username);
         return res.status(403).json({ message: "تم إلغاء تنشيط حسابك، يرجى مراجعة مدير النظام" });
       }

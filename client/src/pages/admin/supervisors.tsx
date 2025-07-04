@@ -272,15 +272,7 @@ const AdminSupervisors: React.FC = () => {
                             >
                               <Icon name="eye" size={16} />
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className={supervisor.user.active ? "text-orange-600 hover:text-orange-700" : "text-green-600 hover:text-green-700"}
-                              onClick={() => handleToggleActive(supervisor.id, supervisor.user.active)}
-                              title={supervisor.user.active ? "إلغاء تنشيط الحساب" : "تنشيط الحساب"}
-                            >
-                              <Icon name={supervisor.user.active ? "user-x" : "user-check"} size={16} />
-                            </Button>
+
                             <Button
                               variant="ghost"
                               size="sm"
