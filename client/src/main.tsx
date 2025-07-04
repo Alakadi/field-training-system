@@ -6,7 +6,7 @@ import "./index.css";
 
 // Add Tajawal font
 const fontLink = document.createElement("link");
-fontLink.href = "file-d/css2.css";
+fontLink.href = "https://fonts.googleapis.com/css2?family=Tajawal:wght@200;300;400;500;700;800;900&display=swap";
 fontLink.rel = "stylesheet";
 document.head.appendChild(fontLink);
 
