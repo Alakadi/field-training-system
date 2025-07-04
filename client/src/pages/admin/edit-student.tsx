@@ -333,21 +333,29 @@ const EditStudent: React.FC = () => {
                     control={form.control}
                     name="active"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-x-reverse space-y-0 rounded-md border p-4">
+                      <FormItem>
+                        <FormLabel>حالة الحساب</FormLabel>
                         <FormControl>
-                          <Checkbox
-                            checked={field.value || false}
-                            onCheckedChange={(checked) => {
-                              field.onChange(checked === true);
-                            }}
-                          />
+                          <div className="flex items-center space-x-2 space-x-reverse">
+                            <Checkbox
+                              id="active-checkbox"
+                              checked={Boolean(field.value)}
+                              onCheckedChange={(checked) => {
+                                field.onChange(Boolean(checked));
+                              }}
+                            />
+                            <label
+                              htmlFor="active-checkbox"
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              حساب نشط
+                            </label>
+                          </div>
                         </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel>حساب نشط</FormLabel>
-                          <p className="text-sm text-neutral-500">
-                            تمكين أو تعطيل حساب الطالب
-                          </p>
-                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          إزالة التحديد لتعطيل حساب الطالب
+                        </p>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
