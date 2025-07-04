@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Eye, Users, BookOpen, Trophy } from "lucide-react";
+import { ExportDialog } from "@/components/ExportDialog";
 
 interface StudentReport {
   id: number;
@@ -52,12 +54,30 @@ export default function AdminReports() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<StudentReport | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<CourseReport | null>(null);
+  const [selectedAcademicYear, setSelectedAcademicYear] = useState<string>('all');
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+
+  // Fetch academic years
+  const { data: academicYears } = useQuery({
+    queryKey: ["/api/academic-years"],
+    queryFn: async () => {
+      const res = await fetch("/api/academic-years", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch academic years");
+      return res.json();
+    },
+  });
 
   // Fetch students with evaluations
   const { data: studentsReport, isLoading: loadingStudents } = useQuery({
-    queryKey: ["/api/reports/students"],
+    queryKey: ["/api/reports/students", selectedAcademicYear],
     queryFn: async () => {
-      const res = await fetch("/api/reports/students", { credentials: "include" });
+      const params = new URLSearchParams();
+      if (selectedAcademicYear && selectedAcademicYear !== 'all') {
+        params.append('academicYearId', selectedAcademicYear);
+      }
+      const res = await fetch(`/api/reports/students${params.toString() ? '?' + params.toString() : ''}`, { 
+        credentials: "include" 
+      });
       if (!res.ok) throw new Error("Failed to fetch students report");
       return res.json();
     },
@@ -65,9 +85,15 @@ export default function AdminReports() {
 
   // Fetch completed courses with evaluations
   const { data: coursesReport, isLoading: loadingCourses } = useQuery({
-    queryKey: ["/api/reports/courses"],
+    queryKey: ["/api/reports/courses", selectedAcademicYear],
     queryFn: async () => {
-      const res = await fetch("/api/reports/courses", { credentials: "include" });
+      const params = new URLSearchParams();
+      if (selectedAcademicYear && selectedAcademicYear !== 'all') {
+        params.append('academicYearId', selectedAcademicYear);
+      }
+      const res = await fetch(`/api/reports/courses${params.toString() ? '?' + params.toString() : ''}`, { 
+        credentials: "include" 
+      });
       if (!res.ok) throw new Error("Failed to fetch courses report");
       return res.json();
     },
@@ -85,6 +111,44 @@ export default function AdminReports() {
     course.faculty.includes(searchQuery) ||
     course.major.includes(searchQuery)
   ) || [];
+
+  // Prepare export data for students
+  const exportStudentsData = filteredStudents.flatMap((student: StudentReport) =>
+    student.courses.map((course) => ({
+      universityId: student.universityId,
+      studentName: student.name,
+      courseId: course.id,
+      courseName: course.name,
+      grade: course.calculatedFinal || course.grade || 0,
+      academicYear: "السنة الدراسية الحالية", // Replace with actual academic year from API
+      faculty: student.faculty,
+      major: student.major,
+      level: student.level,
+      site: course.site,
+      supervisor: course.supervisor,
+      attendanceGrade: course.attendanceGrade || 0,
+      behaviorGrade: course.behaviorGrade || 0,
+      finalExamGrade: course.finalExamGrade || 0,
+    }))
+  );
+
+  // Define export columns
+  const exportColumns = [
+    { key: 'universityId', title: 'الرقم الجامعي', width: 15 },
+    { key: 'studentName', title: 'اسم الطالب', width: 20 },
+    { key: 'courseId', title: 'رقم الكورس', width: 12 },
+    { key: 'courseName', title: 'اسم الكورس', width: 25 },
+    { key: 'grade', title: 'الدرجة النهائية', width: 15, formatter: (value: any) => `${value}/100` },
+    { key: 'academicYear', title: 'السنة الدراسية', width: 18 },
+    { key: 'faculty', title: 'الكلية', width: 20 },
+    { key: 'major', title: 'التخصص', width: 20 },
+    { key: 'level', title: 'المستوى', width: 15 },
+    { key: 'site', title: 'موقع التدريب', width: 20 },
+    { key: 'supervisor', title: 'المشرف', width: 20 },
+    { key: 'attendanceGrade', title: 'درجة الحضور', width: 15, formatter: (value: any) => `${value}/20` },
+    { key: 'behaviorGrade', title: 'درجة السلوك', width: 15, formatter: (value: any) => `${value}/30` },
+    { key: 'finalExamGrade', title: 'درجة الاختبار', width: 15, formatter: (value: any) => `${value}/50` },
+  ];
 
   return (
     <AdminLayout>
@@ -115,15 +179,50 @@ export default function AdminReports() {
             </Button>
           </div>
 
-          {/* Search Bar */}
-          <div className="relative">
-            <Search className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder={activeTab === 'students' ? "البحث في الطلاب..." : "البحث في الدورات..."}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pr-10"
-            />
+          {/* Filters and Search */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Academic Year Filter */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">السنة الدراسية</label>
+              <Select value={selectedAcademicYear} onValueChange={setSelectedAcademicYear}>
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر السنة الدراسية" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">جميع السنوات</SelectItem>
+                  {academicYears?.map((year: any) => (
+                    <SelectItem key={year.id} value={String(year.id)}>
+                      {year.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Search Bar */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">البحث</label>
+              <div className="relative">
+                <Search className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder={activeTab === 'students' ? "البحث في الطلاب..." : "البحث في الدورات..."}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pr-10"
+                />
+              </div>
+            </div>
+
+            {/* Export Button */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">تصدير البيانات</label>
+              <ExportDialog
+                data={exportStudentsData}
+                columns={exportColumns}
+                defaultFilename={`تقرير_${activeTab === 'students' ? 'الطلاب' : 'الدورات'}_${new Date().toISOString().split('T')[0]}`}
+                title={`تصدير تقرير ${activeTab === 'students' ? 'الطلاب' : 'الدورات'}`}
+              />
+            </div>
           </div>
 
           {/* Students Report */}
