@@ -905,6 +905,43 @@ export const Loader: React.FC<IconProps> = ({ className = "", size = 24 }) => (
   </svg>
 );
 
+export const UserCheck: React.FC<IconProps> = ({ className = "", size = 24 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+    <circle cx="8" cy="7" r="4"/>
+    <polyline points="17,11 19,13 23,9"/>
+  </svg>
+);
+
+export const UserX: React.FC<IconProps> = ({ className = "", size = 24 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+    <circle cx="8" cy="7" r="4"/>
+    <path d="M18 8l5 5"/>
+    <path d="M23 8l-5 5"/>
+  </svg>
+);
+
 // Default export for backward compatibility
 export default {
   Bell,

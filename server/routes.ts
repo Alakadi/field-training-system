@@ -81,6 +81,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "اسم المستخدم أو كلمة المرور غير صحيحة" });
       }
 
+      // التحقق من أن الحساب نشط
+      if (!user.active) {
+        console.log("Login failed: Account is inactive for user:", user.username);
+        return res.status(403).json({ message: "تم إلغاء تنشيط حسابك، يرجى مراجعة مدير النظام" });
+      }
+
       console.log("Login successful for:", user.username); // إضافة للتصحيح
 
       // Set user in session
@@ -471,6 +477,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "خطأ في تحديث بيانات المشرف" });
     }
   });
+
+  // Toggle supervisor active status
+  app.put("/api/supervisors/:id/toggle-active", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const { active } = req.body;
+
+      // Get existing supervisor
+      const supervisor = await storage.getSupervisor(id);
+      if (!supervisor) {
+        return res.status(404).json({ message: "المشرف غير موجود" });
+      }
+
+      // Update user active status
+      const updatedUser = await storage.updateUser(supervisor.userId, {
+        active: Boolean(active)
+      });
+
+      // Log activity
+      if (req.user) {
+        await logActivity(
+          req.user.username,
+          "update",
+          "supervisor",
+          supervisor.id,
+          { 
+            message: `تم ${active ? 'تنشيط' : 'إلغاء تنشيط'} حساب المشرف`,
+            action: active ? 'activate' : 'deactivate'
+          }
+        );
+      }
+
+      res.json({ message: `تم ${active ? 'تنشيط' : 'إلغاء تنشيط'} المشرف بنجاح`, user: updatedUser });
+    } catch (error) {
+      res.status(500).json({ message: "خطأ في تحديث حالة المشرف" });
+    }
+  });
+
   // Student Routes
   app.get("/api/students", authMiddleware, async (req: Request, res: Response) => {
     try {
@@ -593,6 +637,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating student:", error);
       res.status(500).json({ message: "خطأ في تحديث بيانات الطالب" });
+    }
+  });
+
+  // Toggle student active status
+  app.put("/api/students/:id/toggle-active", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const { active } = req.body;
+
+      // Get existing student
+      const student = await storage.getStudent(id);
+      if (!student) {
+        return res.status(404).json({ message: "الطالب غير موجود" });
+      }
+
+      // Update user active status
+      const updatedUser = await storage.updateUser(student.userId, {
+        active: Boolean(active)
+      });
+
+      // Log activity
+      if (req.user) {
+        await logActivity(
+          req.user.username,
+          "update",
+          "student",
+          student.id,
+          { 
+            message: `تم ${active ? 'تنشيط' : 'إلغاء تنشيط'} حساب الطالب`,
+            action: active ? 'activate' : 'deactivate'
+          }
+        );
+      }
+
+      res.json({ message: `تم ${active ? 'تنشيط' : 'إلغاء تنشيط'} الطالب بنجاح`, user: updatedUser });
+    } catch (error) {
+      res.status(500).json({ message: "خطأ في تحديث حالة الطالب" });
     }
   });
 

@@ -114,6 +114,29 @@ const AdminStudents: React.FC = () => {
     }
   };
 
+  const handleToggleActive = async (studentId: number, currentStatus: boolean) => {
+    const action = currentStatus ? "إلغاء تنشيط" : "تنشيط";
+    if (window.confirm(`هل أنت متأكد من ${action} هذا الطالب؟`)) {
+      try {
+        await apiRequest("PUT", `/api/students/${studentId}/toggle-active`, {
+          active: !currentStatus
+        });
+
+        toast({
+          title: `تم ${action} الطالب بنجاح`,
+        });
+
+        queryClient.invalidateQueries({ queryKey: ["/api/students"] });
+      } catch (error) {
+        toast({
+          title: `فشل ${action} الطالب`,
+          description: error instanceof Error ? error.message : `حدث خطأ أثناء ${action} الطالب`,
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   // Define export columns for students
   const exportColumns = [
     { key: 'universityId', title: 'الرقم الجامعي', width: 15 },
@@ -307,8 +330,10 @@ const AdminStudents: React.FC = () => {
                         {student.level?.name || "-"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                          {student.user.active ? "نشط" : "غير نشط"}
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          student.user.active ? 'bg-green-100 text-green-800' : 'bg-neutral-100 text-neutral-800'
+                        }`}>
+                          {student.user.active ? 'نشط' : 'غير نشط'}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
@@ -328,6 +353,15 @@ const AdminStudents: React.FC = () => {
                             onClick={() => handleViewStudent(student.id)}
                           >
                             <Icon name="eye" size={16} />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className={student.user.active ? "text-orange-600 hover:text-orange-700" : "text-green-600 hover:text-green-700"}
+                            onClick={() => handleToggleActive(student.id, student.user.active)}
+                            title={student.user.active ? "إلغاء تنشيط الحساب" : "تنشيط الحساب"}
+                          >
+                            <Icon name={student.user.active ? "user-x" : "user-check"} size={16} />
                           </Button>
                           <Button
                             variant="ghost"

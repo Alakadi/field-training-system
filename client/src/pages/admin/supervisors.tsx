@@ -92,6 +92,29 @@ const AdminSupervisors: React.FC = () => {
     }
   };
 
+  const handleToggleActive = async (supervisorId: number, currentStatus: boolean) => {
+    const action = currentStatus ? "إلغاء تنشيط" : "تنشيط";
+    if (window.confirm(`هل أنت متأكد من ${action} هذا المشرف؟`)) {
+      try {
+        await apiRequest("PUT", `/api/supervisors/${supervisorId}/toggle-active`, {
+          active: !currentStatus
+        });
+
+        toast({
+          title: `تم ${action} المشرف بنجاح`,
+        });
+
+        queryClient.invalidateQueries({ queryKey: ["/api/supervisors"] });
+      } catch (error) {
+        toast({
+          title: `فشل ${action} المشرف`,
+          description: error instanceof Error ? error.message : `حدث خطأ أثناء ${action} المشرف`,
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   // Define export columns for supervisors
   const exportColumns = [
     { key: 'user.name', title: 'اسم المشرف', width: 20 },
@@ -248,6 +271,15 @@ const AdminSupervisors: React.FC = () => {
                               onClick={() => handleViewSupervisor(supervisor.id)}
                             >
                               <Icon name="eye" size={16} />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className={supervisor.user.active ? "text-orange-600 hover:text-orange-700" : "text-green-600 hover:text-green-700"}
+                              onClick={() => handleToggleActive(supervisor.id, supervisor.user.active)}
+                              title={supervisor.user.active ? "إلغاء تنشيط الحساب" : "تنشيط الحساب"}
+                            >
+                              <Icon name={supervisor.user.active ? "user-x" : "user-check"} size={16} />
                             </Button>
                             <Button
                               variant="ghost"

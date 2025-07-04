@@ -49,7 +49,9 @@ import {
   FileSpreadsheet,
   Printer,
   CheckAll,
-  Loader
+  Loader,
+  UserCheck,
+  UserX
 } from './icons';
 
 interface IconProps {
@@ -109,6 +111,8 @@ export const iconMap: Record<string, React.ComponentType<IconProps>> = {
   printer: Printer,
   check_all: CheckAll,
   loader: Loader,
+  user_check: UserCheck,
+  user_x: UserX,
   // إضافة الأيقونات المفقودة
   dashboard: Home,
   person: User,
