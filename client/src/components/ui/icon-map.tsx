@@ -100,6 +100,7 @@ export const iconMap: Record<string, React.ComponentType<IconProps>> = {
   arrow_right: ArrowRight,
   "arrow-right": ArrowRight,
   "graduation-cap": GraduationCap,
+  graduation_cap: GraduationCap,
   check_circle: CheckCircle,
   calendar_days: CalendarDays,
   trophy: Trophy,
