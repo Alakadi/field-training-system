@@ -199,10 +199,12 @@ const AdminSettings: React.FC = () => {
         </div>
 
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="profile">الملف الشخصي</TabsTrigger>
             <TabsTrigger value="password">كلمة المرور</TabsTrigger>
             <TabsTrigger value="system">إعدادات النظام</TabsTrigger>
+            <TabsTrigger value="faculties">الكليات والتخصصات</TabsTrigger>
+            <TabsTrigger value="academic-years">السنوات الدراسية</TabsTrigger>
           </TabsList>
           
           <TabsContent value="profile">
@@ -479,6 +481,26 @@ const AdminSettings: React.FC = () => {
                   </form>
                 </Form>
               )}
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="faculties">
+            <Card className="bg-white p-6 rounded-lg shadow">
+              <iframe 
+                src="/admin/faculties" 
+                className="w-full h-[600px] border-0"
+                title="إدارة الكليات والتخصصات"
+              />
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="academic-years">
+            <Card className="bg-white p-6 rounded-lg shadow">
+              <iframe 
+                src="/admin/academic-years" 
+                className="w-full h-[600px] border-0"
+                title="إدارة السنوات الدراسية"
+              />
             </Card>
           </TabsContent>
         </Tabs>

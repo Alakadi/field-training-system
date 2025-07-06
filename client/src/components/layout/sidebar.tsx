@@ -21,10 +21,10 @@ const Sidebar: React.FC<SidebarProps> = ({ links, title, isVisible }) => {
   const isActive = (href: string) => {
     // For exact match
     if (location === href) return true;
-    
+
     // For parent paths (e.g. /admin/dashboard should highlight /admin)
     if (href !== "/" && location.startsWith(href)) return true;
-    
+
     return false;
   };
 
