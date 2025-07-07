@@ -515,6 +515,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete supervisor
+  app.delete("/api/supervisors/:id", authMiddleware, requireRole(["admin", "supervisor"]), async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const currentUser = req.user!;
+
+      // Get existing supervisor
+      const supervisor = await storage.getSupervisor(id);
+      if (!supervisor) {
+        return res.status(404).json({ message: "المشرف غير موجود" });
+      }
+
+      // Check if supervisor is trying to delete themselves (only admins can delete supervisors)
+      if (currentUser.role === "supervisor") {
+        const currentSupervisor = await storage.getSupervisorByUserId(currentUser.id);
+        if (!currentSupervisor || currentSupervisor.id !== id) {
+          return res.status(403).json({ message: "غير مصرح لك بحذف هذا المشرف" });
+        }
+      }
+
+      // Check if supervisor has any active assignments
+      const activeAssignments = await storage.getActiveAssignmentsBySupervisor(id);
+      if (activeAssignments.length > 0) {
+        return res.status(400).json({ 
+          message: "لا يمكن حذف المشرف لأنه مُعين لمجموعات نشطة. يرجى إلغاء تعيينه أولاً أو انتظار انتهاء الدورات" 
+        });
+      }
+
+      // Get supervisor details for logging
+      const supervisorDetails = await storage.getSupervisorWithUser(id);
+      
+      // Delete supervisor (this will also delete the user)
+      await storage.deleteSupervisor(id);
+
+      // Log activity
+      await logActivity(
+        currentUser.username,
+        "delete",
+        "supervisor",
+        id,
+        { 
+          message: `تم حذف المشرف: ${supervisorDetails?.user.name}`,
+          supervisorName: supervisorDetails?.user.name
+        }
+      );
+
+      res.json({ message: "تم حذف المشرف بنجاح" });
+    } catch (error) {
+      console.error("Error deleting supervisor:", error);
+      res.status(500).json({ message: "خطأ في حذف المشرف" });
+    }
+  });
+
   // Student Routes
   app.get("/api/students", authMiddleware, async (req: Request, res: Response) => {
     try {
@@ -674,6 +727,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: `تم ${active ? 'تنشيط' : 'إلغاء تنشيط'} الطالب بنجاح`, user: updatedUser });
     } catch (error) {
       res.status(500).json({ message: "خطأ في تحديث حالة الطالب" });
+    }
+  });
+
+  // Delete student
+  app.delete("/api/students/:id", authMiddleware, requireRole(["admin", "supervisor"]), async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+
+      // Get existing student
+      const student = await storage.getStudent(id);
+      if (!student) {
+        return res.status(404).json({ message: "الطالب غير موجود" });
+      }
+
+      // Check if student has any active assignments
+      const activeAssignments = await storage.getActiveAssignmentsByStudent(id);
+      if (activeAssignments.length > 0) {
+        return res.status(400).json({ 
+          message: "لا يمكن حذف الطالب لأنه مُسجل في دورات نشطة. يرجى إلغاء تسجيله أولاً أو انتظار انتهاء الدورات" 
+        });
+      }
+
+      // Get student details for logging
+      const studentDetails = await storage.getStudentWithDetails(id);
+      
+      // Delete student (this will also delete the user)
+      await storage.deleteStudent(id);
+
+      // Log activity
+      await logActivity(
+        req.user!.username,
+        "delete",
+        "student",
+        id,
+        { 
+          message: `تم حذف الطالب: ${studentDetails?.user.name}`,
+          studentName: studentDetails?.user.name,
+          universityId: studentDetails?.universityId
+        }
+      );
+
+      res.json({ message: "تم حذف الطالب بنجاح" });
+    } catch (error) {
+      console.error("Error deleting student:", error);
+      res.status(500).json({ message: "خطأ في حذف الطالب" });
     }
   });
 
@@ -1060,6 +1158,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error creating course with groups:", error);
       res.status(500).json({ message: "خطأ في إنشاء دورة تدريبية جديدة" });
+    }
+  });
+
+  // Delete training course
+  app.delete("/api/training-courses/:id", authMiddleware, requireRole(["admin", "supervisor"]), async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+
+      // Get existing course
+      const course = await storage.getTrainingCourse(id);
+      if (!course) {
+        return res.status(404).json({ message: "الدورة التدريبية غير موجودة" });
+      }
+
+      // Check if course has any active assignments
+      const assignments = await storage.getTrainingAssignmentsByCourse(id);
+      if (assignments.length > 0) {
+        return res.status(400).json({ 
+          message: "لا يمكن حذف الدورة التدريبية لأنها تحتوي على طلاب مسجلين. يرجى إلغاء تسجيل جميع الطلاب أولاً" 
+        });
+      }
+
+      // Get course details for logging
+      const courseDetails = await storage.getTrainingCourseWithDetails(id);
+      
+      // Delete course (this will also delete related groups)
+      await storage.deleteTrainingCourse(id);
+
+      // Log activity
+      await logActivity(
+        req.user!.username,
+        "delete",
+        "training_course",
+        id,
+        { 
+          message: `تم حذف الدورة التدريبية: ${courseDetails?.name}`,
+          courseName: courseDetails?.name
+        }
+      );
+
+      res.json({ message: "تم حذف الدورة التدريبية بنجاح" });
+    } catch (error) {
+      console.error("Error deleting training course:", error);
+      res.status(500).json({ message: "خطأ في حذف الدورة التدريبية" });
     }
   });
 
@@ -1883,6 +2025,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Reports API endpoints
   app.get("/api/reports/students", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
+      const academicYearId = req.query.academicYearId ? Number(req.query.academicYearId) : undefined;
+
       // Get all students with their evaluations and course details
       const students = await storage.getAllStudents();
       const studentsReport = [];
@@ -1898,13 +2042,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Check if this assignment has detailed grades or evaluations
           const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
           
-          // Include course if it has detailed grades OR evaluations OR is just enrolled
+          // Only include courses that have either detailed grades OR evaluations (actual graded courses)
           const hasDetailedGrades = !!(assignment.attendanceGrade || assignment.behaviorGrade || assignment.finalExamGrade || assignment.calculatedFinalGrade);
           const hasEvaluations = evaluations.length > 0;
           
-          // Show all enrolled courses, but prioritize those with grades
+          // Only show courses with actual grades or evaluations
+          if (!hasDetailedGrades && !hasEvaluations) {
+            continue;
+          }
+          
           const group = assignment.groupId ? await storage.getTrainingCourseGroupWithStudents(assignment.groupId) : null;
           if (group) {
+            // Filter by academic year if specified
+            if (academicYearId && group.course.academicYearId !== academicYearId) {
+              continue;
+            }
+
             const supervisorDetails = await storage.getSupervisorWithUser(group.supervisorId);
 
             // Get the latest evaluation for this assignment (if any)
@@ -1932,12 +2085,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
               site: group.site.name,
               supervisor: supervisorDetails?.user?.name || 'غير محدد',
               hasDetailedGrades: hasDetailedGrades,
-              hasEvaluations: hasEvaluations
+              hasEvaluations: hasEvaluations,
+              academicYear: group.course.academicYear?.name || 'غير محدد'
             });
           }
         }
 
-        // Include students even if they don't have grades yet (for comprehensive reporting)
+        // Only include students who have been graded in at least one course
         if (courses.length > 0) {
           studentsReport.push({
             id: student.id,
@@ -1960,11 +2114,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/reports/courses", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
+      const academicYearId = req.query.academicYearId ? Number(req.query.academicYearId) : undefined;
+
       // Get all completed courses with evaluations
       const courses = await storage.getAllTrainingCourses();
       const coursesReport = [];
 
       for (const course of courses) {
+        // Filter by academic year if specified
+        if (academicYearId && course.academicYearId !== academicYearId) {
+          continue;
+        }
+
         const courseDetails = await storage.getTrainingCourseWithDetails(course.id);
         if (!courseDetails) continue;
 
@@ -1983,14 +2144,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           for (const assignment of assignments) {
             const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
-            if (evaluations.length > 0) {
+            // Also check for detailed grades
+            const hasDetailedGrades = !!(assignment.attendanceGrade || assignment.behaviorGrade || assignment.finalExamGrade || assignment.calculatedFinalGrade);
+            
+            if (evaluations.length > 0 || hasDetailedGrades) {
               completedEvaluations++;
               hasEvaluations = true;
-              for (const evaluation of evaluations) {
-                if (evaluation.score) {
-                  totalGrades += evaluation.score;
-                  gradeCount++;
-                }
+              
+              // Use calculated final grade if available, otherwise use evaluation score
+              let finalGrade = null;
+              if (assignment.calculatedFinalGrade) {
+                finalGrade = parseFloat(assignment.calculatedFinalGrade);
+              } else if (evaluations.length > 0 && evaluations[0].score) {
+                finalGrade = evaluations[0].score;
+              }
+              
+              if (finalGrade) {
+                totalGrades += finalGrade;
+                gradeCount++;
               }
             }
           }

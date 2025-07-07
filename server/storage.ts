@@ -84,6 +84,8 @@ export interface IStorage {
   createSupervisor(supervisor: InsertSupervisor): Promise<Supervisor>;
   updateSupervisor(id: number, supervisor: Partial<Supervisor>, userData?: Partial<User>): Promise<Supervisor | undefined>;
   getSupervisorWithUser(id: number): Promise<(Supervisor & { user: User }) | undefined>;
+  deleteSupervisor(id: number): Promise<void>;
+  getActiveAssignmentsBySupervisor(supervisorId: number): Promise<TrainingAssignment[]>;
 
   // Student operations
   getAllStudents(): Promise<Student[]>;
@@ -95,6 +97,8 @@ export interface IStorage {
   getStudentWithDetails(id: number): Promise<(Student & { user: User, faculty?: Faculty, major?: Major, level?: Level }) | undefined>;
   getStudentsByFaculty(facultyId: number): Promise<Student[]>;
   getStudentsBySupervisorThroughGroups(supervisorId: number): Promise<(Student & { user: User, faculty?: Faculty, major?: Major, level?: Level })[]>;
+  deleteStudent(id: number): Promise<void>;
+  getActiveAssignmentsByStudent(studentId: number): Promise<TrainingAssignment[]>;
 
   // Training Site operations
   getAllTrainingSites(): Promise<TrainingSite[]>;
@@ -109,6 +113,7 @@ export interface IStorage {
   getTrainingCourseWithDetails(id: number): Promise<(TrainingCourse & { faculty?: Faculty, major?: Major }) | undefined>;
   getTrainingCoursesByFaculty(facultyId: number): Promise<TrainingCourse[]>;
   getTrainingCoursesByMajor(majorId: number): Promise<TrainingCourse[]>;
+  deleteTrainingCourse(id: number): Promise<void>;
 
   // Training Course Group operations
   getAllTrainingCourseGroups(): Promise<TrainingCourseGroup[]>;
@@ -1442,6 +1447,72 @@ export class DatabaseStorage implements IStorage {
     .where(eq(trainingCourseGroups.id, groupId));
     
     return result[0];
+  }
+
+  // Delete operations
+  async deleteSupervisor(id: number): Promise<void> {
+    const supervisor = await this.getSupervisor(id);
+    if (!supervisor) {
+      throw new Error("المشرف غير موجود");
+    }
+
+    // Delete supervisor record first
+    await db.delete(supervisors).where(eq(supervisors.id, id));
+    
+    // Delete associated user
+    await db.delete(users).where(eq(users.id, supervisor.userId));
+  }
+
+  async deleteStudent(id: number): Promise<void> {
+    const student = await this.getStudent(id);
+    if (!student) {
+      throw new Error("الطالب غير موجود");
+    }
+
+    // Delete student record first
+    await db.delete(students).where(eq(students.id, id));
+    
+    // Delete associated user
+    await db.delete(users).where(eq(users.id, student.userId));
+  }
+
+  async deleteTrainingCourse(id: number): Promise<void> {
+    // Delete course groups first (foreign key constraint)
+    await db.delete(trainingCourseGroups).where(eq(trainingCourseGroups.courseId, id));
+    
+    // Delete training course
+    await db.delete(trainingCourses).where(eq(trainingCourses.id, id));
+  }
+
+  async getActiveAssignmentsBySupervisor(supervisorId: number): Promise<TrainingAssignment[]> {
+    const result = await db.select()
+      .from(trainingAssignments)
+      .leftJoin(trainingCourseGroups, eq(trainingAssignments.groupId, trainingCourseGroups.id))
+      .leftJoin(trainingCourses, eq(trainingAssignments.courseId, trainingCourses.id))
+      .where(and(
+        eq(trainingCourseGroups.supervisorId, supervisorId),
+        or(
+          eq(trainingCourses.status, "active"),
+          eq(trainingCourses.status, "upcoming")
+        )
+      ));
+
+    return result.map(row => row.training_assignments);
+  }
+
+  async getActiveAssignmentsByStudent(studentId: number): Promise<TrainingAssignment[]> {
+    const result = await db.select()
+      .from(trainingAssignments)
+      .leftJoin(trainingCourses, eq(trainingAssignments.courseId, trainingCourses.id))
+      .where(and(
+        eq(trainingAssignments.studentId, studentId),
+        or(
+          eq(trainingCourses.status, "active"),
+          eq(trainingCourses.status, "upcoming")
+        )
+      ));
+
+    return result.map(row => row.training_assignments);
   }
 }
 
