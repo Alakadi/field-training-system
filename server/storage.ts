@@ -43,7 +43,7 @@ import {
   type InsertActivityLog,
   LoginData
 } from "@shared/schema";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, or, isNull, gte, lte } from "drizzle-orm";
 import { db } from "./db";
 
 export interface IStorage {
@@ -1370,6 +1370,77 @@ export class DatabaseStorage implements IStorage {
     const result = await db.select()
       .from(trainingAssignments)
       .where(eq(trainingAssignments.id, id));
+    return result[0];
+  }
+
+  // Notification System Support Functions
+  async getUsersByRole(role: string): Promise<User[]> {
+    return await db.select().from(users).where(eq(users.role, role));
+  }
+
+  async getRecentlyEndedGroups(): Promise<any[]> {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    return await db.select({
+      id: trainingCourseGroups.id,
+      groupName: trainingCourseGroups.groupName,
+      supervisorId: trainingCourseGroups.supervisorId,
+      endDate: trainingCourseGroups.endDate,
+      course: {
+        id: trainingCourses.id,
+        title: trainingCourses.title
+      }
+    })
+    .from(trainingCourseGroups)
+    .leftJoin(trainingCourses, eq(trainingCourseGroups.courseId, trainingCourses.id))
+    .where(and(
+      gte(trainingCourseGroups.endDate, yesterday.toISOString().split('T')[0]),
+      lte(trainingCourseGroups.endDate, new Date().toISOString().split('T')[0])
+    ));
+  }
+
+  async getStudentsByGroupId(groupId: number): Promise<any[]> {
+    return await db.select({
+      id: students.id,
+      studentId: trainingAssignments.studentId
+    })
+    .from(trainingAssignments)
+    .leftJoin(students, eq(trainingAssignments.studentId, students.id))
+    .where(eq(trainingAssignments.groupId, groupId));
+  }
+
+  async getStudentsWithoutGrades(groupId: number): Promise<any[]> {
+    return await db.select({
+      id: students.id,
+      assignmentId: trainingAssignments.id
+    })
+    .from(trainingAssignments)
+    .leftJoin(students, eq(trainingAssignments.studentId, students.id))
+    .where(and(
+      eq(trainingAssignments.groupId, groupId),
+      or(
+        isNull(trainingAssignments.attendanceGrade),
+        isNull(trainingAssignments.behaviorGrade),
+        isNull(trainingAssignments.finalExamGrade)
+      )
+    ));
+  }
+
+  async getGroupWithCourseInfo(groupId: number): Promise<any | undefined> {
+    const result = await db.select({
+      id: trainingCourseGroups.id,
+      groupName: trainingCourseGroups.groupName,
+      supervisorId: trainingCourseGroups.supervisorId,
+      course: {
+        id: trainingCourses.id,
+        title: trainingCourses.title
+      }
+    })
+    .from(trainingCourseGroups)
+    .leftJoin(trainingCourses, eq(trainingCourseGroups.courseId, trainingCourses.id))
+    .where(eq(trainingCourseGroups.id, groupId));
+    
     return result[0];
   }
 }

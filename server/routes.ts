@@ -2428,8 +2428,9 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         });
       }
 
-      // Send single notification for all grades
+      // Send smart notifications
       if (savedEvaluations.length > 0) {
+        // Log activity
         await logActivity(
           req.user!.username,
           "grade_entry",
@@ -2446,6 +2447,40 @@ const allGroups = await storage.getAllTrainingCourseGroups();
             }
           }
         );
+
+        // Send notification to admin
+        try {
+          const adminUsers = await storage.getAllUsers();
+          const admins = adminUsers.filter(user => user.role === 'admin');
+          
+          for (const admin of admins) {
+            await storage.createNotification({
+              userId: admin.id,
+              title: 'تم إدخال درجات جديدة',
+              message: `قام المشرف ${supervisorWithUser?.user?.name || 'غير محدد'} بإدخال درجات ${savedEvaluations.length} طالب للمجموعة "${group.groupName}" في دورة "${group.course.name}"`,
+              type: 'info'
+            });
+          }
+        } catch (error) {
+          console.error("Error sending admin notification:", error);
+        }
+
+        // Send notifications to students
+        for (const gradeItem of grades) {
+          try {
+            const student = await storage.getStudentWithDetails(gradeItem.studentId);
+            if (student) {
+              await storage.createNotification({
+                userId: student.user.id,
+                title: 'تم إدراج درجاتك',
+                message: `تم إدراج درجاتك للمجموعة "${group.groupName}" في دورة "${group.course.name}" (الدرجة: ${gradeItem.grade}/100)`,
+                type: 'success'
+              });
+            }
+          } catch (error) {
+            console.error("Error sending student notification:", error);
+          }
+        }
       }
 
       res.json({
@@ -2838,7 +2873,131 @@ const allGroups = await storage.getAllTrainingCourseGroups();
     }
   });
 
-  // Helper methods are already implemented in DatabaseStorage
+  // Smart Notification System
+  
+  // Helper functions for smart notifications
+  async function notifyAdminGradeEntry(supervisorName: string, courseName: string, groupName: string) {
+    try {
+      const adminUsers = await storage.getAllUsers();
+      const admins = adminUsers.filter(user => user.role === 'admin');
+      
+      for (const admin of admins) {
+        await storage.createNotification({
+          userId: admin.id,
+          title: 'تم إدخال درجات جديدة',
+          message: `قام المشرف ${supervisorName} بإدخال درجات للمجموعة "${groupName}" في دورة "${courseName}"`,
+          type: 'info'
+        });
+      }
+    } catch (error) {
+      console.error("Error notifying admin about grade entry:", error);
+    }
+  }
+
+  async function notifyAdminGradeUpdate(supervisorName: string, courseName: string, groupName: string) {
+    try {
+      const adminUsers = await storage.getAllUsers();
+      const admins = adminUsers.filter(user => user.role === 'admin');
+      
+      for (const admin of admins) {
+        await storage.createNotification({
+          userId: admin.id,
+          title: 'تم تعديل درجات',
+          message: `قام المشرف ${supervisorName} بتعديل درجات للمجموعة "${groupName}" في دورة "${courseName}"`,
+          type: 'warning'
+        });
+      }
+    } catch (error) {
+      console.error("Error notifying admin about grade update:", error);
+    }
+  }
+
+  async function notifyStudentGradesAdded(studentId: number, courseName: string, groupName: string, grade?: number) {
+    try {
+      const student = await storage.getStudentWithDetails(studentId);
+      if (!student) return;
+
+      const gradeText = grade ? ` (الدرجة النهائية: ${grade.toFixed(1)})` : '';
+      
+      await storage.createNotification({
+        userId: student.user.id,
+        title: 'تم إدراج درجاتك',
+        message: `تم إدراج درجاتك للمجموعة "${groupName}" في دورة "${courseName}"${gradeText}`,
+        type: 'success'
+      });
+    } catch (error) {
+      console.error("Error notifying student about grades:", error);
+    }
+  }
+
+  async function notifySupervisorNewAssignment(supervisorId: number, courseName: string, groupName: string) {
+    try {
+      const supervisor = await storage.getSupervisorWithUser(supervisorId);
+      if (!supervisor) return;
+
+      await storage.createNotification({
+        userId: supervisor.user.id,
+        title: 'تعيين جديد',
+        message: `تم تعيينك كمشرف للمجموعة "${groupName}" في دورة "${courseName}"`,
+        type: 'success'
+      });
+    } catch (error) {
+      console.error("Error notifying supervisor about new assignment:", error);
+    }
+  }
+
+  async function notifyStudentAssignmentConfirmed(studentId: number, courseName: string, groupName: string) {
+    try {
+      const student = await storage.getStudentWithDetails(studentId);
+      if (!student) return;
+
+      await storage.createNotification({
+        userId: student.user.id,
+        title: 'تم تأكيد تسجيلك',
+        message: `تم تأكيد تسجيلك في المجموعة "${groupName}" للدورة "${courseName}"`,
+        type: 'success'
+      });
+    } catch (error) {
+      console.error("Error notifying student about assignment confirmation:", error);
+    }
+  }
+
+  // Enhanced notification API endpoints
+  app.post("/api/smart-notifications/grade-entry", authMiddleware, requireRole("supervisor"), async (req: Request, res: Response) => {
+    try {
+      const { groupId, studentIds } = req.body;
+      
+      // Get group and course info
+      const group = await storage.getTrainingCourseGroup(groupId);
+      if (!group) {
+        return res.status(404).json({ message: "المجموعة غير موجودة" });
+      }
+      
+      const course = await storage.getTrainingCourse(group.courseId);
+      if (!course) {
+        return res.status(404).json({ message: "الدورة غير موجودة" });
+      }
+      
+      const supervisor = await storage.getSupervisorWithUser(group.supervisorId!);
+      
+      // Notify admin about grade entry
+      await notifyAdminGradeEntry(
+        supervisor?.user.name || 'مشرف غير محدد',
+        course.name || 'دورة غير محددة',
+        group.groupName
+      );
+      
+      // Notify students about their grades
+      for (const studentId of studentIds) {
+        await notifyStudentGradesAdded(studentId, course.name || 'دورة غير محددة', group.groupName);
+      }
+      
+      res.json({ message: "تم إرسال الإشعارات بنجاح" });
+    } catch (error) {
+      console.error("Error sending grade entry notifications:", error);
+      res.status(500).json({ message: "خطأ في إرسال الإشعارات" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
