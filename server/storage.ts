@@ -235,7 +235,16 @@ export class DatabaseStorage implements IStorage {
   async login(loginData: LoginData): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.username, loginData.username));
     const user = result[0];
-    // Password verification would be done in the calling code
+    
+    if (!user) {
+      return undefined;
+    }
+    
+    // Check password - simple comparison for now (in production, use hashing)
+    if (user.password !== loginData.password) {
+      return undefined;
+    }
+    
     return user;
   }
 

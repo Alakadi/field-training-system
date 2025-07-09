@@ -54,30 +54,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
-      console.log("Login attempt:", req.body); // إضافة للتصحيح
+      console.log("Login attempt:", req.body.username); // إضافة للتصحيح
       const loginData = schema.loginSchema.parse(req.body);
 
       // محاولة التسجيل عبر الدالة الأساسية
-      let user = await storage.login(loginData);
-
-      // إذا لم تنجح محاولة تسجيل الدخول، نحاول البحث عن المستخدم مباشرة
-      if (!user) {
-        console.log("Login failed, trying direct lookup"); // إضافة للتصحيح
-
-        // البحث عن المستخدم بناءً على اسم المستخدم
-        const userByUsername = await storage.getUserByUsername(loginData.username);
-
-        console.log("Found user by username:", userByUsername ? "yes" : "no"); // إضافة للتصحيح
-
-        // التحقق من كلمة المرور
-        if (userByUsername && userByUsername.password === loginData.password) {
-          user = userByUsername;
-          console.log("Password matched for direct lookup"); // إضافة للتصحيح
-        }
-      }
+      const user = await storage.login(loginData);
 
       if (!user) {
-        console.log("Login failed: Invalid credentials"); // إضافة للتصحيح
+        console.log("Login failed: Invalid credentials for:", loginData.username);
         return res.status(401).json({ message: "اسم المستخدم أو كلمة المرور غير صحيحة" });
       }
 
