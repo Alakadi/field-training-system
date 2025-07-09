@@ -54,24 +54,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.post("/api/auth/login", async (req: Request, res: Response) => {
     try {
-      console.log("Login attempt:", req.body.username); // إضافة للتصحيح
       const loginData = schema.loginSchema.parse(req.body);
 
       // محاولة التسجيل عبر الدالة الأساسية
       const user = await storage.login(loginData);
 
       if (!user) {
-        console.log("Login failed: Invalid credentials for:", loginData.username);
         return res.status(401).json({ message: "اسم المستخدم أو كلمة المرور غير صحيحة" });
       }
 
       // التحقق من أن الحساب نشط
       if (user.active === false) {
-        console.log("Login failed: Account is inactive for user:", user.username);
         return res.status(403).json({ message: "تم إلغاء تنشيط حسابك، يرجى مراجعة مدير النظام" });
       }
-
-      console.log("Login successful for:", user.username); // إضافة للتصحيح
 
       // Set user in session
       if (!req.session) {
