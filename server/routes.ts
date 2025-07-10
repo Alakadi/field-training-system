@@ -6,6 +6,10 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import * as XLSX from "xlsx";
 import { authMiddleware, requireRole } from "./middlewares/auth";
+import { NotificationService } from "./services/notification-service";
+
+// Initialize notification service
+const notificationService = new NotificationService(storage);
 
 // Helper function to log activities - مبسط
 async function logActivity(
@@ -1654,6 +1658,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: "pending"
       });
 
+      // Send notification to supervisor about new assignment
+      if (group.supervisorId) {
+        try {
+          const course = await storage.getTrainingCourse(group.courseId);
+          await notificationService.notifySupervisorNewAssignment(
+            group.supervisorId,
+            course?.name || 'دورة غير محددة',
+            group.groupName
+          );
+        } catch (error) {
+          console.error("Error sending supervisor notification:", error);
+        }
+      }
+
       // Log activity
       if (req.user) {
         const student = await storage.getStudent(Number(studentId));
@@ -2713,8 +2731,46 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         }
       }
 
-      // Log activity for detailed grading
+      // Send notifications for detailed grading
       if (savedCount > 0) {
+        // Get group and course details for notifications
+        const firstAssignment = await storage.getTrainingAssignment(updates[0].assignmentId);
+        if (firstAssignment && firstAssignment.groupId) {
+          const group = await storage.getTrainingCourseGroupWithStudents(firstAssignment.groupId);
+          if (group) {
+            const supervisorWithUser = await storage.getSupervisorWithUser(supervisor.id);
+            
+            // Notify admin about grade entry
+            try {
+              await notificationService.notifyAdminGradeEntry(
+                supervisorWithUser?.user?.name || 'غير محدد',
+                group.course?.name || 'دورة غير محددة',
+                group.groupName
+              );
+            } catch (error) {
+              console.error("Error sending admin notification:", error);
+            }
+
+            // Notify students about their new grades
+            for (const update of savedUpdates) {
+              try {
+                const assignment = await storage.getTrainingAssignment(update.assignmentId);
+                if (assignment) {
+                  await notificationService.notifyStudentGradesAdded(
+                    assignment.studentId,
+                    group.course?.name || 'دورة غير محددة',
+                    group.groupName,
+                    update.finalGrade
+                  );
+                }
+              } catch (error) {
+                console.error("Error sending student notification:", error);
+              }
+            }
+          }
+        }
+
+        // Log activity for detailed grading
         await logActivity(
           req.user!.username,
           "detailed_grade_entry",
@@ -2733,7 +2789,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
       }
 
       res.json({
-        message: `تم حفظ الدرجات المفصلة لـ ${savedCount} طالب بنجاح`,
+        message: `تم حفظ الدرجات المفصلة لـ ${savedCount} طالب بنجاح وإرسال الإشعارات`,
         savedCount: savedCount,
         updates: savedUpdates
       });
