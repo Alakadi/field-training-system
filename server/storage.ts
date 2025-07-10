@@ -242,7 +242,6 @@ export class DatabaseStorage implements IStorage {
     
     // Check password - simple comparison for now (in production, use hashing)
     if (user.password !== loginData.password) {
-      console.log("Login failed: Invalid password for user:", user.username);
       return undefined;
     }
     
