@@ -14,8 +14,8 @@ interface Notification {
   title: string;
   message: string;
   type: string;
-  read: boolean;
-  created_at: string;
+  isRead: boolean;
+  createdAt: string;
 }
 
 export const NotificationBell: React.FC = () => {
@@ -41,11 +41,11 @@ export const NotificationBell: React.FC = () => {
     }
   };
 
-  // Fetch activity logs as notifications
+  // Fetch notifications
   const { data: notifications, isLoading } = useQuery({
-    queryKey: ["/api/activity-logs"],
+    queryKey: ["/api/notifications"],
     queryFn: async () => {
-      const res = await fetch("/api/activity-logs", {
+      const res = await fetch("/api/notifications", {
         credentials: "include",
       });
       if (!res.ok) return [];
@@ -54,20 +54,13 @@ export const NotificationBell: React.FC = () => {
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 
-  // Filter for grade entry notifications
-  const gradeNotifications = notifications?.filter((log: any) => 
-    log.action === "grade_entry"
-  ).slice(0, 10) || [];
+  // Use all notifications (limit to 10 most recent)
+  const recentNotifications = notifications?.slice(0, 10) || [];
 
-  // Count unread notifications (those newer than last read time)
-  const unreadCount = gradeNotifications.filter((notification: any) => {
-    if (!lastReadTime) {
-      // If no last read time, consider notifications from last 24 hours as unread
-      return new Date(notification.timestamp) > new Date(Date.now() - 24 * 60 * 60 * 1000);
-    }
-    // Otherwise, consider notifications newer than last read time as unread
-    return new Date(notification.timestamp) > new Date(lastReadTime);
-  }).length;
+  // Count unread notifications
+  const unreadCount = recentNotifications.filter((notification: Notification) => 
+    !notification.isRead
+  ).length;
 
   return (
     <Popover open={isOpen} onOpenChange={(open) => {
@@ -97,33 +90,68 @@ export const NotificationBell: React.FC = () => {
               <div className="text-center py-4 text-sm text-gray-500">
                 جاري التحميل...
               </div>
-            ) : gradeNotifications.length === 0 ? (
+            ) : recentNotifications.length === 0 ? (
               <div className="text-center py-4 text-sm text-gray-500">
                 لا توجد إشعارات جديدة
               </div>
             ) : (
-              gradeNotifications.map((log: any) => (
+              recentNotifications.map((notification: Notification) => (
                 <div 
-                  key={log.id} 
-                  className="p-3 border rounded-lg bg-blue-50 border-blue-200"
+                  key={notification.id} 
+                  className={`p-3 border rounded-lg ${
+                    notification.isRead 
+                      ? 'bg-gray-50 border-gray-200' 
+                      : notification.type === 'success' 
+                        ? 'bg-green-50 border-green-200'
+                        : notification.type === 'warning'
+                          ? 'bg-yellow-50 border-yellow-200'
+                          : notification.type === 'error'
+                            ? 'bg-red-50 border-red-200'
+                            : 'bg-blue-50 border-blue-200'
+                  }`}
                 >
-                  <div className="text-sm font-medium text-blue-900 text-right mb-1">
-                    إدخال درجات جديدة
+                  <div className={`text-sm font-medium text-right mb-1 ${
+                    notification.isRead 
+                      ? 'text-gray-700' 
+                      : notification.type === 'success' 
+                        ? 'text-green-900'
+                        : notification.type === 'warning'
+                          ? 'text-yellow-900'
+                          : notification.type === 'error'
+                            ? 'text-red-900'
+                            : 'text-blue-900'
+                  }`}>
+                    {notification.title}
+                    {!notification.isRead && (
+                      <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                    )}
                   </div>
-                  <div className="text-xs text-blue-700 text-right">
-                    {log.details?.message || log.details}
+                  <div className={`text-xs text-right mb-1 ${
+                    notification.isRead 
+                      ? 'text-gray-600' 
+                      : notification.type === 'success' 
+                        ? 'text-green-700'
+                        : notification.type === 'warning'
+                          ? 'text-yellow-700'
+                          : notification.type === 'error'
+                            ? 'text-red-700'
+                            : 'text-blue-700'
+                  }`}>
+                    {notification.message}
                   </div>
-                  <div className="text-xs text-blue-600 text-right mt-1">
-                    {new Date(log.timestamp).toLocaleString('ar-SA')}
+                  <div className={`text-xs text-right ${
+                    notification.isRead 
+                      ? 'text-gray-500' 
+                      : notification.type === 'success' 
+                        ? 'text-green-600'
+                        : notification.type === 'warning'
+                          ? 'text-yellow-600'
+                          : notification.type === 'error'
+                            ? 'text-red-600'
+                            : 'text-blue-600'
+                  }`}>
+                    {new Date(notification.createdAt).toLocaleString('ar-SA')}
                   </div>
-                  {log.details?.details && (
-                    <div className="mt-2 text-xs space-y-1">
-                      <div className="text-right">الطالب: {log.details.details.studentName}</div>
-                      <div className="text-right">الدرجة: {log.details.details.grade}/100</div>
-                      <div className="text-right">الكلية: {log.details.details.faculty}</div>
-                      <div className="text-right">التخصص: {log.details.details.major}</div>
-                    </div>
-                  )}
                 </div>
               ))
             )}
