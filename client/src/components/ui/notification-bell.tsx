@@ -9,13 +9,13 @@ import {
 } from "./popover";
 import { Bell } from "./icons";
 
-interface Notification {
+interface ActivityNotification {
   id: number;
-  title: string;
-  message: string;
-  type: string;
+  notificationTitle: string;
+  notificationMessage: string;
+  notificationType: string;
   isRead: boolean;
-  createdAt: string;
+  timestamp: string;
 }
 
 export const NotificationBell: React.FC = () => {
@@ -58,7 +58,7 @@ export const NotificationBell: React.FC = () => {
   const recentNotifications = notifications?.slice(0, 10) || [];
 
   // Count unread notifications
-  const unreadCount = recentNotifications.filter((notification: Notification) => 
+  const unreadCount = recentNotifications.filter((notification: ActivityNotification) => 
     !notification.isRead
   ).length;
 
@@ -95,17 +95,17 @@ export const NotificationBell: React.FC = () => {
                 لا توجد إشعارات جديدة
               </div>
             ) : (
-              recentNotifications.map((notification: Notification) => (
+              recentNotifications.map((notification: ActivityNotification) => (
                 <div 
                   key={notification.id} 
                   className={`p-3 border rounded-lg ${
                     notification.isRead 
                       ? 'bg-gray-50 border-gray-200' 
-                      : notification.type === 'success' 
+                      : notification.notificationType === 'success' 
                         ? 'bg-green-50 border-green-200'
-                        : notification.type === 'warning'
+                        : notification.notificationType === 'warning'
                           ? 'bg-yellow-50 border-yellow-200'
-                          : notification.type === 'error'
+                          : notification.notificationType === 'error'
                             ? 'bg-red-50 border-red-200'
                             : 'bg-blue-50 border-blue-200'
                   }`}
@@ -113,15 +113,15 @@ export const NotificationBell: React.FC = () => {
                   <div className={`text-sm font-medium text-right mb-1 ${
                     notification.isRead 
                       ? 'text-gray-700' 
-                      : notification.type === 'success' 
+                      : notification.notificationType === 'success' 
                         ? 'text-green-900'
-                        : notification.type === 'warning'
+                        : notification.notificationType === 'warning'
                           ? 'text-yellow-900'
-                          : notification.type === 'error'
+                          : notification.notificationType === 'error'
                             ? 'text-red-900'
                             : 'text-blue-900'
                   }`}>
-                    {notification.title}
+                    {notification.notificationTitle}
                     {!notification.isRead && (
                       <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
                     )}
@@ -129,28 +129,28 @@ export const NotificationBell: React.FC = () => {
                   <div className={`text-xs text-right mb-1 ${
                     notification.isRead 
                       ? 'text-gray-600' 
-                      : notification.type === 'success' 
+                      : notification.notificationType === 'success' 
                         ? 'text-green-700'
-                        : notification.type === 'warning'
+                        : notification.notificationType === 'warning'
                           ? 'text-yellow-700'
-                          : notification.type === 'error'
+                          : notification.notificationType === 'error'
                             ? 'text-red-700'
                             : 'text-blue-700'
                   }`}>
-                    {notification.message}
+                    {notification.notificationMessage}
                   </div>
                   <div className={`text-xs text-right ${
                     notification.isRead 
                       ? 'text-gray-500' 
-                      : notification.type === 'success' 
+                      : notification.notificationType === 'success' 
                         ? 'text-green-600'
-                        : notification.type === 'warning'
+                        : notification.notificationType === 'warning'
                           ? 'text-yellow-600'
-                          : notification.type === 'error'
+                          : notification.notificationType === 'error'
                             ? 'text-red-600'
                             : 'text-blue-600'
                   }`}>
-                    {new Date(notification.createdAt).toLocaleString('ar-SA')}
+                    {new Date(notification.timestamp).toLocaleString('ar-SA')}
                   </div>
                 </div>
               ))

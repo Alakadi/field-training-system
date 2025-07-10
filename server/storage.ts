@@ -4,7 +4,6 @@ import {
   majors,
   levels,
   academicYears,
-  notifications,
   supervisors,
   students,
   trainingSites,
@@ -23,8 +22,6 @@ import {
   type InsertLevel,
   type AcademicYear,
   type InsertAcademicYear,
-  type Notification,
-  type InsertNotification,
   type Supervisor,
   type InsertSupervisor,
   type Student,
@@ -43,7 +40,7 @@ import {
   type InsertActivityLog,
   LoginData
 } from "@shared/schema";
-import { eq, and, desc, sql, or, isNull, gte, lte } from "drizzle-orm";
+import { eq, and, desc, sql, or, isNull, gte, lte, count } from "drizzle-orm";
 import { db } from "./db";
 
 export interface IStorage {
@@ -182,11 +179,12 @@ export interface IStorage {
   updateAcademicYear(id: number, academicYear: Partial<AcademicYear>): Promise<AcademicYear | undefined>;
   setAllAcademicYearsNonCurrent(): Promise<void>;
 
-  // Notifications operations
-  getAllNotifications(): Promise<Notification[]>;
-  getNotificationsByUserId(userId: number): Promise<Notification[]>;
-  createNotification(notification: InsertNotification): Promise<Notification>;
-  markNotificationAsRead(id: number, userId: number): Promise<Notification | undefined>;
+  // Unified Activity/Notification operations
+  getAllNotifications(): Promise<ActivityLog[]>;
+  getNotificationsByUserId(userId: number): Promise<ActivityLog[]>;
+  createNotification(userId: number, title: string, message: string, type?: string, performedBy?: string): Promise<ActivityLog>;
+  markNotificationAsRead(id: number, userId: number): Promise<ActivityLog | undefined>;
+  getUnreadNotificationCount(userId: number): Promise<number>;
   getTrainingAssignmentById(id: number): Promise<TrainingAssignment | undefined>;
 
   // Training Assignment Grades operations
@@ -1332,28 +1330,62 @@ export class DatabaseStorage implements IStorage {
     await db.update(academicYears).set({ isCurrent: false });
   }
 
-  // Notifications operations
-  async getAllNotifications(): Promise<Notification[]> {
-    return await db.select().from(notifications).orderBy(desc(notifications.createdAt));
+  // Unified Activity/Notification operations
+  async getAllNotifications(): Promise<ActivityLog[]> {
+    return await db.select()
+      .from(activityLogs)
+      .where(eq(activityLogs.isNotification, true))
+      .orderBy(desc(activityLogs.timestamp));
   }
 
-  async getNotificationsByUserId(userId: number): Promise<Notification[]> {
-    return await db.select().from(notifications)
-      .where(eq(notifications.userId, userId))
-      .orderBy(desc(notifications.createdAt));
+  async getNotificationsByUserId(userId: number): Promise<ActivityLog[]> {
+    return await db.select()
+      .from(activityLogs)
+      .where(and(
+        eq(activityLogs.targetUserId, userId),
+        eq(activityLogs.isNotification, true)
+      ))
+      .orderBy(desc(activityLogs.timestamp));
   }
 
-  async createNotification(notification: InsertNotification): Promise<Notification> {
-    const result = await db.insert(notifications).values(notification).returning();
+  async createNotification(userId: number, title: string, message: string, type: string = 'info', performedBy?: string): Promise<ActivityLog> {
+    const result = await db.insert(activityLogs).values({
+      username: performedBy || 'النظام',
+      action: 'notification',
+      entityType: 'notification',
+      entityId: null,
+      details: { automated: true },
+      targetUserId: userId,
+      notificationTitle: title,
+      notificationMessage: message,
+      notificationType: type,
+      isRead: false,
+      isNotification: true
+    }).returning();
     return result[0];
   }
 
-  async markNotificationAsRead(id: number, userId: number): Promise<Notification | undefined> {
-    const result = await db.update(notifications)
+  async markNotificationAsRead(id: number, userId: number): Promise<ActivityLog | undefined> {
+    const result = await db.update(activityLogs)
       .set({ isRead: true })
-      .where(and(eq(notifications.id, id), eq(notifications.userId, userId)))
+      .where(and(
+        eq(activityLogs.id, id), 
+        eq(activityLogs.targetUserId, userId),
+        eq(activityLogs.isNotification, true)
+      ))
       .returning();
     return result[0];
+  }
+
+  async getUnreadNotificationCount(userId: number): Promise<number> {
+    const result = await db.select({ count: count() })
+      .from(activityLogs)
+      .where(and(
+        eq(activityLogs.targetUserId, userId),
+        eq(activityLogs.isNotification, true),
+        eq(activityLogs.isRead, false)
+      ));
+    return result[0]?.count || 0;
   }
 
   // Training Assignment Grades operations

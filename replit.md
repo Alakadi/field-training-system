@@ -137,6 +137,14 @@ This is a comprehensive Arabic-supported field training management system built 
 - **المشرفين**: 5 مشرفين مع بيانات كاملة
 
 ## Recent Changes
+- July 10, 2025: دمج نظام الإشعارات مع activity_logs - نظام موحد للأنشطة والإشعارات
+  - إلغاء جدول notifications منفصل واستخدام activity_logs كنظام موحد
+  - إضافة حقول جديدة لـ activity_logs: target_user_id, notification_title, notification_message, notification_type, is_read, is_notification
+  - تحديث NotificationService لاستخدام النظام الجديد مع دوال مبسطة
+  - تحديث واجهة المستخدم (notification bell) لتتوافق مع النموذج الجديد
+  - تطبيق الإشعارات التلقائية عند إدخال الدرجات وتعيين المشرفين والطلاب
+  - تبسيط هيكل قاعدة البيانات بإزالة التكرار وتوحيد تسجيل الأنشطة والإشعارات
+
 - July 8, 2025: إصلاح مشكلة تسجيل الدخول وتحسين آلية التحقق من كلمة المرور
   - إصلاح دالة login في storage.ts لتتحقق من كلمة المرور بشكل صحيح
   - تبسيط كود تسجيل الدخول في routes.ts وإزالة الآلية المضاعفة

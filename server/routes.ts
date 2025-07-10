@@ -2616,35 +2616,26 @@ const allGroups = await storage.getAllTrainingCourseGroups();
           }
         );
 
-        // Send notification to admin
+        // Send notification to admin using unified system
         try {
-          const adminUsers = await storage.getAllUsers();
-          const admins = adminUsers.filter(user => user.role === 'admin');
-          
-          for (const admin of admins) {
-            await storage.createNotification({
-              userId: admin.id,
-              title: 'تم إدخال درجات جديدة',
-              message: `قام المشرف ${supervisorWithUser?.user?.name || 'غير محدد'} بإدخال درجات ${savedEvaluations.length} طالب للمجموعة "${group.groupName}" في دورة "${group.course.name}"`,
-              type: 'info'
-            });
-          }
+          await notificationService.notifyAdminGradeEntry(
+            supervisorWithUser?.user?.name || 'غير محدد',
+            group.course.name,
+            group.groupName
+          );
         } catch (error) {
           console.error("Error sending admin notification:", error);
         }
 
-        // Send notifications to students
+        // Send notifications to students using unified system
         for (const gradeItem of grades) {
           try {
-            const student = await storage.getStudentWithDetails(gradeItem.studentId);
-            if (student) {
-              await storage.createNotification({
-                userId: student.user.id,
-                title: 'تم إدراج درجاتك',
-                message: `تم إدراج درجاتك للمجموعة "${group.groupName}" في دورة "${group.course.name}" (الدرجة: ${gradeItem.grade}/100)`,
-                type: 'success'
-              });
-            }
+            await notificationService.notifyStudentGradesAdded(
+              gradeItem.studentId,
+              group.course.name,
+              group.groupName,
+              gradeItem.grade
+            );
           } catch (error) {
             console.error("Error sending student notification:", error);
           }

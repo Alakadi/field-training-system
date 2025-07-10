@@ -44,16 +44,7 @@ export const academicYears = pgTable("academic_years", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Notifications table - نظام الإشعارات
-export const notifications = pgTable("notifications", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull().references(() => users.id),
-  title: text("title").notNull(),
-  message: text("message").notNull(),
-  type: text("type").default("info"), // info, warning, error, success
-  isRead: boolean("is_read").default(false),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+// تم حذف جدول notifications - نستخدم activity_logs الآن للإشعارات والأنشطة معاً
 
 // Supervisors table - extends users
 export const supervisors = pgTable("supervisors", {
@@ -145,15 +136,23 @@ export const evaluations = pgTable("evaluations", {
   createdBy: integer("created_by").references(() => users.id),
 });
 
-// Activity Logs table - مبسط بدون ربط مباشر بالمستخدمين
+// Activity Logs table - نظام موحد للأنشطة والإشعارات
 export const activityLogs = pgTable("activity_logs", {
   id: serial("id").primaryKey(),
-  username: text("username"), // اسم المستخدم بدلاً من foreign key
-  action: text("action").notNull(), // e.g. "create", "update", "delete"
-  entityType: text("entity_type").notNull(), // e.g. "student", "course", "assignment"
+  username: text("username"), // اسم المستخدم الذي قام بالعملية
+  action: text("action").notNull(), // e.g. "create", "update", "delete", "notification"
+  entityType: text("entity_type").notNull(), // e.g. "student", "course", "assignment", "notification"
   entityId: integer("entity_id"), // ID of the affected entity
   details: jsonb("details"), // JSON details about the activity
   timestamp: timestamp("timestamp").defaultNow(),
+  
+  // حقول الإشعارات
+  targetUserId: integer("target_user_id").references(() => users.id), // المستخدم المستهدف للإشعار
+  notificationTitle: text("notification_title"), // عنوان الإشعار
+  notificationMessage: text("notification_message"), // رسالة الإشعار
+  notificationType: text("notification_type").default("info"), // info, warning, error, success
+  isRead: boolean("is_read").default(false), // هل تم قراءة الإشعار
+  isNotification: boolean("is_notification").default(false), // هل هذا السجل إشعار أم نشاط عادي
 });
 
 // Insert schemas
@@ -162,7 +161,7 @@ export const insertFacultySchema = createInsertSchema(faculties);
 export const insertMajorSchema = createInsertSchema(majors);
 export const insertLevelSchema = createInsertSchema(levels);
 export const insertAcademicYearSchema = createInsertSchema(academicYears);
-export const insertNotificationSchema = createInsertSchema(notifications);
+// تم حذف insertNotificationSchema - نستخدم insertActivityLogSchema للإشعارات
 export const insertSupervisorSchema = createInsertSchema(supervisors);
 export const insertStudentSchema = createInsertSchema(students);
 export const insertTrainingSiteSchema = createInsertSchema(trainingSites);
@@ -188,8 +187,7 @@ export type InsertLevel = z.infer<typeof insertLevelSchema>;
 export type AcademicYear = typeof academicYears.$inferSelect;
 export type InsertAcademicYear = z.infer<typeof insertAcademicYearSchema>;
 
-export type Notification = typeof notifications.$inferSelect;
-export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+// تم حذف types الخاصة بـ notifications - نستخدم ActivityLog types للإشعارات
 
 export type Supervisor = typeof supervisors.$inferSelect;
 export type InsertSupervisor = z.infer<typeof insertSupervisorSchema>;
