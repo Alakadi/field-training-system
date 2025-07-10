@@ -198,11 +198,12 @@ const ActivityLogs: React.FC = () => {
                               <User size={14} className="text-white" />
                             </div>
                             <div>
-                              <div className="font-medium">{log.user?.name || 'غير معروف'}</div>
+                              <div className="font-medium">{log.user?.name || log.username || 'غير معروف'}</div>
                               <div className="text-xs text-gray-500">
                                 {log.user?.role === 'admin' ? 'مسؤول' : 
                                  log.user?.role === 'supervisor' ? 'مشرف' : 
-                                 log.user?.role === 'student' ? 'طالب' : 'غير معروف'}
+                                 log.user?.role === 'student' ? 'طالب' : 
+                                 log.username === 'النظام' ? 'النظام التلقائي' : 'غير معروف'}
                               </div>
                             </div>
                           </div>
