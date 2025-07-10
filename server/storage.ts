@@ -248,33 +248,39 @@ export class DatabaseStorage implements IStorage {
 
   // Activity log operations
   async getAllActivityLogs(): Promise<ActivityLog[]> {
-    const result = await db.select({
-      id: activityLogs.id,
-      username: activityLogs.username,
-      action: activityLogs.action,
-      entityType: activityLogs.entityType,
-      entityId: activityLogs.entityId,
-      details: activityLogs.details,
-      timestamp: activityLogs.timestamp,
-      ipAddress: activityLogs.ipAddress,
-      targetUserId: activityLogs.targetUserId,
-      notificationTitle: activityLogs.notificationTitle,
-      notificationMessage: activityLogs.notificationMessage,
-      notificationType: activityLogs.notificationType,
-      isRead: activityLogs.isRead,
-      isNotification: activityLogs.isNotification,
-      user: {
-        id: users.id,
-        name: users.name,
-        role: users.role,
-        username: users.username
-      }
-    })
-    .from(activityLogs)
-    .leftJoin(users, eq(activityLogs.username, users.username))
-    .orderBy(desc(activityLogs.timestamp));
-    
-    return result;
+    try {
+      console.log("Starting getAllActivityLogs query...");
+      const result = await db.select({
+        id: activityLogs.id,
+        username: activityLogs.username,
+        action: activityLogs.action,
+        entityType: activityLogs.entityType,
+        entityId: activityLogs.entityId,
+        details: activityLogs.details,
+        timestamp: activityLogs.timestamp,
+        targetUserId: activityLogs.targetUserId,
+        notificationTitle: activityLogs.notificationTitle,
+        notificationMessage: activityLogs.notificationMessage,
+        notificationType: activityLogs.notificationType,
+        isRead: activityLogs.isRead,
+        isNotification: activityLogs.isNotification,
+        user: {
+          id: users.id,
+          name: users.name,
+          role: users.role,
+          username: users.username
+        }
+      })
+      .from(activityLogs)
+      .leftJoin(users, eq(activityLogs.username, users.username))
+      .orderBy(desc(activityLogs.timestamp));
+      
+      console.log("Query completed, found", result.length, "logs");
+      return result;
+    } catch (error) {
+      console.error("Error in getAllActivityLogs:", error);
+      throw error;
+    }
   }
 
   async getActivityLog(id: number): Promise<ActivityLog | undefined> {

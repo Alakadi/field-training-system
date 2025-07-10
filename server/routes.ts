@@ -36,7 +36,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Activity logs route
   app.get("/api/activity-logs", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
+      console.log("Getting activity logs...");
       const logs = await storage.getAllActivityLogs();
+      console.log("Retrieved logs:", logs.length);
 
       // Log this activity view
       if (req.user) {
@@ -51,6 +53,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json(logs);
     } catch (error) {
+      console.error("Error in activity logs API:", error);
       res.status(500).json({ message: "خطأ في استرجاع سجلات النشاط" });
     }
   });

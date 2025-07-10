@@ -13,13 +13,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 interface ActivityLog {
   id: number;
-  userId: number | null;
+  username: string;
   action: string;
   entityType: string;
   entityId: number | null;
   details: any;
   timestamp: string;
-  ipAddress: string | null;
+  targetUserId: number | null;
+  notificationTitle: string | null;
+  notificationMessage: string | null;
+  notificationType: string;
+  isRead: boolean;
+  isNotification: boolean;
   user?: {
     id: number;
     username: string;
@@ -179,7 +184,7 @@ const ActivityLogs: React.FC = () => {
                       <TableHead>الكيان</TableHead>
                       <TableHead>التفاصيل</TableHead>
                       <TableHead>التاريخ والوقت</TableHead>
-                      <TableHead>عنوان IP</TableHead>
+                      <TableHead>النوع</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -241,9 +246,9 @@ const ActivityLogs: React.FC = () => {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <span className="text-xs font-mono">
-                            {log.ipAddress || '-'}
-                          </span>
+                          <Badge className={log.isNotification ? "bg-blue-500" : "bg-gray-500"}>
+                            {log.isNotification ? 'إشعار' : 'نشاط'}
+                          </Badge>
                         </TableCell>
                       </TableRow>
                     ))}
