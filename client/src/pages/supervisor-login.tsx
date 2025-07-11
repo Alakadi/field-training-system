@@ -71,19 +71,24 @@ const SupervisorLogin: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-green-50 to-teal-100">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-blue-50 to-blue-100" style={{backgroundColor: '#1e3a8a'}}>
       <div className="w-full max-w-md p-4">
         <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
           <CardHeader className="text-center pb-8">
             <div className="flex justify-center mb-6">
               <img 
                 src="/logo.png" 
-                alt="Logo" 
-                className="h-16 w-auto object-contain"
+                alt="شعار الجامعة" 
+                className="h-24 w-auto object-contain"
+                onError={(e) => {
+                  console.log('Error loading logo from /logo.png');
+                  e.currentTarget.src = '/client/public/logo.png';
+                }}
+                onLoad={() => console.log('Logo loaded successfully')}
               />
             </div>
-            <CardTitle className="text-2xl font-bold text-green-800">تسجيل دخول المشرف</CardTitle>
-            <CardDescription className="text-green-600 mt-2">
+            <CardTitle className="text-2xl font-bold" style={{color: '#1e3a8a'}}>تسجيل دخول المشرف</CardTitle>
+            <CardDescription className="mt-2" style={{color: '#1e40af'}}>
               قم بتسجيل الدخول للوصول إلى لوحة تحكم المشرف
             </CardDescription>
           </CardHeader>
@@ -127,7 +132,8 @@ const SupervisorLogin: React.FC = () => {
                 />
                 <Button
                   type="submit"
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                  className="w-full text-white font-medium py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                  style={{backgroundColor: '#1e3a8a'}}
                   disabled={isLoading}
                 >
                   {isLoading ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}
@@ -140,12 +146,12 @@ const SupervisorLogin: React.FC = () => {
               <p className="text-gray-600 mb-3">هل تريد تسجيل الدخول بصفة أخرى؟</p>
               <div className="flex space-x-2 space-x-reverse justify-center">
                 <Link href="/admin-login">
-                  <Button variant="link" className="text-green-600 hover:text-green-800 font-medium">
+                  <Button variant="link" className="font-medium" style={{color: '#1e3a8a'}}>
                     تسجيل دخول كمسؤول
                   </Button>
                 </Link>
                 <Link href="/student-login">
-                  <Button variant="link" className="text-green-600 hover:text-green-800 font-medium">
+                  <Button variant="link" className="font-medium" style={{color: '#1e3a8a'}}>
                     تسجيل دخول كطالب
                   </Button>
                 </Link>

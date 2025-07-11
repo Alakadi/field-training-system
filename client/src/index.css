@@ -13,17 +13,17 @@
   --card-foreground: 20 14.3% 4.1%;
   --border: 20 5.9% 90%;
   --input: 20 5.9% 90%;
-  --primary: 210 100% 42%;
-  --primary-light: 207 90% 54%;
-  --primary-dark: 217 96% 35%;
+  --primary: 219 96% 20%; /* تم تحديثه ليطابق الأزرق في الشعار */
+  --primary-light: 219 96% 30%;
+  --primary-dark: 219 96% 15%;
   --primary-foreground: 211 100% 99%;
   --secondary: 174 42% 40%;
   --secondary-light: 174 32% 51%;
   --secondary-dark: 175 66% 35%;
   --secondary-foreground: 24 9.8% 10%;
-  --accent: 45 93% 47%;
-  --accent-light: 42 100% 66%;
-  --accent-dark: 43 100% 50%;
+  --accent: 45 93% 47%; /* الأصفر من الشعار */
+  --accent-light: 45 100% 60%;
+  --accent-dark: 45 93% 40%;
   --accent-foreground: 24 9.8% 10%;
   --success: 122 39% 49%;
   --warning: 36 100% 50%;
@@ -31,6 +31,14 @@
   --destructive-foreground: 60 9.1% 97.8%;
   --ring: 20 14.3% 4.1%;
   --radius: 0.5rem;
+  
+  /* ألوان مخصصة للشعار */
+  --logo-blue: #1e3a8a;
+  --logo-blue-light: #3b82f6;
+  --logo-blue-dark: #1e40af;
+  --logo-yellow: #fbbf24;
+  --logo-yellow-light: #fcd34d;
+  --logo-yellow-dark: #f59e0b;
 }
 
 .dark {
