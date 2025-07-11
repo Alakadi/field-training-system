@@ -73,12 +73,19 @@ const StudentLogin: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-neutral-50">
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-50 to-pink-100">
       <div className="w-full max-w-md p-4">
-        <Card className="shadow-lg">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold text-primary">تسجيل دخول الطالب</CardTitle>
-            <CardDescription>
+        <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
+          <CardHeader className="text-center pb-8">
+            <div className="flex justify-center mb-6">
+              <img 
+                src="/logo.png" 
+                alt="Logo" 
+                className="h-16 w-auto object-contain"
+              />
+            </div>
+            <CardTitle className="text-2xl font-bold text-purple-800">تسجيل دخول الطالب</CardTitle>
+            <CardDescription className="text-purple-600 mt-2">
               قم بتسجيل الدخول للوصول إلى نظام التدريب الميداني
             </CardDescription>
           </CardHeader>
@@ -122,7 +129,7 @@ const StudentLogin: React.FC = () => {
                 />
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
                   disabled={isLoading}
                 >
                   {isLoading ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}
@@ -130,16 +137,17 @@ const StudentLogin: React.FC = () => {
               </form>
             </Form>
           </CardContent>
-          <CardFooter className="flex justify-center">
-            <div className="text-center text-sm mt-4">
-              <div className="flex space-x-2 space-x-reverse justify-center mt-2">
+          <CardFooter className="flex justify-center pt-6">
+            <div className="text-center text-sm">
+              <p className="text-gray-600 mb-3">هل تريد تسجيل الدخول بصفة أخرى؟</p>
+              <div className="flex space-x-2 space-x-reverse justify-center">
                 <Link href="/admin-login">
-                  <Button variant="link" className="text-neutral-500">
+                  <Button variant="link" className="text-purple-600 hover:text-purple-800 font-medium">
                     تسجيل دخول كمسؤول
                   </Button>
                 </Link>
                 <Link href="/supervisor-login">
-                  <Button variant="link" className="text-neutral-500">
+                  <Button variant="link" className="text-purple-600 hover:text-purple-800 font-medium">
                     تسجيل دخول كمشرف
                   </Button>
                 </Link>
