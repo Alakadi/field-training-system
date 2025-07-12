@@ -109,11 +109,11 @@ function Router() {
           <AdminCourses />
         </AdminOnly>
       </Route>
-      <Route path="/admin/student-group-assignments">
+      {/* <Route path="/admin/student-group-assignments">
         <AdminOnly>
           <StudentGroupAssignments />
         </AdminOnly>
-      </Route>
+      </Route> */}
 
       <Route path="/admin/courses/edit/:id">
         <AdminOnly>

@@ -2,111 +2,371 @@
 @tailwind components;
 @tailwind utilities;
 
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
 :root {
-  --background: 0 0% 100%;
-  --foreground: 20 14.3% 4.1%;
-  --muted: 60 4.8% 95.9%;
-  --muted-foreground: 25 5.3% 44.7%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 20 14.3% 4.1%;
-  --card: 0 0% 100%;
-  --card-foreground: 20 14.3% 4.1%;
-  --border: 20 5.9% 90%;
-  --input: 20 5.9% 90%;
-  --primary: 219 96% 20%; /* تم تحديثه ليطابق الأزرق في الشعار */
-  --primary-light: 219 96% 30%;
-  --primary-dark: 219 96% 15%;
-  --primary-foreground: 211 100% 99%;
-  --secondary: 174 42% 40%;
-  --secondary-light: 174 32% 51%;
-  --secondary-dark: 175 66% 35%;
-  --secondary-foreground: 24 9.8% 10%;
-  --accent: 45 93% 47%; /* الأصفر من الشعار */
-  --accent-light: 45 100% 60%;
-  --accent-dark: 45 93% 40%;
-  --accent-foreground: 24 9.8% 10%;
-  --success: 122 39% 49%;
-  --warning: 36 100% 50%;
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 60 9.1% 97.8%;
-  --ring: 20 14.3% 4.1%;
-  --radius: 0.5rem;
-  
-  /* ألوان مخصصة للشعار */
-  --logo-blue: #1e3a8a;
-  --logo-blue-light: #3b82f6;
-  --logo-blue-dark: #1e40af;
-  --logo-yellow: #fbbf24;
-  --logo-yellow-light: #fcd34d;
-  --logo-yellow-dark: #f59e0b;
+  --radius: 0.625rem;
+  --background: #f8fafc;
+  --foreground: #1e406c;
+  --card: #ffffff;
+  --card-foreground: #1e406c;
+  --popover: #ffffff;
+  --popover-foreground: #1e406c;
+  --primary: #3e5463;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #1e406c;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --accent: #1e406c;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;
+  --input: #ffffff;
+  --ring: #3e5463;
+  --chart-1: #3e5463;
+  --chart-2: #183b6a;
+  --chart-3: #1e406c;
+  --chart-4: #64748b;
+  --chart-5: #94a3b8;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1e406c;
+  --sidebar-primary: #3e5463;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #1e406c;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #3e5463;
 }
 
 .dark {
-  --background: 240 10% 3.9%;
-  --foreground: 0 0% 98%;
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  --popover: 240 10% 3.9%;
-  --popover-foreground: 0 0% 98%;
-  --card: 240 10% 3.9%;
-  --card-foreground: 0 0% 98%;
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --primary: 210 100% 42%;
-  --primary-light: 207 90% 54%;
-  --primary-dark: 217 96% 35%;
-  --primary-foreground: 211 100% 99%;
-  --secondary: 174 42% 40%;
-  --secondary-light: 174 32% 51%;
-  --secondary-dark: 175 66% 35%;
-  --secondary-foreground: 0 0% 98%;
-  --accent: 45 93% 47%;
-  --accent-light: 42 100% 66%;
-  --accent-dark: 43 100% 50%;
-  --accent-foreground: 0 0% 98%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --ring: 240 4.9% 83.9%;
-  --radius: 0.5rem;
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
 }
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border outline-ring/50;
   }
-
   body {
-    @apply font-sans antialiased bg-neutral-100 text-neutral-900;
+    @apply bg-background text-foreground;
   }
 }
 
-/* Custom styles for the app */
-.sidebar-link.active {
-  @apply bg-primary/10 border-r-[3px] border-primary;
+/* Custom styles for Janad login pages */
+.janad-gradient {
+  background: linear-gradient(135deg, #3e5463 0%, #183b6a 50%, #1e406c 100%);
 }
 
+.janad-card-shadow {
+  box-shadow: 0 20px 25px -5px rgba(62, 84, 99, 0.1), 0 10px 10px -5px rgba(62, 84, 99, 0.04);
+}
+
+.janad-glass {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.janad-logo-glow {
+  filter: drop-shadow(0 4px 8px rgba(62, 84, 99, 0.3));
+}
+
+.janad-input-focus:focus {
+  border-color: #3e5463;
+  box-shadow: 0 0 0 3px rgba(62, 84, 99, 0.1);
+}
+
+.janad-button-hover:hover {
+  background: linear-gradient(135deg, #2d3e4a 0%, #0f2a4a 50%, #152f4f 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(62, 84, 99, 0.2);
+}
+
+.janad-fade-in {
+  animation: fadeIn 0.8s ease-out;
+}
+
+.janad-slide-up {
+  animation: slideUp 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.janad-floating {
+  animation: floating 3s ease-in-out infinite;
+}
+
+@keyframes floating {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.janad-pattern {
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(62, 84, 99, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(24, 59, 106, 0.1) 0%, transparent 50%);
+}
+
+.janad-text-gradient {
+  background: linear-gradient(135deg, #3e5463, #183b6a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.janad-border-gradient {
+  border: 2px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(135deg, #3e5463, #183b6a) border-box;
+}
+
+
+/* Enhanced error messages and notifications */
+.error-message {
+  @apply bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg;
+  animation: slideInFromTop 0.3s ease-out;
+}
+
+.success-message {
+  @apply bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg;
+  animation: slideInFromTop 0.3s ease-out;
+}
+
+.warning-message {
+  @apply bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg;
+  animation: slideInFromTop 0.3s ease-out;
+}
+
+.info-message {
+  @apply bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg;
+  animation: slideInFromTop 0.3s ease-out;
+}
+
+/* Enhanced form validation styles */
+.form-field-error {
+  @apply border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500;
+}
+
+.form-field-success {
+  @apply border-green-300 bg-green-50 focus:border-green-500 focus:ring-green-500;
+}
+
+/* Loading states */
+.loading-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50;
+  backdrop-filter: blur(4px);
+}
+
+.loading-spinner {
+  @apply animate-spin rounded-full h-8 w-8 border-b-2 border-white;
+}
+
+/* Enhanced button states */
+.btn-loading {
+  @apply opacity-75 cursor-not-allowed;
+}
+
+.btn-loading::after {
+  content: '';
+  @apply inline-block w-4 h-4 ml-2 border-2 border-white border-t-transparent rounded-full animate-spin;
+}
+
+/* Improved card layouts */
 .dashboard-card {
-  @apply transition-all;
+  @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200;
 }
 
 .dashboard-card:hover {
-  @apply transform -translate-y-1 shadow-lg;
+  transform: translateY(-1px);
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* Better spacing for dashboard elements */
+.dashboard-grid {
+  @apply grid gap-6 md:grid-cols-2 lg:grid-cols-3;
 }
 
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
+.dashboard-header {
+  @apply mb-8 pb-4 border-b border-gray-200;
 }
 
-::-webkit-scrollbar-thumb {
-  @apply bg-neutral-400 rounded-sm;
+/* Enhanced table styles */
+.data-table {
+  @apply w-full border-collapse bg-white rounded-lg overflow-hidden shadow-sm;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  @apply bg-neutral-500;
+.data-table th {
+  @apply bg-gray-50 px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border-b border-gray-200;
 }
+
+.data-table td {
+  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900 border-b border-gray-100;
+}
+
+.data-table tr:hover {
+  @apply bg-gray-50;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .dashboard-grid {
+    @apply grid-cols-1;
+  }
+
+  .data-table {
+    @apply text-sm;
+  }
+
+  .data-table th,
+  .data-table td {
+    @apply px-3 py-2;
+  }
+}
+
+/* Animation improvements */
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.fade-in-scale {
+  animation: fadeInScale 0.2s ease-out;
+}
+
+/* Enhanced sidebar styles */
+.sidebar-nav {
+  @apply space-y-1;
+}
+
+.sidebar-nav-item {
+  @apply flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors duration-150;
+}
+
+.sidebar-nav-item:hover {
+  @apply bg-gray-100 text-gray-900;
+}
+
+.sidebar-nav-item.active {
+  @apply bg-primary text-primary-foreground;
+}
+
+/* Better form layouts */
+.form-grid {
+  @apply grid gap-4 md:grid-cols-2;
+}
+
+.form-section {
+  @apply space-y-4 p-6 bg-white rounded-lg border border-gray-200;
+}
+
+.form-section-title {
+  @apply text-lg font-medium text-gray-900 mb-4 pb-2 border-b border-gray-200;
+}
+
