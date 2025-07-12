@@ -3323,4 +3323,5 @@ const allGroups = await storage.getAllTrainingCourseGroups();
 
   const httpServer = createServer(app);
   return httpServer;
+}
 
