@@ -82,12 +82,12 @@ const AdminLogin = () => {
           <div className="flex justify-center mb-4">
             <img 
               src={JanadLogo} 
-              alt="شعار جامعة الجناد" 
+              alt="شعار جامعة الجند" 
               className="h-20 w-auto janad-logo-glow janad-floating"
             />
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">
-            جامعة الجناد للعلوم والتكنولوجيا
+            جامعة الجند للعلوم والتكنولوجيا
           </h1>
           <p className="text-white/80">نظام إدارة التعلم الإلكتروني</p>
         </div>
