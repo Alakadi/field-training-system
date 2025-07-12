@@ -3199,9 +3199,6 @@ const allGroups = await storage.getAllTrainingCourseGroups();
     }
   });
 
-  const httpServer = createServer(app);
-  return httpServer;
-}
   // User profile routes - for users to update their own data
   app.get("/api/profile", authMiddleware, async (req: Request, res: Response) => {
     try {
@@ -3323,4 +3320,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
       res.status(500).json({ message: "خطأ في تغيير كلمة المرور" });
     }
   });
+
+  const httpServer = createServer(app);
+  return httpServer;
 
