@@ -1589,6 +1589,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
       }
 
+      // Send notification to supervisor about new assignment
+      if (group.supervisorId) {
+        try {
+          const course = await storage.getTrainingCourse(group.courseId);
+          await notificationService.notifySupervisorNewAssignment(
+            group.supervisorId,
+            course?.name || 'دورة غير محددة',
+            group.groupName
+          );
+        } catch (error) {
+          console.error("Error sending supervisor notification:", error);
+        }
+      }
+
       res.status(201).json(group);
     } catch (error) {
       console.error("Error creating training course group:", error);
@@ -2866,6 +2880,26 @@ const allGroups = await storage.getAllTrainingCourseGroups();
             finalExamGrade,
             calculatedFinalGrade: updateData.calculatedFinalGrade
           });
+
+          // تسجيل تفاصيل التغييرات للنشاط
+          if (assignment) {
+            const changes = [];
+            if (attendanceGrade !== undefined && assignment.attendanceGrade !== attendanceGrade) {
+              changes.push(`الحضور: ${assignment.attendanceGrade || 'لم يتم إدخالها'} → ${attendanceGrade}/20`);
+            }
+            if (behaviorGrade !== undefined && assignment.behaviorGrade !== behaviorGrade) {
+              changes.push(`السلوك: ${assignment.behaviorGrade || 'لم يتم إدخالها'} → ${behaviorGrade}/30`);
+            }
+            if (finalExamGrade !== undefined && assignment.finalExamGrade !== finalExamGrade) {
+              changes.push(`الاختبار النهائي: ${assignment.finalExamGrade || 'لم يتم إدخالها'} → ${finalExamGrade}/50`);
+            }
+            
+            if (changes.length > 0) {
+              const student = await storage.getStudentById(assignment.studentId);
+              validGrades[validGrades.length - 1].changes = changes;
+              validGrades[validGrades.length - 1].studentName = student?.user?.name || 'غير معروف';
+            }
+          }
         }
       }
 
@@ -3270,20 +3304,10 @@ const allGroups = await storage.getAllTrainingCourseGroups();
 
   // Smart Notification System
 
-  // Helper functions for smart notifications
+  // Helper functions for smart notifications - using notification service
   async function notifyAdminGradeEntry(supervisorName: string, courseName: string, groupName: string) {
     try {
-      const adminUsers = await storage.getAllUsers();
-      const admins = adminUsers.filter(user => user.role === 'admin');
-
-      for (const admin of admins) {
-        await storage.createNotification({
-          userId: admin.id,
-          title: 'تم إدخال درجات جديدة',
-          message: `قام المشرف ${supervisorName} بإدخال درجات للمجموعة "${groupName}" في دورة "${courseName}"`,
-          type: 'info'
-        });
-      }
+      await notificationService.notifyAdminGradeEntry(supervisorName, courseName, groupName);
     } catch (error) {
       console.error("Error notifying admin about grade entry:", error);
     }
@@ -3291,17 +3315,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
 
   async function notifyAdminGradeUpdate(supervisorName: string, courseName: string, groupName: string) {
     try {
-      const adminUsers = await storage.getAllUsers();
-      const admins = adminUsers.filter(user => user.role === 'admin');
-
-      for (const admin of admins) {
-        await storage.createNotification({
-          userId: admin.id,
-          title: 'تم تعديل درجات',
-          message: `قام المشرف ${supervisorName} بتعديل درجات للمجموعة "${groupName}" في دورة "${courseName}"`,
-          type: 'warning'
-        });
-      }
+      await notificationService.notifyAdminGradeUpdate(supervisorName, courseName, groupName);
     } catch (error) {
       console.error("Error notifying admin about grade update:", error);
     }
@@ -3309,17 +3323,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
 
   async function notifyStudentGradesAdded(studentId: number, courseName: string, groupName: string, grade?: number) {
     try {
-      const student = await storage.getStudentWithDetails(studentId);
-      if (!student) return;
-
-      const gradeText = grade ? ` (الدرجة النهائية: ${grade.toFixed(1)})` : '';
-
-      await storage.createNotification({
-        userId: student.user.id,
-        title: 'تم إدراج درجاتك',
-        message: `تم إدراج درجاتك للمجموعة "${groupName}" في دورة "${courseName}"${gradeText}`,
-        type: 'success'
-      });
+      await notificationService.notifyStudentGradesAdded(studentId, courseName, groupName, grade);
     } catch (error) {
       console.error("Error notifying student about grades:", error);
     }
@@ -3327,15 +3331,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
 
   async function notifySupervisorNewAssignment(supervisorId: number, courseName: string, groupName: string) {
     try {
-      const supervisor = await storage.getSupervisorWithUser(supervisorId);
-      if (!supervisor) return;
-
-      await storage.createNotification({
-        userId: supervisor.user.id,
-        title: 'تعيين جديد',
-        message: `تم تعيينك كمشرف للمجموعة "${groupName}" في دورة "${courseName}"`,
-        type: 'success'
-      });
+      await notificationService.notifySupervisorNewAssignment(supervisorId, courseName, groupName);
     } catch (error) {
       console.error("Error notifying supervisor about new assignment:", error);
     }
@@ -3346,12 +3342,12 @@ const allGroups = await storage.getAllTrainingCourseGroups();
       const student = await storage.getStudentWithDetails(studentId);
       if (!student) return;
 
-      await storage.createNotification({
-        userId: student.user.id,
-        title: 'تم تأكيد تسجيلك',
-        message: `تم تأكيد تسجيلك في المجموعة "${groupName}" للدورة "${courseName}"`,
-        type: 'success'
-      });
+      await storage.createNotification(
+        student.user.id,
+        'تم تأكيد تسجيلك',
+        `تم تأكيد تسجيلك في المجموعة "${groupName}" للدورة "${courseName}"`,
+        'success'
+      );
     } catch (error) {
       console.error("Error notifying student about assignment confirmation:", error);
     }
