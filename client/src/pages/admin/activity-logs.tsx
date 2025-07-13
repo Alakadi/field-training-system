@@ -237,12 +237,29 @@ const ActivityLogs: React.FC = () => {
                             {log.action === 'detailed_grade_entry' && log.details?.details && (
                               <div className="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded">
                                 <div className="font-medium mb-1">تفاصيل التغييرات:</div>
-                                {log.details.details.students && log.details.details.students.map((student: any, index: number) => (
-                                  <div key={index} className="flex justify-between items-center py-1 border-b border-gray-200 last:border-b-0">
-                                    <span className="font-medium">{student.name}</span>
-                                    <span className="text-blue-600">{student.grade}/100</span>
-                                  </div>
-                                ))}
+                                {log.details.details.students && log.details.details.students.length > 0 ? (
+                                  log.details.details.students.map((student: any, index: number) => (
+                                    <div key={index} className="flex flex-col gap-1 py-2 border-b border-gray-200 last:border-b-0">
+                                      <div className="flex justify-between items-center">
+                                        <span className="font-medium">{student.name || 'غير معروف'}</span>
+                                        <span className="text-blue-600 font-bold">{student.grade || 'لم يتم حسابها'}/100</span>
+                                      </div>
+                                      <div className="flex gap-4 text-xs text-gray-500">
+                                        {student.attendanceGrade !== undefined && (
+                                          <span>الحضور: {student.attendanceGrade}</span>
+                                        )}
+                                        {student.behaviorGrade !== undefined && (
+                                          <span>السلوك: {student.behaviorGrade}</span>
+                                        )}
+                                        {student.finalExamGrade !== undefined && (
+                                          <span>الامتحان: {student.finalExamGrade}</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))
+                                ) : (
+                                  <div className="text-gray-500 italic">لا توجد تفاصيل متاحة</div>
+                                )}
                               </div>
                             )}
                             {/* عرض تفاصيل إدخال الدرجات العادية */}

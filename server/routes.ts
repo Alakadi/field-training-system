@@ -2827,6 +2827,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
       }
 
       const savedUpdates = [];
+      const validGrades = [];
 
       for (const update of updates) {
         const { assignmentId, attendanceGrade, behaviorGrade, finalExamGrade } = update;
@@ -2858,7 +2859,53 @@ const allGroups = await storage.getAllTrainingCourseGroups();
             ...updateData,
             finalGrade: updateData.calculatedFinalGrade
           });
+          validGrades.push({
+            assignmentId,
+            attendanceGrade,
+            behaviorGrade,
+            finalExamGrade,
+            calculatedFinalGrade: updateData.calculatedFinalGrade
+          });
         }
+      }
+
+      // الحصول على تفاصيل الطلاب المحدثين
+      const studentDetails = [];
+      for (const grade of validGrades) {
+        try {
+          const assignment = await storage.getTrainingAssignmentById(grade.assignmentId);
+          if (assignment) {
+            const student = await storage.getStudentById(assignment.studentId);
+            if (student) {
+              studentDetails.push({
+                name: student.user?.name || 'غير معروف',
+                grade: grade.calculatedFinalGrade || 'لم يتم حسابها',
+                attendanceGrade: grade.attendanceGrade,
+                behaviorGrade: grade.behaviorGrade,
+                finalExamGrade: grade.finalExamGrade
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error getting student details:', error);
+        }
+      }
+
+      // تسجيل النشاط
+      if (req.user) {
+        await logActivity(
+          req.user.username,
+          "detailed_grade_entry",
+          "grade",
+          null,
+          { 
+            message: `المشرف قد أدخل الدرجات المفصلة لـ ${validGrades.length} طالب`,
+            details: {
+              count: validGrades.length,
+              students: studentDetails
+            }
+          }
+        );
       }
 
       // Send notifications for detailed grading
