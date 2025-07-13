@@ -36,6 +36,7 @@ import ViewStudent from "@/pages/admin/view-student";
 import ViewGroup from "@/pages/admin/view-group";
 import StudentGroupAssignments from "@/pages/admin/student-group-assignments";
 import AdminProfile from "@/pages/admin/profile";
+import FieldAccessDemoPage from "@/pages/admin/field-access-demo";
 
 // Supervisor pages
 import SupervisorDashboard from "@/pages/supervisor/dashboard";
@@ -197,6 +198,11 @@ function Router() {
       <Route path="/admin/profile">
         <AdminOnly>
           <AdminProfile />
+        </AdminOnly>
+      </Route>
+      <Route path="/admin/field-access-demo">
+        <AdminOnly>
+          <FieldAccessDemoPage />
         </AdminOnly>
       </Route>
 

@@ -6,6 +6,7 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import * as XLSX from "xlsx";
 import { authMiddleware, requireRole } from "./middlewares/auth";
+import { applyFieldAccessControl, filterSensitiveData } from "./middlewares/field-access";
 import { NotificationService } from "./services/notification-service";
 
 // Initialize notification service
@@ -388,7 +389,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       );
 
-      res.json(result);
+      // Apply field access control based on user role
+      const filteredResults = result.map(supervisor => 
+        filterSensitiveData(supervisor, req.user!.role, 'supervisors')
+      );
+
+      res.json(filteredResults);
     } catch (error) {
       res.status(500).json({ message: "خطأ في استرجاع بيانات المشرفين" });
     }
@@ -710,7 +716,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Filter out any null results
       const validResults = result.filter(student => student !== undefined);
 
-      res.json(validResults);
+      // Apply field access control based on user role
+      const filteredResults = validResults.map(student => 
+        filterSensitiveData(student, req.user!.role, 'students')
+      );
+
+      res.json(filteredResults);
     } catch (error) {
       console.error("Error fetching students:", error);
       res.status(500).json({ message: "خطأ في استرجاع بيانات الطلاب" });

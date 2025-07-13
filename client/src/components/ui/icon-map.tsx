@@ -51,7 +51,8 @@ import {
   CheckAll,
   Loader,
   UserCheck,
-  UserX
+  UserX,
+  Shield
 } from './icons';
 
 interface IconProps {
@@ -115,6 +116,7 @@ export const iconMap: Record<string, React.ComponentType<IconProps>> = {
   loader: Loader,
   user_check: UserCheck,
   user_x: UserX,
+  shield: Shield,
   // إضافة الأيقونات المفقودة
   dashboard: Home,
   person: User,
