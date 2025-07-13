@@ -72,6 +72,15 @@ async function main() {
         "name" VARCHAR(255) NOT NULL
       );
       
+      CREATE TABLE IF NOT EXISTS "academic_years" (
+        "id" SERIAL PRIMARY KEY,
+        "name" VARCHAR(255) NOT NULL,
+        "start_date" DATE NOT NULL,
+        "end_date" DATE NOT NULL,
+        "is_current" BOOLEAN DEFAULT false,
+        "created_at" TIMESTAMP DEFAULT NOW()
+      );
+      
       CREATE TABLE IF NOT EXISTS "supervisors" (
         "id" SERIAL PRIMARY KEY,
         "user_id" INTEGER NOT NULL REFERENCES "users"("id"),
@@ -101,27 +110,45 @@ async function main() {
       CREATE TABLE IF NOT EXISTS "training_courses" (
         "id" SERIAL PRIMARY KEY,
         "name" VARCHAR(255) NOT NULL,
-        "site_id" INTEGER NOT NULL REFERENCES "training_sites"("id"),
         "faculty_id" INTEGER REFERENCES "faculties"("id"),
-        "supervisor_id" INTEGER REFERENCES "supervisors"("id"),
+        "major_id" INTEGER REFERENCES "majors"("id"),
+        "level_id" INTEGER REFERENCES "levels"("id"),
+        "academic_year_id" INTEGER REFERENCES "academic_years"("id"),
+        "description" TEXT,
+        "status" VARCHAR(20) DEFAULT 'upcoming',
+        "created_at" TIMESTAMP DEFAULT NOW(),
+        "created_by" INTEGER REFERENCES "users"("id")
+      );
+      
+      CREATE TABLE IF NOT EXISTS "training_course_groups" (
+        "id" SERIAL PRIMARY KEY,
+        "course_id" INTEGER NOT NULL REFERENCES "training_courses"("id"),
+        "group_name" VARCHAR(255) NOT NULL,
+        "site_id" INTEGER NOT NULL REFERENCES "training_sites"("id"),
+        "supervisor_id" INTEGER NOT NULL REFERENCES "supervisors"("id"),
         "start_date" DATE NOT NULL,
         "end_date" DATE NOT NULL,
-        "capacity" INTEGER DEFAULT 20,
+        "capacity" INTEGER DEFAULT 10,
+        "current_enrollment" INTEGER DEFAULT 0,
         "location" VARCHAR(255),
-        "description" TEXT,
         "status" VARCHAR(20) DEFAULT 'active',
-        "created_by" INTEGER REFERENCES "users"("id"),
-        "created_at" TIMESTAMP DEFAULT NOW()
+        "created_at" TIMESTAMP DEFAULT NOW(),
+        UNIQUE("course_id", "group_name")
       );
       
       CREATE TABLE IF NOT EXISTS "training_assignments" (
         "id" SERIAL PRIMARY KEY,
         "student_id" INTEGER NOT NULL REFERENCES "students"("id"),
         "course_id" INTEGER NOT NULL REFERENCES "training_courses"("id"),
+        "group_id" INTEGER REFERENCES "training_course_groups"("id"),
+        "assigned_by" INTEGER REFERENCES "users"("id"),
         "status" VARCHAR(20) DEFAULT 'pending',
         "confirmed" BOOLEAN DEFAULT false,
         "assigned_at" TIMESTAMP DEFAULT NOW(),
-        "created_by" INTEGER REFERENCES "users"("id"),
+        "attendance_grade" DECIMAL(5,2),
+        "behavior_grade" DECIMAL(5,2),
+        "final_exam_grade" DECIMAL(5,2),
+        "calculated_final_grade" DECIMAL(5,2),
         UNIQUE("student_id", "course_id")
       );
       
@@ -133,6 +160,22 @@ async function main() {
         "evaluator_name" VARCHAR(255),
         "evaluation_date" TIMESTAMP DEFAULT NOW(),
         "created_by" INTEGER REFERENCES "users"("id")
+      );
+      
+      CREATE TABLE IF NOT EXISTS "activity_logs" (
+        "id" SERIAL PRIMARY KEY,
+        "username" VARCHAR(255),
+        "action" VARCHAR(255) NOT NULL,
+        "entity_type" VARCHAR(255) NOT NULL,
+        "entity_id" INTEGER,
+        "details" JSONB,
+        "timestamp" TIMESTAMP DEFAULT NOW(),
+        "target_user_id" INTEGER REFERENCES "users"("id"),
+        "notification_title" VARCHAR(255),
+        "notification_message" TEXT,
+        "notification_type" VARCHAR(20) DEFAULT 'info',
+        "is_read" BOOLEAN DEFAULT false,
+        "is_notification" BOOLEAN DEFAULT false
       );
       
       CREATE TABLE IF NOT EXISTS "session" (
