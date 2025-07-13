@@ -247,7 +247,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  // Activity log operations
+  // Activity log operations - عرض الأنشطة الأمنية فقط
   async getAllActivityLogs(): Promise<ActivityLog[]> {
     try {
       console.log("Starting getAllActivityLogs query...");
@@ -274,9 +274,10 @@ export class DatabaseStorage implements IStorage {
       })
       .from(activityLogs)
       .leftJoin(users, eq(activityLogs.username, users.username))
+      .where(eq(activityLogs.isNotification, false)) // فقط الأنشطة الأمنية وليس الإشعارات
       .orderBy(desc(activityLogs.timestamp));
       
-      console.log("Query completed, found", result.length, "logs");
+      console.log("Query completed, found", result.length, "security logs");
       return result;
     } catch (error) {
       console.error("Error in getAllActivityLogs:", error);

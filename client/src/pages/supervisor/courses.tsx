@@ -224,6 +224,17 @@ const SupervisorCourses: React.FC = () => {
     else if (field === 'behaviorGrade') maxValue = 30;
     else if (field === 'finalExamGrade') maxValue = 50;
 
+    // Check if course is upcoming (prevent grade entry for upcoming courses)
+    const targetGroup = selectedGroups.find(g => g.students.some(s => s.id === studentId));
+    if (targetGroup?.course?.status === 'upcoming') {
+      toast({
+        title: "لا يمكن إدخال الدرجات",
+        description: "لا يمكن إدخال الدرجات للدورات التدريبية التي لم تبدأ بعد",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (value === '' || (!isNaN(gradeNumber!) && gradeNumber! >= 0 && gradeNumber! <= maxValue)) {
       console.log(`Setting grade for student ${studentId}, field ${field}, value ${gradeNumber}, assignmentId ${assignmentId}`);
 
@@ -238,7 +249,6 @@ const SupervisorCourses: React.FC = () => {
         
         if (!finalAssignmentId) {
           // Try to get from student assignment data
-          const targetGroup = selectedGroups.find(g => g.students.some(s => s.id === studentId));
           const student = targetGroup?.students.find(s => s.id === studentId);
           finalAssignmentId = student?.assignment?.id;
         }

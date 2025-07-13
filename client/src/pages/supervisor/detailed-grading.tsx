@@ -44,6 +44,15 @@ const SupervisorDetailedGrading: React.FC = () => {
     enabled: !!selectedCourseId,
   });
 
+  // Get selected course details
+  const selectedCourseData = courseAssignments.find((assignment: any) => 
+    String(assignment.course?.id) === selectedCourseId
+  );
+
+  // Check if course is upcoming (not started yet)
+  const isCourseUpcoming = selectedCourseData?.course?.status === 'upcoming';
+  const isCourseCompleted = selectedCourseData?.course?.status === 'completed';
+
   // Save detailed grades mutation
   const saveGradesMutation = useMutation({
     mutationFn: (updates: DetailedGrades[]) =>
@@ -69,6 +78,16 @@ const SupervisorDetailedGrading: React.FC = () => {
 
   const handleGradeChange = (assignmentId: number, field: keyof DetailedGrades, value: number) => {
     if (value < 0 || value > 100) return;
+    
+    // منع إدخال الدرجات للكورسات القادمة
+    if (isCourseUpcoming) {
+      toast({
+        title: "لا يمكن إدخال الدرجات",
+        description: "لا يمكن إدخال الدرجات للدورات التدريبية التي لم تبدأ بعد",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setGrades(prev => ({
       ...prev,
@@ -119,7 +138,7 @@ const SupervisorDetailedGrading: React.FC = () => {
     setChangesCount(0);
   };
 
-  const selectedCourse = courseAssignments.find((assignment: any) => assignment.course?.id === parseInt(selectedCourseId));
+
 
   return (
     <SupervisorLayout>
@@ -189,13 +208,33 @@ const SupervisorDetailedGrading: React.FC = () => {
           </Card>
         )}
 
+        {/* Course Status Alert */}
+        {selectedCourseId && isCourseUpcoming && (
+          <Card className="border-yellow-200 bg-yellow-50">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-2">
+                <Icon name="alert_triangle" size={20} className="text-yellow-600" />
+                <div>
+                  <p className="font-medium text-yellow-800">دورة لم تبدأ بعد</p>
+                  <p className="text-sm text-yellow-700">
+                    لا يمكن إدخال الدرجات للدورات التدريبية التي لم تبدأ بعد. يرجى الانتظار حتى تبدأ الدورة.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Students Grading Table */}
         {selectedCourseId && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Icon name="users" size={20} />
-                الطلاب المسجلين - {selectedCourse?.course?.name}
+                الطلاب المسجلين - {selectedCourseData?.course?.name}
+                <Badge variant={isCourseUpcoming ? "secondary" : isCourseCompleted ? "outline" : "default"}>
+                  {isCourseUpcoming ? "قادمة" : isCourseCompleted ? "منتهية" : "جارية"}
+                </Badge>
               </CardTitle>
               <div className="text-sm text-gray-600">
                 <div className="grid grid-cols-3 gap-4 mt-2">

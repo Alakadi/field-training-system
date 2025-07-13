@@ -137,6 +137,15 @@ This is a comprehensive Arabic-supported field training management system built 
 - **المشرفين**: 5 مشرفين مع بيانات كاملة
 
 ## Recent Changes
+- July 13, 2025: إعادة تنظيم نظام تسجيل الأنشطة الأمنية وتحسين الحماية
+  - تحويل جميع استدعاءات logActivity إلى logSecurityActivity للأنشطة الأمنية الهامة
+  - فصل تسجيل الأنشطة الأمنية عن الإشعارات لتجنب التكرار في سجل النشاطات
+  - إضافة فلترة للأنشطة الأمنية فقط في صفحة سجل النشاطات (isNotification = false)
+  - منع المشرفين من إدخال الدرجات للدورات التدريبية التي لم تبدأ بعد (upcoming status)
+  - تحديث صفحات الدرجات المفصلة والعادية لتطبيق منع إدخال الدرجات للدورات القادمة
+  - تحسين middleware حماية الحقول الحساسة لتتضمن المزيد من الحماية للبيانات الشخصية
+  - إضافة تنبيهات مرئية واضحة عند محاولة إدخال الدرجات للدورات غير المتاحة
+
 - July 10, 2025: دمج نظام الإشعارات مع activity_logs - نظام موحد للأنشطة والإشعارات
   - إلغاء جدول notifications منفصل واستخدام activity_logs كنظام موحد
   - إضافة حقول جديدة لـ activity_logs: target_user_id, notification_title, notification_message, notification_type, is_read, is_notification

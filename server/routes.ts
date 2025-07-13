@@ -12,8 +12,25 @@ import { NotificationService } from "./services/notification-service";
 // Initialize notification service
 const notificationService = new NotificationService(storage);
 
-// Helper function to log activities - مبسط
-async function logActivity(
+// الأنشطة الأمنية المهمة التي يجب تسجيلها
+const SECURITY_ACTIVITIES = {
+  // إدارة الدرجات
+  'grades': ['create', 'update', 'bulk_update'],
+  // تسجيل الطلاب في المجموعات
+  'training_assignments': ['create', 'update', 'delete', 'register', 'transfer'],
+  // عمليات المسؤول المهمة
+  'users': ['create', 'update', 'delete', 'toggle_active'],
+  'students': ['create', 'update', 'delete', 'toggle_active', 'import'],
+  'supervisors': ['create', 'update', 'delete', 'toggle_active'],
+  'training_courses': ['create', 'update', 'delete'],
+  'training_course_groups': ['create', 'update', 'delete'],
+  'faculties': ['create', 'update', 'delete'],
+  'majors': ['create', 'update', 'delete'],
+  'academic_years': ['create', 'update', 'delete']
+};
+
+// Helper function to log security activities only
+async function logSecurityActivity(
   username: string | null, 
   action: string, 
   entityType: string, 
@@ -21,6 +38,12 @@ async function logActivity(
   details: any = {}
 ): Promise<void> {
   try {
+    // تحقق من أن النشاط أمني مهم
+    const allowedActions = SECURITY_ACTIVITIES[entityType];
+    if (!allowedActions || !allowedActions.includes(action)) {
+      return; // لا تسجل النشاط إذا لم يكن أمنياً مهماً
+    }
+    
     await storage.logActivity({
       username,
       action,
@@ -29,7 +52,7 @@ async function logActivity(
       details
     });
   } catch (error) {
-    console.error("Error logging activity:", error);
+    console.error("Error logging security activity:", error);
   }
 }
 
@@ -41,16 +64,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const logs = await storage.getAllActivityLogs();
       console.log("Retrieved logs:", logs.length);
 
-      // Log this activity view
-      if (req.user) {
-        await logActivity(
-          req.user.username,
-          "view",
-          "activity_logs",
-          null,
-          { message: "عرض سجلات النشاط" }
-        );
-      }
+      // لا نسجل عرض سجلات النشاط لأنه ليس نشاطاً أمنياً مهماً
 
       res.json(logs);
     } catch (error) {
@@ -84,10 +98,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Log login activity
       try {
-        await logActivity(
+        await logSecurityActivity(
           user.username,
           "login",
-          "user",
+          "users",
           user.id,
           { message: `تم تسجيل الدخول` }
         );
@@ -173,10 +187,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Log activity
-      await logActivity(
+      await logSecurityActivity(
         req.user!.username,
         "update",
-        "profile",
+        "users",
         userId,
         { 
           message: `تم تحديث الملف الشخصي`,
@@ -227,10 +241,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Log activity
-      await logActivity(
+      await logSecurityActivity(
         currentUser.username,
         "update",
-        "username",
+        "users",
         userId,
         { 
           message: `تم تغيير اسم المستخدم إلى: ${newUsername.trim()}`,
@@ -264,7 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const faculty = await storage.createFaculty({ name: name.trim() });
-      await logActivity(req.user!.username, "إضافة كلية", "كلية", faculty.id, { name });
+      await logSecurityActivity(req.user!.username, "create", "faculties", faculty.id, { message: `تم إنشاء كلية: ${name}` });
 
       res.status(201).json(faculty);
     } catch (error) {
@@ -287,7 +301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "الكلية غير موجودة" });
       }
 
-      await logActivity(req.user!.username, "تعديل كلية", "كلية", id, { name });
+      await logSecurityActivity(req.user!.username, "update", "faculties", id, { message: `تم تعديل كلية: ${name}` });
 
       res.json(faculty);
     } catch (error) {
@@ -328,7 +342,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const major = await storage.createMajor({ name: name.trim(), facultyId });
-      await logActivity(req.user!.username, "إضافة تخصص", "تخصص", major.id, { name, facultyName: faculty.name });
+      await logSecurityActivity(req.user!.username, "create", "majors", major.id, { message: `تم إنشاء تخصص: ${name}` });
 
       res.status(201).json(major);
     } catch (error) {
@@ -361,7 +375,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "التخصص غير موجود" });
       }
 
-      await logActivity(req.user!.username, "تعديل تخصص", "تخصص", id, { name, facultyName: faculty.name });
+      await logSecurityActivity(req.user!.username, "update", "majors", id, { message: `تم تعديل تخصص: ${name}` });
 
       res.json(major);
     } catch (error) {
@@ -519,10 +533,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Log activity
       if (req.user) {
-        await logActivity(
+        await logSecurityActivity(
           req.user.username,
           "create",
-          "supervisor",
+          "supervisors",
           supervisor.id,
           { 
             message: `تم إنشاء حساب مشرف: ${name}`,
@@ -577,10 +591,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Log activity
       if (req.user) {
-        await logActivity(
+        await logSecurityActivity(
           req.user.username,
           "update",
-          "supervisor",
+          "supervisors",
           supervisor.id,
           { 
             message: `تم تحديث بيانات المشرف: ${name}`,
@@ -614,10 +628,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Log activity
       if (req.user) {
-        await logActivity(
+        await logSecurityActivity(
           req.user.username,
-          "update",
-          "supervisor",
+          "toggle_active",
+          "supervisors",
           supervisor.id,
           { 
             message: `تم ${active ? 'تنشيط' : 'إلغاء تنشيط'} حساب المشرف`,
@@ -929,10 +943,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Log activity
       if (req.user) {
-        await logActivity(
+        await logSecurityActivity(
           req.user.username,
           "create",
-          "student",
+          "students",
           student.id,
           { 
             message: `تم إنشاء حساب طالب: ${name}`,
@@ -1927,10 +1941,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Log activity
-      await logActivity(
+      await logSecurityActivity(
         req.user.username,
         "register",
-        "training_assignment",
+        "training_assignments",
         assignment.id,
         { 
           message: `قام الطالب بالتسجيل في مجموعة التدريب`,
@@ -1979,10 +1993,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const course = group ? await storage.getTrainingCourse(group.courseId) : null;
 
       // Log activity
-      await logActivity(
+      await logSecurityActivity(
         req.user.username,
-        "cancel",
-        "training_assignment",
+        "delete",
+        "training_assignments",
         assignment.id,
         { 
           message: `قام الطالب بإلغاء التسجيل من مجموعة التدريب`,
@@ -2031,10 +2045,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const studentUser = await storage.getUser(student.userId);
 
         if (studentUser) {
-          await logActivity(
+          await logSecurityActivity(
             req.user.username,
-            "confirm",
-            "training_assignment",
+            "update",
+            "training_assignments",
             assignment.id,
             { 
               message: `تم تأكيد التسجيل في الدورة التدريبية`,
@@ -2091,10 +2105,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const student = assignment.studentId ? await storage.getStudent(assignment.studentId) : null;
           const studentUser = student ? await storage.getUser(student.userId) : null;
 
-          await logActivity(
+          await logSecurityActivity(
             req.user.username,
             "create",
-            "evaluation",
+            "grades",
             evaluation.id,
             { 
               message: `تم إنشاء تقييم للطالب: ${studentUser?.name}`,
@@ -2626,10 +2640,10 @@ const allGroups = await storage.getAllTrainingCourseGroups();
       }
 
       // Log activity
-      await logActivity(
+      await logSecurityActivity(
         req.user!.username,
-        "grade_entry",
-        "evaluation",
+        existingEvaluation ? "update" : "create",
+        "grades",
         evaluation.id,
         {
           message: `المشرف ${supervisorWithUser?.user?.name || 'غير محدد'} قد ${existingEvaluation ? 'حدث' : 'أدخل'} درجات الكورس "${group.course.name}" - ${group.groupName}`,
@@ -2761,10 +2775,10 @@ const allGroups = await storage.getAllTrainingCourseGroups();
       // Send smart notifications
       if (savedEvaluations.length > 0) {
         // Log activity
-        await logActivity(
+        await logSecurityActivity(
           req.user!.username,
-          "grade_entry",
-          "evaluation",
+          "bulk_update",
+          "grades",
           groupId,
           {
             message: `المشرف ${supervisorWithUser?.user?.name || 'غير محدد'} قد أدخل درجات ${savedEvaluations.length} طالب في الكورس "${group.course.name}" - ${group.groupName}`,
@@ -2938,10 +2952,10 @@ const allGroups = await storage.getAllTrainingCourseGroups();
 
       // تسجيل النشاط
       if (req.user) {
-        await logActivity(
+        await logSecurityActivity(
           req.user.username,
-          "detailed_grade_entry",
-          "grade",
+          "bulk_update",
+          "grades",
           null,
           { 
             message: `المشرف قد أدخل الدرجات المفصلة لـ ${validGrades.length} طالب`,
@@ -2993,10 +3007,10 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         }
 
         // Log activity for detailed grading
-        await logActivity(
+        await logSecurityActivity(
           req.user!.username,
-          "detailed_grade_entry",
-          "training_assignment",
+          "bulk_update",
+          "grades",
           null,
           {
             message: `المشرف قد أدخل الدرجات المفصلة لـ ${savedUpdates.length} طالب`,
