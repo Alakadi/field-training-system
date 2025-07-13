@@ -1,23 +1,16 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-import { X, AlertCircle, CheckCircle, Info, AlertTriangle } from "lucide-react"
 
-import { cn } from "../../lib/utils"
+import { cn } from "@/lib/utils"
 
 const alertVariants = cva(
-  "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:right-4 [&>svg]:top-4 [&>svg]:text-foreground transition-all duration-300 ease-in-out",
+  "relative w-full rounded-lg border p-4 [&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:right-4 [&>svg]:top-4 [&>svg]:text-foreground",
   {
     variants: {
       variant: {
-        default: "bg-background text-foreground border-border",
+        default: "bg-background text-foreground",
         destructive:
-          "border-red-200 bg-red-50 text-red-800 [&>svg]:text-red-600 shadow-sm",
-        success:
-          "border-green-200 bg-green-50 text-green-800 [&>svg]:text-green-600 shadow-sm",
-        warning:
-          "border-yellow-200 bg-yellow-50 text-yellow-800 [&>svg]:text-yellow-600 shadow-sm",
-        info:
-          "border-blue-200 bg-blue-50 text-blue-800 [&>svg]:text-blue-600 shadow-sm",
+          "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive",
       },
     },
     defaultVariants: {
@@ -28,67 +21,15 @@ const alertVariants = cva(
 
 const Alert = React.forwardRef<
   HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants> & {
-    dismissible?: boolean;
-    onDismiss?: () => void;
-  }
->(({ className, variant, dismissible = false, onDismiss, children, ...props }, ref) => {
-  const [isVisible, setIsVisible] = React.useState(true);
-
-  const handleDismiss = () => {
-    setIsVisible(false);
-    setTimeout(() => {
-      onDismiss?.();
-    }, 300);
-  };
-
-  const getIcon = () => {
-    switch (variant) {
-      case "destructive":
-        return <AlertCircle className="h-4 w-4" />;
-      case "success":
-        return <CheckCircle className="h-4 w-4" />;
-      case "warning":
-        return <AlertTriangle className="h-4 w-4" />;
-      case "info":
-        return <Info className="h-4 w-4" />;
-      default:
-        return <Info className="h-4 w-4" />;
-    }
-  };
-
-  if (!isVisible) {
-    return null;
-  }
-
-  return (
-    <div
-      ref={ref}
-      role="alert"
-      className={cn(
-        alertVariants({ variant }),
-        "animate-in slide-in-from-top-2 fade-in-0 duration-300",
-        !isVisible && "animate-out slide-out-to-top-2 fade-out-0 duration-300",
-        className
-      )}
-      {...props}
-    >
-      {getIcon()}
-      <div className="flex-1">
-        {children}
-      </div>
-      {dismissible && (
-        <button
-          onClick={handleDismiss}
-          className="absolute left-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-        >
-          <X className="h-4 w-4" />
-          <span className="sr-only">إغلاق</span>
-        </button>
-      )}
-    </div>
-  )
-})
+  React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>
+>(({ className, variant, ...props }, ref) => (
+  <div
+    ref={ref}
+    role="alert"
+    className={cn(alertVariants({ variant }), className)}
+    {...props}
+  />
+))
 Alert.displayName = "Alert"
 
 const AlertTitle = React.forwardRef<
@@ -116,4 +57,3 @@ const AlertDescription = React.forwardRef<
 AlertDescription.displayName = "AlertDescription"
 
 export { Alert, AlertTitle, AlertDescription }
-

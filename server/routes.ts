@@ -147,14 +147,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/faculties", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
       const { name } = req.body;
-
+      
       if (!name || !name.trim()) {
         return res.status(400).json({ message: "اسم الكلية مطلوب" });
       }
 
       const faculty = await storage.createFaculty({ name: name.trim() });
       await logActivity(req.user!.username, "إضافة كلية", "كلية", faculty.id, { name });
-
+      
       res.status(201).json(faculty);
     } catch (error) {
       console.error("Error creating faculty:", error);
@@ -166,7 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = Number(req.params.id);
       const { name } = req.body;
-
+      
       if (!name || !name.trim()) {
         return res.status(400).json({ message: "اسم الكلية مطلوب" });
       }
@@ -177,7 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       await logActivity(req.user!.username, "تعديل كلية", "كلية", id, { name });
-
+      
       res.json(faculty);
     } catch (error) {
       console.error("Error updating faculty:", error);
@@ -201,7 +201,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/majors", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
       const { name, facultyId } = req.body;
-
+      
       if (!name || !name.trim()) {
         return res.status(400).json({ message: "اسم التخصص مطلوب" });
       }
@@ -218,7 +218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const major = await storage.createMajor({ name: name.trim(), facultyId });
       await logActivity(req.user!.username, "إضافة تخصص", "تخصص", major.id, { name, facultyName: faculty.name });
-
+      
       res.status(201).json(major);
     } catch (error) {
       console.error("Error creating major:", error);
@@ -230,7 +230,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = Number(req.params.id);
       const { name, facultyId } = req.body;
-
+      
       if (!name || !name.trim()) {
         return res.status(400).json({ message: "اسم التخصص مطلوب" });
       }
@@ -251,7 +251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       await logActivity(req.user!.username, "تعديل تخصص", "تخصص", id, { name, facultyName: faculty.name });
-
+      
       res.json(major);
     } catch (error) {
       console.error("Error updating major:", error);
@@ -531,7 +531,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get supervisor details for logging
       const supervisorDetails = await storage.getSupervisorWithUser(id);
-
+      
       // Delete supervisor (this will also delete the user)
       await storage.deleteSupervisor(id);
 
@@ -737,7 +737,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get student details for logging
       const studentDetails = await storage.getStudentWithDetails(id);
-
+      
       // Delete student (this will also delete the user)
       await storage.deleteStudent(id);
 
@@ -1168,7 +1168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get course details for logging
       const courseDetails = await storage.getTrainingCourseWithDetails(id);
-
+      
       // Delete course (this will also delete related groups)
       await storage.deleteTrainingCourse(id);
 
@@ -1227,7 +1227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   const student = await storage.getStudentWithDetails(assignment.studentId);
                   const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
                   const evaluation = evaluations.length > 0 ? evaluations[0] : null;
-
+                  
                   return {
                     ...student,
                     grade: evaluation?.score || null,
@@ -2041,16 +2041,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const assignment of assignments) {
           // Check if this assignment has detailed grades or evaluations
           const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
-
+          
           // Only include courses that have either detailed grades OR evaluations (actual graded courses)
           const hasDetailedGrades = !!(assignment.attendanceGrade || assignment.behaviorGrade || assignment.finalExamGrade || assignment.calculatedFinalGrade);
           const hasEvaluations = evaluations.length > 0;
-
+          
           // Only show courses with actual grades or evaluations
           if (!hasDetailedGrades && !hasEvaluations) {
             continue;
           }
-
+          
           const group = assignment.groupId ? await storage.getTrainingCourseGroupWithStudents(assignment.groupId) : null;
           if (group) {
             // Filter by academic year if specified
@@ -2062,7 +2062,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             // Get the latest evaluation for this assignment (if any)
             const latestEvaluation = evaluations.length > 0 ? evaluations[evaluations.length - 1] : null;
-
+            
             // Use calculated final grade from assignment if available, otherwise use evaluation score
             let finalGrade = null;
             if (assignment.calculatedFinalGrade) {
@@ -2070,7 +2070,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             } else if (latestEvaluation?.score) {
               finalGrade = latestEvaluation.score;
             }
-
+            
             courses.push({
               id: group.course.id,
               name: group.course.name,
@@ -2146,11 +2146,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
             // Also check for detailed grades
             const hasDetailedGrades = !!(assignment.attendanceGrade || assignment.behaviorGrade || assignment.finalExamGrade || assignment.calculatedFinalGrade);
-
+            
             if (evaluations.length > 0 || hasDetailedGrades) {
               completedEvaluations++;
               hasEvaluations = true;
-
+              
               // Use calculated final grade if available, otherwise use evaluation score
               let finalGrade = null;
               if (assignment.calculatedFinalGrade) {
@@ -2158,7 +2158,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               } else if (evaluations.length > 0 && evaluations[0].score) {
                 finalGrade = evaluations[0].score;
               }
-
+              
               if (finalGrade) {
                 totalGrades += finalGrade;
                 gradeCount++;
@@ -2733,7 +2733,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
           const group = await storage.getTrainingCourseGroupWithStudents(firstAssignment.groupId);
           if (group) {
             const supervisorWithUser = await storage.getSupervisorWithUser(supervisor.id);
-
+            
             // Notify admin about grade entry
             try {
               await notificationService.notifyAdminGradeEntry(
@@ -2871,7 +2871,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
   app.get("/api/students/:id/evaluations", authMiddleware, async (req: Request, res: Response) => {
     try {
       const studentId = Number(req.params.id);
-
+      
       // Check permissions - admin can access all, students can access their own
       if (req.user!.role === "student") {
         const student = await storage.getStudentByUserId(req.user!.id);
@@ -2970,14 +2970,14 @@ const allGroups = await storage.getAllTrainingCourseGroups();
   app.post("/api/academic-years", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
       const academicYearData = schema.insertAcademicYearSchema.parse(req.body);
-
+      
       // If this is set as current, make all others non-current
       if (academicYearData.isCurrent) {
         await storage.setAllAcademicYearsNonCurrent();
       }
-
+      
       const academicYear = await storage.createAcademicYear(academicYearData);
-
+      
       await logActivity(
         req.user!.username,
         "create",
@@ -2985,7 +2985,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         academicYear.id,
         { message: `إنشاء سنة دراسية جديدة: ${academicYear.name}` }
       );
-
+      
       res.json(academicYear);
     } catch (error) {
       if (error instanceof ZodError) {
@@ -3001,17 +3001,17 @@ const allGroups = await storage.getAllTrainingCourseGroups();
     try {
       const id = parseInt(req.params.id);
       const academicYearData = schema.insertAcademicYearSchema.parse(req.body);
-
+      
       // If this is set as current, make all others non-current
       if (academicYearData.isCurrent) {
         await storage.setAllAcademicYearsNonCurrent();
       }
-
+      
       const academicYear = await storage.updateAcademicYear(id, academicYearData);
       if (!academicYear) {
         return res.status(404).json({ message: "السنة الدراسية غير موجودة" });
       }
-
+      
       await logActivity(
         req.user!.username,
         "update",
@@ -3019,7 +3019,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         academicYear.id,
         { message: `تحديث السنة الدراسية: ${academicYear.name}` }
       );
-
+      
       res.json(academicYear);
     } catch (error) {
       if (error instanceof ZodError) {
@@ -3074,13 +3074,13 @@ const allGroups = await storage.getAllTrainingCourseGroups();
   });
 
   // Smart Notification System
-
+  
   // Helper functions for smart notifications
   async function notifyAdminGradeEntry(supervisorName: string, courseName: string, groupName: string) {
     try {
       const adminUsers = await storage.getAllUsers();
       const admins = adminUsers.filter(user => user.role === 'admin');
-
+      
       for (const admin of admins) {
         await storage.createNotification({
           userId: admin.id,
@@ -3098,7 +3098,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
     try {
       const adminUsers = await storage.getAllUsers();
       const admins = adminUsers.filter(user => user.role === 'admin');
-
+      
       for (const admin of admins) {
         await storage.createNotification({
           userId: admin.id,
@@ -3118,7 +3118,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
       if (!student) return;
 
       const gradeText = grade ? ` (الدرجة النهائية: ${grade.toFixed(1)})` : '';
-
+      
       await storage.createNotification({
         userId: student.user.id,
         title: 'تم إدراج درجاتك',
@@ -3166,32 +3166,32 @@ const allGroups = await storage.getAllTrainingCourseGroups();
   app.post("/api/smart-notifications/grade-entry", authMiddleware, requireRole("supervisor"), async (req: Request, res: Response) => {
     try {
       const { groupId, studentIds } = req.body;
-
+      
       // Get group and course info
       const group = await storage.getTrainingCourseGroup(groupId);
       if (!group) {
         return res.status(404).json({ message: "المجموعة غير موجودة" });
       }
-
+      
       const course = await storage.getTrainingCourse(group.courseId);
       if (!course) {
         return res.status(404).json({ message: "الدورة غير موجودة" });
       }
-
+      
       const supervisor = await storage.getSupervisorWithUser(group.supervisorId!);
-
+      
       // Notify admin about grade entry
       await notifyAdminGradeEntry(
         supervisor?.user.name || 'مشرف غير محدد',
         course.name || 'دورة غير محددة',
         group.groupName
       );
-
+      
       // Notify students about their grades
       for (const studentId of studentIds) {
         await notifyStudentGradesAdded(studentId, course.name || 'دورة غير محددة', group.groupName);
       }
-
+      
       res.json({ message: "تم إرسال الإشعارات بنجاح" });
     } catch (error) {
       console.error("Error sending grade entry notifications:", error);
@@ -3199,129 +3199,6 @@ const allGroups = await storage.getAllTrainingCourseGroups();
     }
   });
 
-  // User profile routes - for users to update their own data
-  app.get("/api/profile", authMiddleware, async (req: Request, res: Response) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ message: "غير مصرح" });
-      }
-
-      const user = await storage.getUserById(req.user.id);
-      if (!user) {
-        return res.status(404).json({ message: "المستخدم غير موجود" });
-      }
-
-      // Return user data without sensitive information
-      const { password, ...userProfile } = user;
-      res.json(userProfile);
-    } catch (error) {
-      console.error("Error getting user profile:", error);
-      res.status(500).json({ message: "خطأ في استرجاع بيانات الملف الشخصي" });
-    }
-  });
-
-  app.put("/api/profile", authMiddleware, async (req: Request, res: Response) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ message: "غير مصرح" });
-      }
-
-      const { name, email, phone } = req.body;
-
-      // Validate input
-      if (!name || name.trim().length === 0) {
-        return res.status(400).json({ message: "الاسم مطلوب" });
-      }
-
-      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return res.status(400).json({ message: "البريد الإلكتروني غير صحيح" });
-      }
-
-      if (phone && !/^[0-9+\-\s()]+$/.test(phone)) {
-        return res.status(400).json({ message: "رقم الهاتف غير صحيح" });
-      }
-
-      // Update user data
-      const updatedUser = await storage.updateUser(req.user.id, {
-        name: name.trim(),
-        email: email?.trim() || null,
-        phone: phone?.trim() || null
-      });
-
-      // Log activity
-      await logActivity(
-        req.user.username,
-        "update",
-        "profile",
-        req.user.id,
-        { 
-          message: `تم تحديث البيانات الشخصية`,
-          changes: { name, email, phone }
-        }
-      );
-
-      // Return updated user data without sensitive information
-      const { password, ...userProfile } = updatedUser;
-      res.json(userProfile);
-    } catch (error) {
-      console.error("Error updating user profile:", error);
-      res.status(500).json({ message: "خطأ في تحديث البيانات الشخصية" });
-    }
-  });
-
-  app.put("/api/profile/password", authMiddleware, async (req: Request, res: Response) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ message: "غير مصرح" });
-      }
-
-      const { currentPassword, newPassword, confirmPassword } = req.body;
-
-      // Validate input
-      if (!currentPassword || !newPassword || !confirmPassword) {
-        return res.status(400).json({ message: "جميع الحقول مطلوبة" });
-      }
-
-      if (newPassword !== confirmPassword) {
-        return res.status(400).json({ message: "كلمة المرور الجديدة وتأكيدها غير متطابقين" });
-      }
-
-      if (newPassword.length < 6) {
-        return res.status(400).json({ message: "كلمة المرور يجب أن تكون 6 أحرف على الأقل" });
-      }
-
-      // Verify current password
-      const user = await storage.getUserById(req.user.id);
-      if (!user) {
-        return res.status(404).json({ message: "المستخدم غير موجود" });
-      }
-
-      // Check current password (assuming you have a password verification method)
-      const isCurrentPasswordValid = await storage.verifyPassword(user.username, currentPassword);
-      if (!isCurrentPasswordValid) {
-        return res.status(400).json({ message: "كلمة المرور الحالية غير صحيحة" });
-      }
-
-      // Update password
-      await storage.updateUserPassword(req.user.id, newPassword);
-
-      // Log activity
-      await logActivity(
-        req.user.username,
-        "update",
-        "password",
-        req.user.id,
-        { message: `تم تغيير كلمة المرور` }
-      );
-
-      res.json({ message: "تم تغيير كلمة المرور بنجاح" });
-    } catch (error) {
-      console.error("Error updating password:", error);
-      res.status(500).json({ message: "خطأ في تغيير كلمة المرور" });
-    }
-  });
-
   const httpServer = createServer(app);
   return httpServer;
 }
-

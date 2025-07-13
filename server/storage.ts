@@ -233,16 +233,16 @@ export class DatabaseStorage implements IStorage {
   async login(loginData: LoginData): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.username, loginData.username));
     const user = result[0];
-
+    
     if (!user) {
       return undefined;
     }
-
+    
     // Check password - simple comparison for now (in production, use hashing)
     if (user.password !== loginData.password) {
       return undefined;
     }
-
+    
     return user;
   }
 
@@ -274,7 +274,7 @@ export class DatabaseStorage implements IStorage {
       .from(activityLogs)
       .leftJoin(users, eq(activityLogs.username, users.username))
       .orderBy(desc(activityLogs.timestamp));
-
+      
       console.log("Query completed, found", result.length, "logs");
       return result;
     } catch (error) {
@@ -565,7 +565,7 @@ export class DatabaseStorage implements IStorage {
       for (const year of academicYears) {
         const yearStart = new Date(year.startDate);
         const yearEnd = new Date(year.endDate);
-
+        
         if (earliestStartDate >= yearStart && earliestStartDate <= yearEnd) {
           appropriateAcademicYearId = year.id;
           console.log(`تم تعيين الكورس للسنة الدراسية: ${year.name} بناءً على تاريخ البدء: ${earliestStartDate.toISOString().split('T')[0]}`);
@@ -708,14 +708,14 @@ export class DatabaseStorage implements IStorage {
     // Only show upcoming and active courses for new registrations
     const result = await db.select().from(trainingCourses)
       .where(sql`status IN ('upcoming', 'active')`);
-
+    
     // If studentId provided, filter out courses the student is already enrolled in
     if (studentId) {
       const enrolledCourses = await this.getEnrolledCoursesForStudent(studentId);
       const enrolledCourseIds = enrolledCourses.map(c => c.id);
       return result.filter((course: any) => !enrolledCourseIds.includes(course.id));
     }
-
+    
     return result;
   }
 
@@ -735,7 +735,7 @@ export class DatabaseStorage implements IStorage {
     .from(trainingCourses)
     .innerJoin(trainingAssignments, eq(trainingCourses.id, trainingAssignments.courseId))
     .where(eq(trainingAssignments.studentId, studentId));
-
+    
     return result;
   }
 
@@ -798,15 +798,15 @@ export class DatabaseStorage implements IStorage {
 
     // Apply filters based on parameters
     const whereConditions = [];
-
+    
     if (facultyId) {
       whereConditions.push(eq(trainingCourses.facultyId, facultyId));
     }
-
+    
     if (majorId) {
       whereConditions.push(eq(trainingCourses.majorId, majorId));
     }
-
+    
     if (levelId) {
       whereConditions.push(eq(trainingCourses.levelId, levelId));
     }
@@ -941,10 +941,10 @@ export class DatabaseStorage implements IStorage {
   async deleteTrainingAssignment(id: number): Promise<void> {
     // Get assignment details before deletion to update group enrollment
     const assignment = await this.getTrainingAssignment(id);
-
+    
     // Delete the assignment
     await db.delete(trainingAssignments).where(eq(trainingAssignments.id, id));
-
+    
     // Update group enrollment if groupId exists
     if (assignment && assignment.groupId) {
       const group = await this.getTrainingCourseGroup(assignment.groupId);
@@ -1458,7 +1458,7 @@ export class DatabaseStorage implements IStorage {
   async getRecentlyEndedGroups(): Promise<any[]> {
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-
+    
     return await db.select({
       id: trainingCourseGroups.id,
       groupName: trainingCourseGroups.groupName,
@@ -1517,7 +1517,7 @@ export class DatabaseStorage implements IStorage {
     .from(trainingCourseGroups)
     .leftJoin(trainingCourses, eq(trainingCourseGroups.courseId, trainingCourses.id))
     .where(eq(trainingCourseGroups.id, groupId));
-
+    
     return result[0];
   }
 
@@ -1530,7 +1530,7 @@ export class DatabaseStorage implements IStorage {
 
     // Delete supervisor record first
     await db.delete(supervisors).where(eq(supervisors.id, id));
-
+    
     // Delete associated user
     await db.delete(users).where(eq(users.id, supervisor.userId));
   }
@@ -1543,7 +1543,7 @@ export class DatabaseStorage implements IStorage {
 
     // Delete student record first
     await db.delete(students).where(eq(students.id, id));
-
+    
     // Delete associated user
     await db.delete(users).where(eq(users.id, student.userId));
   }
@@ -1551,7 +1551,7 @@ export class DatabaseStorage implements IStorage {
   async deleteTrainingCourse(id: number): Promise<void> {
     // Delete course groups first (foreign key constraint)
     await db.delete(trainingCourseGroups).where(eq(trainingCourseGroups.courseId, id));
-
+    
     // Delete training course
     await db.delete(trainingCourses).where(eq(trainingCourses.id, id));
   }
@@ -1586,35 +1586,7 @@ export class DatabaseStorage implements IStorage {
 
     return result.map(row => row.training_assignments);
   }
-
-  // Additional user operations for profile management
-  async getUserById(id: number): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.id, id));
-    return result[0];
-  }
-
-  async verifyPassword(username: string, password: string): Promise<boolean> {
-    const result = await db.select().from(users).where(eq(users.username, username));
-    const user = result[0];
-
-    if (!user) {
-      return false;
-    }
-
-    // Simple password comparison (in production, use proper hashing)
-    return user.password === password;
-  }
-
-  async updateUserPassword(id: number, newPassword: string): Promise<void> {
-    await db.update(users)
-      .set({ 
-        password: newPassword, // In production, hash this password
-        passwordChangedAt: new Date()
-      })
-      .where(eq(users.id, id));
-  }
 }
 
 // Create storage instance
 export const storage = new DatabaseStorage();
-

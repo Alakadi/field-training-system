@@ -25,6 +25,31 @@ const AdminDashboard: React.FC = () => {
     queryKey: ["/api/training-sites"]
   });
 
+  // Placeholder for recent activities - in a real app, this would be fetched from an API
+  const recentActivities = [
+    {
+      icon: "person_add",
+      iconClass: "bg-blue-100 text-primary",
+      title: "تم إضافة 24 طالب جديد من كلية الهندسة",
+      actor: "أحمد المشرف",
+      time: "منذ 2 ساعة"
+    },
+    {
+      icon: "update",
+      iconClass: "bg-green-100 text-success",
+      title: 'تم تحديث بيانات الدورة "أساسيات الشبكات"',
+      actor: "عبدالله المدير",
+      time: "منذ 5 ساعات"
+    },
+    {
+      icon: "school",
+      iconClass: "bg-purple-100 text-purple-600",
+      title: 'تم إضافة دورة تدريبية جديدة "مهارات التسويق الرقمي"',
+      actor: "خالد المشرف",
+      time: "منذ يوم واحد"
+    }
+  ];
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -128,9 +153,40 @@ const AdminDashboard: React.FC = () => {
           </Card>
         </div>
 
-        {/* Quick Links */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Quick Links */}
+        {/* Recent Activities & Quick Links */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Recent Activities */}
+          <div className="lg:col-span-2 bg-white rounded-lg shadow">
+            <div className="p-6 border-b border-neutral-200">
+              <h2 className="text-lg font-bold">آخر النشاطات</h2>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                {recentActivities.map((activity, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start pb-4 border-b border-neutral-200"
+                  >
+                    <div className={`p-2 ${activity.iconClass} rounded-full ml-4`}>
+                      <Icon name={activity.icon === "person_add" ? "user_plus" : activity.icon === "update" ? "edit" : "graduation_cap"} size={16} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">{activity.title}</p>
+                      <p className="text-neutral-500 text-sm">قام بها: {activity.actor}</p>
+                      <p className="text-neutral-400 text-xs mt-1">{activity.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 text-center">
+                <Button variant="link" className="text-primary text-sm">
+                  عرض كل النشاطات
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Links & To-Do */}
           <div className="bg-white rounded-lg shadow">
             <div className="p-6 border-b border-neutral-200">
               <h2 className="text-lg font-bold">مهام سريعة</h2>
