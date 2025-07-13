@@ -75,16 +75,16 @@ const AdminLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-indigo-800 to-purple-900 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute inset-0 bg-white/5" style={{backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)', backgroundSize: '20px 20px'}}></div>
       </div>
       
       {/* Floating elements */}
-      <div className="absolute top-20 left-20 w-32 h-32 bg-blue-400/20 rounded-full blur-xl animate-pulse"></div>
-      <div className="absolute bottom-20 right-20 w-40 h-40 bg-purple-400/20 rounded-full blur-xl animate-pulse animation-delay-2000"></div>
-      <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-indigo-400/20 rounded-full blur-xl animate-pulse animation-delay-4000"></div>
+      <div className="absolute top-20 left-20 w-32 h-32 bg-yellow-400/20 rounded-full blur-xl animate-pulse"></div>
+      <div className="absolute bottom-20 right-20 w-40 h-40 bg-blue-400/20 rounded-full blur-xl animate-pulse animation-delay-2000"></div>
+      <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-yellow-300/20 rounded-full blur-xl animate-pulse animation-delay-4000"></div>
       
       {/* Main content */}
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
@@ -93,8 +93,8 @@ const AdminLogin: React.FC = () => {
           <div className="text-center mb-8">
             <div className="flex justify-center mb-6">
               <div className="relative">
-                <div className="absolute inset-0 bg-white/20 rounded-full blur-xl scale-110"></div>
-                <div className="relative bg-white/90 backdrop-blur-sm rounded-full p-4 shadow-2xl">
+                <div className="absolute inset-0 bg-yellow-400/30 rounded-full blur-xl scale-110"></div>
+                <div className="relative bg-white/90 backdrop-blur-sm rounded-full p-4 shadow-2xl border-2 border-yellow-400/30">
                   <img 
                     src={janadLogoPath} 
                     alt="شعار جامعة الجند" 
@@ -103,8 +103,8 @@ const AdminLogin: React.FC = () => {
                 </div>
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">جامعة الجند</h1>
-            <p className="text-blue-100 text-lg">نظام إدارة التدريب الميداني</p>
+            <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">جامعة الجند</h1>
+            <p className="text-yellow-100 text-lg">نظام إدارة التدريب الميداني</p>
           </div>
           
           <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
@@ -186,7 +186,7 @@ const AdminLogin: React.FC = () => {
         
         {/* Footer */}
         <div className="text-center mt-8 text-white/80">
-          <p className="text-sm">© 2025 جامعة الجند - جميع الحقوق محفوظة</p>
+          <p className="text-sm drop-shadow-sm">© 2025 جامعة الجند - جميع الحقوق محفوظة</p>
         </div>
         </div>
       </div>

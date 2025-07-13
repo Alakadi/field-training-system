@@ -75,16 +75,16 @@ const StudentLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-rose-900 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-700 relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute inset-0 bg-white/5" style={{backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)', backgroundSize: '20px 20px'}}></div>
       </div>
       
       {/* Floating elements */}
-      <div className="absolute top-20 left-20 w-32 h-32 bg-purple-400/20 rounded-full blur-xl animate-pulse"></div>
-      <div className="absolute bottom-20 right-20 w-40 h-40 bg-pink-400/20 rounded-full blur-xl animate-pulse"></div>
-      <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-rose-400/20 rounded-full blur-xl animate-pulse"></div>
+      <div className="absolute top-20 left-20 w-32 h-32 bg-yellow-400/20 rounded-full blur-xl animate-pulse"></div>
+      <div className="absolute bottom-20 right-20 w-40 h-40 bg-blue-400/20 rounded-full blur-xl animate-pulse"></div>
+      <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-yellow-300/20 rounded-full blur-xl animate-pulse"></div>
       
       {/* Main content */}
       <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
@@ -93,8 +93,8 @@ const StudentLogin: React.FC = () => {
           <div className="text-center mb-8">
             <div className="flex justify-center mb-6">
               <div className="relative">
-                <div className="absolute inset-0 bg-white/20 rounded-full blur-xl scale-110"></div>
-                <div className="relative bg-white/90 backdrop-blur-sm rounded-full p-4 shadow-2xl">
+                <div className="absolute inset-0 bg-yellow-400/30 rounded-full blur-xl scale-110"></div>
+                <div className="relative bg-white/90 backdrop-blur-sm rounded-full p-4 shadow-2xl border-2 border-yellow-400/30">
                   <img 
                     src={janadLogoPath} 
                     alt="شعار جامعة الجند" 
@@ -103,14 +103,14 @@ const StudentLogin: React.FC = () => {
                 </div>
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">جامعة الجند</h1>
-            <p className="text-purple-100 text-lg">نظام إدارة التدريب الميداني</p>
+            <h1 className="text-3xl font-bold text-white mb-2 drop-shadow-lg">جامعة الجند</h1>
+            <p className="text-yellow-100 text-lg">نظام إدارة التدريب الميداني</p>
           </div>
           
           <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
             <CardHeader className="text-center pb-8">
-              <CardTitle className="text-2xl font-bold text-purple-800">تسجيل دخول الطالب</CardTitle>
-              <CardDescription className="text-purple-600 mt-2">
+              <CardTitle className="text-2xl font-bold text-blue-800">تسجيل دخول الطالب</CardTitle>
+              <CardDescription className="text-blue-600 mt-2">
                 قم بتسجيل الدخول للوصول إلى نظام التدريب الميداني
               </CardDescription>
             </CardHeader>
@@ -157,7 +157,7 @@ const StudentLogin: React.FC = () => {
                 />
                 <Button
                   type="submit"
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
                   disabled={isLoading}
                 >
                   {isLoading ? "جاري تسجيل الدخول..." : "تسجيل الدخول"}
@@ -170,12 +170,12 @@ const StudentLogin: React.FC = () => {
               <p className="text-gray-600 mb-3">هل تريد تسجيل الدخول بصفة أخرى؟</p>
               <div className="flex space-x-2 space-x-reverse justify-center">
                 <Link href="/admin-login">
-                  <Button variant="link" className="text-purple-600 hover:text-purple-800 font-medium">
+                  <Button variant="link" className="text-blue-600 hover:text-blue-800 font-medium">
                     تسجيل دخول كمسؤول
                   </Button>
                 </Link>
                 <Link href="/supervisor-login">
-                  <Button variant="link" className="text-purple-600 hover:text-purple-800 font-medium">
+                  <Button variant="link" className="text-blue-600 hover:text-blue-800 font-medium">
                     تسجيل دخول كمشرف
                   </Button>
                 </Link>
@@ -186,7 +186,7 @@ const StudentLogin: React.FC = () => {
         
         {/* Footer */}
         <div className="text-center mt-8 text-white/80">
-          <p className="text-sm">© 2025 جامعة الجند - جميع الحقوق محفوظة</p>
+          <p className="text-sm drop-shadow-sm">© 2025 جامعة الجند - جميع الحقوق محفوظة</p>
         </div>
         </div>
       </div>
