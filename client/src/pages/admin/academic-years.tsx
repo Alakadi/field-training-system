@@ -29,6 +29,38 @@ const academicYearSchema = z.object({
   startDate: z.string().min(1, "يرجى اختيار تاريخ البداية"),
   endDate: z.string().min(1, "يرجى اختيار تاريخ النهاية"),
   isCurrent: z.boolean().default(false),
+}).refine((data) => {
+  // Extract years from the academic year name (e.g., "2024/2025")
+  const yearMatch = data.name.match(/(\d{4})\/(\d{4})/);
+  if (!yearMatch) {
+    return true; // Skip validation if name format is not recognized
+  }
+
+  const startYear = parseInt(yearMatch[1]);
+  const endYear = parseInt(yearMatch[2]);
+  
+  const startDateYear = new Date(data.startDate).getFullYear();
+  const endDateYear = new Date(data.endDate).getFullYear();
+
+  // Validate start date year
+  if (startDateYear !== startYear) {
+    return false;
+  }
+
+  // Validate end date year
+  if (endDateYear !== endYear) {
+    return false;
+  }
+
+  // Ensure start date is before end date
+  if (new Date(data.startDate) >= new Date(data.endDate)) {
+    return false;
+  }
+
+  return true;
+}, {
+  message: "التواريخ لا تتطابق مع السنة الدراسية المحددة",
+  path: ["startDate"], // This will show the error on the start date field
 });
 
 type AcademicYearFormData = z.infer<typeof academicYearSchema>;
@@ -98,7 +130,59 @@ export default function AcademicYearsPage() {
     },
   });
 
+  // Custom validation function for academic year dates
+  const validateAcademicYearDates = (data: AcademicYearFormData) => {
+    const yearMatch = data.name.match(/(\d{4})\/(\d{4})/);
+    if (!yearMatch) {
+      return { isValid: true, error: null };
+    }
+
+    const startYear = parseInt(yearMatch[1]);
+    const endYear = parseInt(yearMatch[2]);
+    
+    const startDateYear = new Date(data.startDate).getFullYear();
+    const endDateYear = new Date(data.endDate).getFullYear();
+
+    // Check start date year
+    if (startDateYear !== startYear) {
+      return {
+        isValid: false,
+        error: `تاريخ البداية يجب أن يكون في سنة ${startYear}، التاريخ المدخل في سنة ${startDateYear}`
+      };
+    }
+
+    // Check end date year
+    if (endDateYear !== endYear) {
+      return {
+        isValid: false,
+        error: `تاريخ النهاية يجب أن يكون في سنة ${endYear}، التاريخ المدخل في سنة ${endDateYear}`
+      };
+    }
+
+    // Check that start date is before end date
+    if (new Date(data.startDate) >= new Date(data.endDate)) {
+      return {
+        isValid: false,
+        error: "تاريخ البداية يجب أن يكون قبل تاريخ النهاية"
+      };
+    }
+
+    return { isValid: true, error: null };
+  };
+
   const onSubmit = (data: AcademicYearFormData) => {
+    // Perform custom validation
+    const validation = validateAcademicYearDates(data);
+    
+    if (!validation.isValid) {
+      toast({
+        variant: "destructive",
+        title: "خطأ في التواريخ",
+        description: validation.error,
+      });
+      return;
+    }
+
     if (editingYear) {
       updateMutation.mutate({ id: editingYear.id, data });
     } else {
@@ -217,6 +301,9 @@ export default function AcademicYearsPage() {
                         {...field}
                       />
                     </FormControl>
+                    <div className="text-sm text-gray-500 mt-1">
+                      يجب أن يكون تاريخ البداية في السنة الأولى وتاريخ النهاية في السنة الثانية
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -225,35 +312,79 @@ export default function AcademicYearsPage() {
               <FormField
                 control={form.control}
                 name="startDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>تاريخ بداية السنة الدراسية</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const nameValue = form.watch("name");
+                  const dateValue = field.value;
+                  
+                  // Real-time validation for start date
+                  let dateError = "";
+                  if (nameValue && dateValue) {
+                    const yearMatch = nameValue.match(/(\d{4})\/(\d{4})/);
+                    if (yearMatch) {
+                      const expectedYear = parseInt(yearMatch[1]);
+                      const actualYear = new Date(dateValue).getFullYear();
+                      if (actualYear !== expectedYear) {
+                        dateError = `هذا التاريخ في سنة ${actualYear}، يجب أن يكون في سنة ${expectedYear}`;
+                      }
+                    }
+                  }
+
+                  return (
+                    <FormItem>
+                      <FormLabel>تاريخ بداية السنة الدراسية</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          {...field}
+                          className={dateError ? "border-red-500" : ""}
+                        />
+                      </FormControl>
+                      {dateError && (
+                        <p className="text-sm text-red-500 mt-1">{dateError}</p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField
                 control={form.control}
                 name="endDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>تاريخ نهاية السنة الدراسية</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="date"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const nameValue = form.watch("name");
+                  const dateValue = field.value;
+                  
+                  // Real-time validation for end date
+                  let dateError = "";
+                  if (nameValue && dateValue) {
+                    const yearMatch = nameValue.match(/(\d{4})\/(\d{4})/);
+                    if (yearMatch) {
+                      const expectedYear = parseInt(yearMatch[2]);
+                      const actualYear = new Date(dateValue).getFullYear();
+                      if (actualYear !== expectedYear) {
+                        dateError = `هذا التاريخ في سنة ${actualYear}، يجب أن يكون في سنة ${expectedYear}`;
+                      }
+                    }
+                  }
+
+                  return (
+                    <FormItem>
+                      <FormLabel>تاريخ نهاية السنة الدراسية</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="date"
+                          {...field}
+                          className={dateError ? "border-red-500" : ""}
+                        />
+                      </FormControl>
+                      {dateError && (
+                        <p className="text-sm text-red-500 mt-1">{dateError}</p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField
