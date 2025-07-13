@@ -624,7 +624,7 @@ const SupervisorCourses: React.FC = () => {
                               className="flex items-center gap-2"
                             >
                               <Save className="h-4 w-4" />
-                              {savingGrades ? "جاري الحفظ..." : "حفظ جميع الدرجات المفصلة"}
+                              {savingGrades ? "جاري الحفظ..." : "حفظ"}
                             </Button>
                           </div>
 
