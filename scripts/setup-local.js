@@ -1,5 +1,5 @@
 import { db } from '../server/db.js';
-import { users, faculties, majors, levels, trainingSites, notifications, academicYears } from '../shared/schema.js';
+import { users, faculties, majors, levels, trainingSites, academicYears, activityLogs } from '../shared/schema.js';
 import { eq } from 'drizzle-orm';
 
 async function setupLocalEnvironment() {
@@ -111,12 +111,12 @@ async function setupLocalEnvironment() {
 
     // إضافة سنة دراسية
     console.log('📅 إضافة السنة الدراسية...');
-    const existingYear = await db.select().from(academicYears).where(eq(academicYears.yearName, '2024-2025'));
+    const existingYear = await db.select().from(academicYears).where(eq(academicYears.name, '2024-2025'));
     if (existingYear.length === 0) {
       await db.insert(academicYears).values({
-        yearName: '2024-2025',
-        startDate: new Date('2024-09-01'),
-        endDate: new Date('2025-06-30'),
+        name: '2024-2025',
+        startDate: '2024-09-01',
+        endDate: '2025-06-30',
         isCurrent: true
       });
       console.log('✅ تم إنشاء السنة الدراسية 2024-2025');
