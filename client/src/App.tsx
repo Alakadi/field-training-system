@@ -35,18 +35,21 @@ import EditStudent from "@/pages/admin/edit-student";
 import ViewStudent from "@/pages/admin/view-student";
 import ViewGroup from "@/pages/admin/view-group";
 import StudentGroupAssignments from "@/pages/admin/student-group-assignments";
+import AdminProfile from "@/pages/admin/profile";
 
 // Supervisor pages
 import SupervisorDashboard from "@/pages/supervisor/dashboard";
 import SupervisorCourses from "@/pages/supervisor/courses";
 import SupervisorDetailedGrading from "@/pages/supervisor/detailed-grading";
 import SupervisorEvaluations from "@/pages/supervisor/evaluations";
+import SupervisorProfile from "@/pages/supervisor/profile";
 
 // Student pages
 import StudentDashboard from "@/pages/student/dashboard";
 import StudentCourses from "@/pages/student/courses";
 import StudentResults from "@/pages/student/results";
 import StudentCourseDetails from "@/pages/student/course-details";
+import StudentProfile from "@/pages/student/profile";
 
 // صفحة للتحويل عند تسجيل الدخول بناءً على الدور
 const RoleRouter: React.FC = () => {
@@ -191,6 +194,11 @@ function Router() {
           <AdminAcademicYears />
         </AdminOnly>
       </Route>
+      <Route path="/admin/profile">
+        <AdminOnly>
+          <AdminProfile />
+        </AdminOnly>
+      </Route>
 
       {/* Supervisor Routes */}
       <Route path="/supervisor">
@@ -218,6 +226,11 @@ function Router() {
           <SupervisorEvaluations />
         </SupervisorOnly>
       </Route>
+      <Route path="/supervisor/profile">
+        <SupervisorOnly>
+          <SupervisorProfile />
+        </SupervisorOnly>
+      </Route>
 
       {/* Student Routes */}
       <Route path="/student">
@@ -243,6 +256,11 @@ function Router() {
       <Route path="/student/results">
         <StudentOnly>
           <StudentResults />
+        </StudentOnly>
+      </Route>
+      <Route path="/student/profile">
+        <StudentOnly>
+          <StudentProfile />
         </StudentOnly>
       </Route>
 

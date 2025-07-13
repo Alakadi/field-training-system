@@ -120,11 +120,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!user) {
       return res.status(401).json({ error: "غير مخول" });
     }
+    
+    // Return user data without sensitive information
     res.json({
       id: user.id,
       username: user.username,
       name: user.name,
-      role: user.role
+      role: user.role,
+      email: user.email,
+      phone: user.phone,
+      active: user.active
     });
   });
 
@@ -136,6 +141,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({ message: "تم تسجيل الخروج بنجاح" });
     });
+  });
+
+  // Update user profile (available for all roles)
+  app.put("/api/auth/profile", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const { name, email, phone, currentPassword, newPassword } = req.body;
+      const userId = req.user!.id;
+
+      // If changing password, verify current password
+      if (newPassword && currentPassword) {
+        const user = await storage.getUser(userId);
+        if (!user || user.password !== currentPassword) {
+          return res.status(400).json({ message: "كلمة المرور الحالية غير صحيحة" });
+        }
+      }
+
+      // Prepare update data
+      const updateData: any = {};
+      if (name && name.trim()) updateData.name = name.trim();
+      if (email !== undefined) updateData.email = email ? email.trim() : null;
+      if (phone !== undefined) updateData.phone = phone ? phone.trim() : null;
+      if (newPassword && newPassword.trim()) updateData.password = newPassword.trim();
+
+      // Update user
+      const updatedUser = await storage.updateUser(userId, updateData);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "المستخدم غير موجود" });
+      }
+
+      // Log activity
+      await logActivity(
+        req.user!.username,
+        "update",
+        "profile",
+        userId,
+        { 
+          message: `تم تحديث الملف الشخصي`,
+          updatedFields: Object.keys(updateData).filter(key => key !== 'password')
+        }
+      );
+
+      // Return user without password
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json({ 
+        message: "تم تحديث الملف الشخصي بنجاح",
+        user: userWithoutPassword 
+      });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "خطأ في تحديث الملف الشخصي" });
+    }
+  });
+
+  // Change username (admin only, or user changing their own)
+  app.put("/api/auth/username", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const { newUsername, targetUserId } = req.body;
+      const currentUser = req.user!;
+      const userId = targetUserId || currentUser.id;
+
+      // Check permissions
+      if (targetUserId && currentUser.role !== "admin") {
+        return res.status(403).json({ message: "غير مصرح لك بتغيير اسم مستخدم آخر" });
+      }
+
+      // Validate new username
+      if (!newUsername || newUsername.trim().length < 3) {
+        return res.status(400).json({ message: "اسم المستخدم يجب أن يكون 3 أحرف على الأقل" });
+      }
+
+      // Check if username already exists
+      const existingUser = await storage.getUserByUsername(newUsername.trim());
+      if (existingUser && existingUser.id !== userId) {
+        return res.status(400).json({ message: "اسم المستخدم موجود بالفعل" });
+      }
+
+      // Update username
+      const updatedUser = await storage.updateUser(userId, { username: newUsername.trim() });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "المستخدم غير موجود" });
+      }
+
+      // Log activity
+      await logActivity(
+        currentUser.username,
+        "update",
+        "username",
+        userId,
+        { 
+          message: `تم تغيير اسم المستخدم إلى: ${newUsername.trim()}`,
+          oldUsername: currentUser.username,
+          newUsername: newUsername.trim()
+        }
+      );
+
+      res.json({ 
+        message: "تم تغيير اسم المستخدم بنجاح",
+        username: updatedUser.username 
+      });
+    } catch (error) {
+      console.error("Error changing username:", error);
+      res.status(500).json({ message: "خطأ في تغيير اسم المستخدم" });
+    }
   });
 
   // Faculty Routes

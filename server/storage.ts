@@ -1528,11 +1528,21 @@ export class DatabaseStorage implements IStorage {
       throw new Error("المشرف غير موجود");
     }
 
-    // Delete supervisor record first
-    await db.delete(supervisors).where(eq(supervisors.id, id));
-    
-    // Delete associated user
-    await db.delete(users).where(eq(users.id, supervisor.userId));
+    try {
+      // Update training course groups to remove supervisor reference
+      await db.update(trainingCourseGroups)
+        .set({ supervisorId: null })
+        .where(eq(trainingCourseGroups.supervisorId, id));
+      
+      // Delete supervisor record
+      await db.delete(supervisors).where(eq(supervisors.id, id));
+      
+      // Delete associated user
+      await db.delete(users).where(eq(users.id, supervisor.userId));
+    } catch (error) {
+      console.error("Error deleting supervisor:", error);
+      throw new Error("خطأ في حذف المشرف من قاعدة البيانات");
+    }
   }
 
   async deleteStudent(id: number): Promise<void> {
@@ -1541,19 +1551,37 @@ export class DatabaseStorage implements IStorage {
       throw new Error("الطالب غير موجود");
     }
 
-    // Delete student record first
-    await db.delete(students).where(eq(students.id, id));
-    
-    // Delete associated user
-    await db.delete(users).where(eq(users.id, student.userId));
+    try {
+      // Delete related records first (foreign key constraints)
+      await db.delete(trainingAssignments).where(eq(trainingAssignments.studentId, id));
+      await db.delete(evaluations).where(eq(evaluations.studentId, id));
+      
+      // Delete student record
+      await db.delete(students).where(eq(students.id, id));
+      
+      // Delete associated user
+      await db.delete(users).where(eq(users.id, student.userId));
+    } catch (error) {
+      console.error("Error deleting student:", error);
+      throw new Error("خطأ في حذف الطالب من قاعدة البيانات");
+    }
   }
 
   async deleteTrainingCourse(id: number): Promise<void> {
-    // Delete course groups first (foreign key constraint)
-    await db.delete(trainingCourseGroups).where(eq(trainingCourseGroups.courseId, id));
-    
-    // Delete training course
-    await db.delete(trainingCourses).where(eq(trainingCourses.id, id));
+    try {
+      // Delete related records first (foreign key constraints)
+      await db.delete(trainingAssignments).where(eq(trainingAssignments.courseId, id));
+      await db.delete(evaluations).where(eq(evaluations.courseId, id));
+      
+      // Delete course groups
+      await db.delete(trainingCourseGroups).where(eq(trainingCourseGroups.courseId, id));
+      
+      // Delete training course
+      await db.delete(trainingCourses).where(eq(trainingCourses.id, id));
+    } catch (error) {
+      console.error("Error deleting training course:", error);
+      throw new Error("خطأ في حذف الدورة التدريبية من قاعدة البيانات");
+    }
   }
 
   async getActiveAssignmentsBySupervisor(supervisorId: number): Promise<TrainingAssignment[]> {

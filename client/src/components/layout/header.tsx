@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { getUserAvatarUrl } from "@/lib/utils";
@@ -77,23 +78,22 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
                 {userMenuOpen && (
                   <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
                     <div className="py-1">
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-start px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100"
-                      >
-                        الملف الشخصي
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        className="w-full justify-start px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100"
-                      >
-                        الإعدادات
-                      </Button>
+                      <Link href={`/${user.role}/profile`}>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <Icon name="user" size={16} className="ml-2" />
+                          الملف الشخصي
+                        </Button>
+                      </Link>
                       <Button
                         variant="ghost"
                         onClick={handleLogout}
                         className="w-full justify-start px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100"
                       >
+                        <Icon name="logout" size={16} className="ml-2" />
                         تسجيل الخروج
                       </Button>
                     </div>
