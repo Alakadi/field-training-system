@@ -186,6 +186,7 @@ export interface IStorage {
   markNotificationAsRead(id: number, userId: number): Promise<ActivityLog | undefined>;
   getUnreadNotificationCount(userId: number): Promise<number>;
   getTrainingAssignmentById(id: number): Promise<TrainingAssignment | undefined>;
+  getStudentById(id: number): Promise<(Student & { user?: User }) | undefined>;
 
   // Training Assignment Grades operations
   updateTrainingAssignmentGrades(assignmentId: number, grades: {
@@ -1462,6 +1463,24 @@ export class DatabaseStorage implements IStorage {
       .from(trainingAssignments)
       .where(eq(trainingAssignments.id, id));
     return result[0];
+  }
+
+  // Get Student by ID with User details
+  async getStudentById(id: number): Promise<(Student & { user?: User }) | undefined> {
+    const result = await db.select({
+      student: students,
+      user: users
+    }).from(students)
+      .leftJoin(users, eq(students.userId, users.id))
+      .where(eq(students.id, id));
+
+    if (result[0]) {
+      return {
+        ...result[0].student,
+        user: result[0].user || undefined
+      };
+    }
+    return undefined;
   }
 
   // Notification System Support Functions
