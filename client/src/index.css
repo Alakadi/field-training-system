@@ -73,6 +73,20 @@
 }
 
 /* Custom styles for the app */
+
+/* Animation delays for login page effects */
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Add smooth scrolling for the entire page */
+html {
+  scroll-behavior: smooth;
+}
 .sidebar-link.active {
   @apply bg-primary/10 border-r-[3px] border-primary;
 }

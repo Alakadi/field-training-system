@@ -11,6 +11,9 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import ErrorMessage from "@/components/ui/error-message";
+import { showErrorToast, showSuccessToast } from "@/components/ui/toast-notification";
+import janadLogoPath from "@assets/JanadLogo1_1752368846626.png";
 
 const formSchema = z.object({
   username: z.string().min(1, "الرقم الجامعي مطلوب"),
@@ -57,43 +60,68 @@ const StudentLogin: React.FC = () => {
         throw new Error("ليس لديك صلاحية للدخول كطالب");
       }
       
-      toast({
-        title: "تم تسجيل الدخول بنجاح",
-        description: `مرحباً ${user.name}`,
-      });
+      showSuccessToast(`مرحباً ${user.name}`, "تم تسجيل الدخول بنجاح");
       
       window.location.href = "/student/dashboard";
 
       // setLocation("/student");
     } catch (error) {
-      setError(error instanceof Error ? error.message : "حدث خطأ أثناء تسجيل الدخول");
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء تسجيل الدخول";
+      setError(errorMessage);
+      showErrorToast(errorMessage, "خطأ في تسجيل الدخول");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-50 to-pink-100">
-      <div className="w-full max-w-md p-4">
-        <Card className="shadow-xl border-0 bg-white/95 backdrop-blur-sm">
-          <CardHeader className="text-center pb-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-rose-900 relative overflow-hidden">
+      {/* Background decorations */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute inset-0 bg-white/5" style={{backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.3) 1px, transparent 0)', backgroundSize: '20px 20px'}}></div>
+      </div>
+      
+      {/* Floating elements */}
+      <div className="absolute top-20 left-20 w-32 h-32 bg-purple-400/20 rounded-full blur-xl animate-pulse"></div>
+      <div className="absolute bottom-20 right-20 w-40 h-40 bg-pink-400/20 rounded-full blur-xl animate-pulse"></div>
+      <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-rose-400/20 rounded-full blur-xl animate-pulse"></div>
+      
+      {/* Main content */}
+      <div className="relative z-10 flex items-center justify-center min-h-screen p-4">
+        <div className="w-full max-w-md">
+          {/* University Header */}
+          <div className="text-center mb-8">
             <div className="flex justify-center mb-6">
-              <img 
-                src="/logo.png" 
-                alt="Logo" 
-                className="h-16 w-auto object-contain"
-              />
+              <div className="relative">
+                <div className="absolute inset-0 bg-white/20 rounded-full blur-xl scale-110"></div>
+                <div className="relative bg-white/90 backdrop-blur-sm rounded-full p-4 shadow-2xl">
+                  <img 
+                    src={janadLogoPath} 
+                    alt="شعار جامعة الجند" 
+                    className="h-24 w-auto object-contain"
+                  />
+                </div>
+              </div>
             </div>
-            <CardTitle className="text-2xl font-bold text-purple-800">تسجيل دخول الطالب</CardTitle>
-            <CardDescription className="text-purple-600 mt-2">
-              قم بتسجيل الدخول للوصول إلى نظام التدريب الميداني
-            </CardDescription>
-          </CardHeader>
+            <h1 className="text-3xl font-bold text-white mb-2">جامعة الجند</h1>
+            <p className="text-purple-100 text-lg">نظام إدارة التدريب الميداني</p>
+          </div>
+          
+          <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm">
+            <CardHeader className="text-center pb-8">
+              <CardTitle className="text-2xl font-bold text-purple-800">تسجيل دخول الطالب</CardTitle>
+              <CardDescription className="text-purple-600 mt-2">
+                قم بتسجيل الدخول للوصول إلى نظام التدريب الميداني
+              </CardDescription>
+            </CardHeader>
           <CardContent>
             {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
+              <ErrorMessage 
+                type="error" 
+                message={error} 
+                className="mb-4"
+                onClose={() => setError("")}
+              />
             )}
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -155,6 +183,12 @@ const StudentLogin: React.FC = () => {
             </div>
           </CardFooter>
         </Card>
+        
+        {/* Footer */}
+        <div className="text-center mt-8 text-white/80">
+          <p className="text-sm">© 2025 جامعة الجند - جميع الحقوق محفوظة</p>
+        </div>
+        </div>
       </div>
     </div>
   );

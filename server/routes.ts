@@ -3037,7 +3037,19 @@ const allGroups = await storage.getAllTrainingCourseGroups();
   app.get("/api/notifications", authMiddleware, async (req: Request, res: Response) => {
     try {
       const notifications = await storage.getNotificationsByUserId(req.user!.id);
-      res.json(notifications);
+      
+      // تحويل البيانات لتتطابق مع الواجهة المطلوبة
+      const formattedNotifications = notifications.map(notification => ({
+        id: notification.id,
+        title: notification.notificationTitle || 'إشعار',
+        message: notification.notificationMessage || 'رسالة إشعار',
+        type: notification.notificationType || 'info',
+        isRead: notification.isRead || false,
+        createdAt: notification.timestamp,
+        performer: notification.username || 'النظام'
+      }));
+      
+      res.json(formattedNotifications);
     } catch (error) {
       console.error("Error fetching notifications:", error);
       res.status(500).json({ message: "خطأ في استرجاع الإشعارات" });

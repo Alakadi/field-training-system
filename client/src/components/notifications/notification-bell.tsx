@@ -16,6 +16,7 @@ interface Notification {
   type: 'info' | 'warning' | 'error' | 'success';
   isRead: boolean;
   createdAt: string;
+  performer: string;
 }
 
 const NotificationBell: React.FC = () => {
@@ -126,9 +127,14 @@ const NotificationBell: React.FC = () => {
                           <p className="text-sm text-gray-600 mb-1">
                             {notification.message}
                           </p>
-                          <p className="text-xs text-gray-400">
-                            {formatDate(notification.createdAt)}
-                          </p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-gray-500">
+                              بواسطة: {notification.performer}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              {formatDate(notification.createdAt)}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
