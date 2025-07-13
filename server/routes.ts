@@ -497,9 +497,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create supervisor
       console.log("Creating supervisor...");
+      
+      // معالجة facultyId بشكل صحيح
+      let processedFacultyId = null;
+      if (facultyId && facultyId !== 'none' && facultyId !== '' && !isNaN(Number(facultyId))) {
+        processedFacultyId = Number(facultyId);
+      }
+      
       const supervisor = await storage.createSupervisor({
         userId: user.id,
-        facultyId: facultyId ? Number(facultyId) : null,
+        facultyId: processedFacultyId,
         department: department || null
       });
       console.log("Supervisor created with ID:", supervisor.id);
@@ -549,8 +556,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Update supervisor data
+      // معالجة facultyId بشكل صحيح
+      let processedFacultyId = undefined;
+      if (facultyId && facultyId !== 'none' && facultyId !== '' && !isNaN(Number(facultyId))) {
+        processedFacultyId = Number(facultyId);
+      } else if (facultyId === 'none' || facultyId === '') {
+        processedFacultyId = null;
+      }
+      
       const updatedSupervisor = await storage.updateSupervisor(id, {
-        facultyId: facultyId ? Number(facultyId) : undefined,
+        facultyId: processedFacultyId,
         department
       });
 
