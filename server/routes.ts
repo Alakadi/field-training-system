@@ -2793,16 +2793,21 @@ const allGroups = await storage.getAllTrainingCourseGroups();
 
       // Validate detailed grades - specific ranges for each grade
       for (const update of updates) {
-        if (
-          !update.assignmentId || 
-          update.attendanceGrade === undefined || 
-          update.behaviorGrade === undefined || 
-          update.finalExamGrade === undefined ||
-          update.attendanceGrade < 0 || update.attendanceGrade > 20 ||
-          update.behaviorGrade < 0 || update.behaviorGrade > 30 ||
-          update.finalExamGrade < 0 || update.finalExamGrade > 50
-        ) {
-          return res.status(400).json({ message: "درجات غير صحيحة - الحضور (0-20)، السلوك (0-30)، النهائي (0-50)" });
+        if (!update.assignmentId) {
+          return res.status(400).json({ message: "معرف التعيين مطلوب" });
+        }
+
+        // التحقق من الدرجات المرسلة فقط (يمكن أن تكون undefined)
+        if (update.attendanceGrade !== undefined && (update.attendanceGrade < 0 || update.attendanceGrade > 20)) {
+          return res.status(400).json({ message: "درجة الحضور يجب أن تكون بين 0 و 20" });
+        }
+        
+        if (update.behaviorGrade !== undefined && (update.behaviorGrade < 0 || update.behaviorGrade > 30)) {
+          return res.status(400).json({ message: "درجة السلوك يجب أن تكون بين 0 و 30" });
+        }
+        
+        if (update.finalExamGrade !== undefined && (update.finalExamGrade < 0 || update.finalExamGrade > 50)) {
+          return res.status(400).json({ message: "درجة الاختبار النهائي يجب أن تكون بين 0 و 50" });
         }
       }
 
@@ -2812,36 +2817,16 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         return res.status(403).json({ message: "غير مصرح بالوصول" });
       }
 
-      let savedCount = 0;
       const savedUpdates = [];
 
       for (const update of updates) {
         const { assignmentId, attendanceGrade, behaviorGrade, finalExamGrade } = update;
 
-        if (!assignmentId) {
-          console.error("Missing assignmentId for update:", update);
-          continue;
-        }
-
-        // التحقق من صحة الدرجات المُرسلة فقط
-        if (attendanceGrade !== undefined && (attendanceGrade < 0 || attendanceGrade > 20)) {
-          console.error("Invalid attendance grade for assignment:", assignmentId);
-          continue;
-        }
-        if (behaviorGrade !== undefined && (behaviorGrade < 0 || behaviorGrade > 30)) {
-          console.error("Invalid behavior grade for assignment:", assignmentId);
-          continue;
-        }
-        if (finalExamGrade !== undefined && (finalExamGrade < 0 || finalExamGrade > 50)) {
-          console.error("Invalid final exam grade for assignment:", assignmentId);
-          continue;
-        }
-
         // إعداد البيانات للتحديث
         const updateData: any = {};
-        if (attendanceGrade !== undefined) updateData.attendanceGrade = attendanceGrade;
-        if (behaviorGrade !== undefined) updateData.behaviorGrade = behaviorGrade;
-        if (finalExamGrade !== undefined) updateData.finalExamGrade = finalExamGrade;
+        if (attendanceGrade !== undefined) updateData.attendanceGrade = Number(attendanceGrade);
+        if (behaviorGrade !== undefined) updateData.behaviorGrade = Number(behaviorGrade);
+        if (finalExamGrade !== undefined) updateData.finalExamGrade = Number(finalExamGrade);
 
         // حساب الدرجة النهائية فقط إذا كانت جميع الدرجات متوفرة
         const assignment = await storage.getTrainingAssignmentById(assignmentId);
@@ -2851,7 +2836,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
           const currentFinalExam = updateData.finalExamGrade ?? assignment.finalExamGrade;
 
           if (currentAttendance !== null && currentBehavior !== null && currentFinalExam !== null) {
-            updateData.calculatedFinalGrade = currentAttendance + currentBehavior + currentFinalExam;
+            updateData.calculatedFinalGrade = Number(currentAttendance) + Number(currentBehavior) + Number(currentFinalExam);
           }
         }
 
@@ -2868,7 +2853,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
       }
 
       // Send notifications for detailed grading
-      if (savedCount > 0) {
+      if (savedUpdates.length > 0) {
         // Get group and course details for notifications
         const firstAssignment = await storage.getTrainingAssignment(updates[0].assignmentId);
         if (firstAssignment && firstAssignment.groupId) {
@@ -2913,10 +2898,10 @@ const allGroups = await storage.getAllTrainingCourseGroups();
           "training_assignment",
           null,
           {
-            message: `المشرف قد أدخل الدرجات المفصلة لـ ${savedCount} طالب`,
+            message: `المشرف قد أدخل الدرجات المفصلة لـ ${savedUpdates.length} طالب`,
             details: {
               supervisorId: supervisor.id,
-              savedCount: savedCount,
+              savedCount: savedUpdates.length,
               gradingType: "detailed",
               components: ["attendance (20%)", "behavior (30%)", "final exam (50%)"]
             }
@@ -2925,8 +2910,8 @@ const allGroups = await storage.getAllTrainingCourseGroups();
       }
 
       res.json({
-        message: `تم حفظ الدرجات المفصلة لـ ${savedCount} طالب بنجاح وإرسال الإشعارات`,
-        savedCount: savedCount,
+        message: `تم حفظ الدرجات المفصلة لـ ${savedUpdates.length} طالب بنجاح وإرسال الإشعارات`,
+        savedCount: savedUpdates.length,
         updates: savedUpdates
       });
 
