@@ -2594,14 +2594,20 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         });
       }
 
-      // Send notification to admin
+      // Get previous grade for comparison
+      let previousGrade = null;
+      if (existingEvaluation) {
+        previousGrade = existingEvaluation.score;
+      }
+
+      // Log activity
       await logActivity(
         req.user!.username,
         "grade_entry",
         "evaluation",
         evaluation.id,
         {
-          message: `المشرف ${supervisorWithUser?.user?.name || 'غير محدد'} قد أدخل درجات الكورس "${group.course.name}" - ${group.groupName}`,
+          message: `المشرف ${supervisorWithUser?.user?.name || 'غير محدد'} قد ${existingEvaluation ? 'حدث' : 'أدخل'} درجات الكورس "${group.course.name}" - ${group.groupName}`,
           details: {
             supervisorName: supervisorWithUser?.user?.name || 'غير محدد',
             courseName: group.course.name,
@@ -2609,9 +2615,12 @@ const allGroups = await storage.getAllTrainingCourseGroups();
             studentName: student.user.name,
             studentId: student.universityId,
             grade: grade,
+            previousGrade: previousGrade,
+            gradeChange: previousGrade ? `${previousGrade} ← ${grade}` : `جديد: ${grade}`,
             faculty: student.faculty?.name || 'غير محدد',
             major: student.major?.name || 'غير محدد',
-            level: student.level?.name || 'غير محدد'
+            level: student.level?.name || 'غير محدد',
+            actionType: existingEvaluation ? 'update' : 'create'
           }
         }
       );
@@ -2801,11 +2810,11 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         if (update.attendanceGrade !== undefined && (update.attendanceGrade < 0 || update.attendanceGrade > 20)) {
           return res.status(400).json({ message: "درجة الحضور يجب أن تكون بين 0 و 20" });
         }
-        
+
         if (update.behaviorGrade !== undefined && (update.behaviorGrade < 0 || update.behaviorGrade > 30)) {
           return res.status(400).json({ message: "درجة السلوك يجب أن تكون بين 0 و 30" });
         }
-        
+
         if (update.finalExamGrade !== undefined && (update.finalExamGrade < 0 || update.finalExamGrade > 50)) {
           return res.status(400).json({ message: "درجة الاختبار النهائي يجب أن تكون بين 0 و 50" });
         }

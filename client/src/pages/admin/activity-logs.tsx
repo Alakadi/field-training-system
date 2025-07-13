@@ -229,8 +229,56 @@ const ActivityLogs: React.FC = () => {
                           )}
                         </TableCell>
                         <TableCell>
-                          <div className="max-w-xs truncate">
-                            {log.details?.message || '-'}
+                          <div className="max-w-md">
+                            <div className="text-sm">
+                              {log.details?.message || '-'}
+                            </div>
+                            {/* عرض تفاصيل إضافية للدرجات المفصلة */}
+                            {log.action === 'detailed_grade_entry' && log.details?.details && (
+                              <div className="mt-2 text-xs text-gray-600 bg-gray-50 p-2 rounded">
+                                <div className="font-medium mb-1">تفاصيل التغييرات:</div>
+                                {log.details.details.students && log.details.details.students.map((student: any, index: number) => (
+                                  <div key={index} className="flex justify-between items-center py-1 border-b border-gray-200 last:border-b-0">
+                                    <span className="font-medium">{student.name}</span>
+                                    <span className="text-blue-600">{student.grade}/100</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {/* عرض تفاصيل إدخال الدرجات العادية */}
+                            {log.action === 'grade_entry' && log.details?.details && (
+                              <div className="mt-2 text-xs text-gray-600 bg-blue-50 p-2 rounded">
+                                <div className="flex flex-col gap-1">
+                                  {log.details.details.studentName && (
+                                    <div>
+                                      <span className="font-medium">الطالب: </span>
+                                      <span>{log.details.details.studentName}</span>
+                                      {log.details.details.studentId && (
+                                        <span className="text-gray-500"> ({log.details.details.studentId})</span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {log.details.details.grade && (
+                                    <div>
+                                      <span className="font-medium">الدرجة: </span>
+                                      <span className="text-green-600">{log.details.details.grade}/100</span>
+                                    </div>
+                                  )}
+                                  {log.details.details.courseName && (
+                                    <div>
+                                      <span className="font-medium">الكورس: </span>
+                                      <span>{log.details.details.courseName}</span>
+                                    </div>
+                                  )}
+                                  {log.details.details.groupName && (
+                                    <div>
+                                      <span className="font-medium">المجموعة: </span>
+                                      <span>{log.details.details.groupName}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
