@@ -120,7 +120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!user) {
       return res.status(401).json({ error: "غير مخول" });
     }
-    
+
     // Return user data without sensitive information
     res.json({
       id: user.id,
@@ -166,7 +166,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update user
       const updatedUser = await storage.updateUser(userId, updateData);
-      
+
       if (!updatedUser) {
         return res.status(404).json({ message: "المستخدم غير موجود" });
       }
@@ -220,7 +220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update username
       const updatedUser = await storage.updateUser(userId, { username: newUsername.trim() });
-      
+
       if (!updatedUser) {
         return res.status(404).json({ message: "المستخدم غير موجود" });
       }
@@ -257,14 +257,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/faculties", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
       const { name } = req.body;
-      
+
       if (!name || !name.trim()) {
         return res.status(400).json({ message: "اسم الكلية مطلوب" });
       }
 
       const faculty = await storage.createFaculty({ name: name.trim() });
       await logActivity(req.user!.username, "إضافة كلية", "كلية", faculty.id, { name });
-      
+
       res.status(201).json(faculty);
     } catch (error) {
       console.error("Error creating faculty:", error);
@@ -276,7 +276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = Number(req.params.id);
       const { name } = req.body;
-      
+
       if (!name || !name.trim()) {
         return res.status(400).json({ message: "اسم الكلية مطلوب" });
       }
@@ -287,7 +287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       await logActivity(req.user!.username, "تعديل كلية", "كلية", id, { name });
-      
+
       res.json(faculty);
     } catch (error) {
       console.error("Error updating faculty:", error);
@@ -311,7 +311,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/majors", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
       const { name, facultyId } = req.body;
-      
+
       if (!name || !name.trim()) {
         return res.status(400).json({ message: "اسم التخصص مطلوب" });
       }
@@ -328,7 +328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const major = await storage.createMajor({ name: name.trim(), facultyId });
       await logActivity(req.user!.username, "إضافة تخصص", "تخصص", major.id, { name, facultyName: faculty.name });
-      
+
       res.status(201).json(major);
     } catch (error) {
       console.error("Error creating major:", error);
@@ -340,7 +340,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = Number(req.params.id);
       const { name, facultyId } = req.body;
-      
+
       if (!name || !name.trim()) {
         return res.status(400).json({ message: "اسم التخصص مطلوب" });
       }
@@ -361,7 +361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       await logActivity(req.user!.username, "تعديل تخصص", "تخصص", id, { name, facultyName: faculty.name });
-      
+
       res.json(major);
     } catch (error) {
       console.error("Error updating major:", error);
@@ -497,13 +497,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Create supervisor
       console.log("Creating supervisor...");
-      
+
       // معالجة facultyId بشكل صحيح
       let processedFacultyId = null;
       if (facultyId && facultyId !== 'none' && facultyId !== '' && !isNaN(Number(facultyId))) {
         processedFacultyId = Number(facultyId);
       }
-      
+
       const supervisor = await storage.createSupervisor({
         userId: user.id,
         facultyId: processedFacultyId,
@@ -563,7 +563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (facultyId === 'none' || facultyId === '') {
         processedFacultyId = null;
       }
-      
+
       const updatedSupervisor = await storage.updateSupervisor(id, {
         facultyId: processedFacultyId,
         department
@@ -656,7 +656,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get supervisor details for logging
       const supervisorDetails = await storage.getSupervisorWithUser(id);
-      
+
       // Delete supervisor (this will also delete the user)
       await storage.deleteSupervisor(id);
 
@@ -862,7 +862,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get student details for logging
       const studentDetails = await storage.getStudentWithDetails(id);
-      
+
       // Delete student (this will also delete the user)
       await storage.deleteStudent(id);
 
@@ -1293,7 +1293,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get course details for logging
       const courseDetails = await storage.getTrainingCourseWithDetails(id);
-      
+
       // Delete course (this will also delete related groups)
       await storage.deleteTrainingCourse(id);
 
@@ -1352,7 +1352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   const student = await storage.getStudentWithDetails(assignment.studentId);
                   const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
                   const evaluation = evaluations.length > 0 ? evaluations[0] : null;
-                  
+
                   return {
                     ...student,
                     grade: evaluation?.score || null,
@@ -2166,16 +2166,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const assignment of assignments) {
           // Check if this assignment has detailed grades or evaluations
           const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
-          
+
           // Only include courses that have either detailed grades OR evaluations (actual graded courses)
           const hasDetailedGrades = !!(assignment.attendanceGrade || assignment.behaviorGrade || assignment.finalExamGrade || assignment.calculatedFinalGrade);
           const hasEvaluations = evaluations.length > 0;
-          
+
           // Only show courses with actual grades or evaluations
           if (!hasDetailedGrades && !hasEvaluations) {
             continue;
           }
-          
+
           const group = assignment.groupId ? await storage.getTrainingCourseGroupWithStudents(assignment.groupId) : null;
           if (group) {
             // Filter by academic year if specified
@@ -2187,7 +2187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
             // Get the latest evaluation for this assignment (if any)
             const latestEvaluation = evaluations.length > 0 ? evaluations[evaluations.length - 1] : null;
-            
+
             // Use calculated final grade from assignment if available, otherwise use evaluation score
             let finalGrade = null;
             if (assignment.calculatedFinalGrade) {
@@ -2195,7 +2195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             } else if (latestEvaluation?.score) {
               finalGrade = latestEvaluation.score;
             }
-            
+
             courses.push({
               id: group.course.id,
               name: group.course.name,
@@ -2271,11 +2271,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
             // Also check for detailed grades
             const hasDetailedGrades = !!(assignment.attendanceGrade || assignment.behaviorGrade || assignment.finalExamGrade || assignment.calculatedFinalGrade);
-            
+
             if (evaluations.length > 0 || hasDetailedGrades) {
               completedEvaluations++;
               hasEvaluations = true;
-              
+
               // Use calculated final grade if available, otherwise use evaluation score
               let finalGrade = null;
               if (assignment.calculatedFinalGrade) {
@@ -2283,7 +2283,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               } else if (evaluations.length > 0 && evaluations[0].score) {
                 finalGrade = evaluations[0].score;
               }
-              
+
               if (finalGrade) {
                 totalGrades += finalGrade;
                 gradeCount++;
@@ -2816,37 +2816,54 @@ const allGroups = await storage.getAllTrainingCourseGroups();
       const savedUpdates = [];
 
       for (const update of updates) {
-        try {
-          // Get assignment details
-          const assignment = await storage.getTrainingAssignment(update.assignmentId);
-          if (!assignment) {
-            console.warn(`Assignment ${update.assignmentId} not found`);
-            continue;
+        const { assignmentId, attendanceGrade, behaviorGrade, finalExamGrade } = update;
+
+        if (!assignmentId) {
+          console.error("Missing assignmentId for update:", update);
+          continue;
+        }
+
+        // التحقق من صحة الدرجات المُرسلة فقط
+        if (attendanceGrade !== undefined && (attendanceGrade < 0 || attendanceGrade > 20)) {
+          console.error("Invalid attendance grade for assignment:", assignmentId);
+          continue;
+        }
+        if (behaviorGrade !== undefined && (behaviorGrade < 0 || behaviorGrade > 30)) {
+          console.error("Invalid behavior grade for assignment:", assignmentId);
+          continue;
+        }
+        if (finalExamGrade !== undefined && (finalExamGrade < 0 || finalExamGrade > 50)) {
+          console.error("Invalid final exam grade for assignment:", assignmentId);
+          continue;
+        }
+
+        // إعداد البيانات للتحديث
+        const updateData: any = {};
+        if (attendanceGrade !== undefined) updateData.attendanceGrade = attendanceGrade;
+        if (behaviorGrade !== undefined) updateData.behaviorGrade = behaviorGrade;
+        if (finalExamGrade !== undefined) updateData.finalExamGrade = finalExamGrade;
+
+        // حساب الدرجة النهائية فقط إذا كانت جميع الدرجات متوفرة
+        const assignment = await storage.getTrainingAssignmentById(assignmentId);
+        if (assignment) {
+          const currentAttendance = updateData.attendanceGrade ?? assignment.attendanceGrade;
+          const currentBehavior = updateData.behaviorGrade ?? assignment.behaviorGrade;
+          const currentFinalExam = updateData.finalExamGrade ?? assignment.finalExamGrade;
+
+          if (currentAttendance !== null && currentBehavior !== null && currentFinalExam !== null) {
+            updateData.calculatedFinalGrade = currentAttendance + currentBehavior + currentFinalExam;
           }
+        }
 
-          // Calculate final grade (simple addition: 20 + 30 + 50 = 100)
-          const calculatedFinalGrade = update.attendanceGrade + update.behaviorGrade + update.finalExamGrade;
+        // تحديث التقييم التفصيلي للطالب
+        const result = await storage.updateStudentDetailedGrades(assignmentId, updateData);
 
-          // Update the assignment with detailed grades
-          const updatedAssignment = await storage.updateTrainingAssignmentGrades(assignment.id, {
-            attendanceGrade: update.attendanceGrade,
-            behaviorGrade: update.behaviorGrade,
-            finalExamGrade: update.finalExamGrade,
-            calculatedFinalGrade: calculatedFinalGrade
+        if (result) {
+          savedUpdates.push({
+            assignmentId,
+            ...updateData,
+            finalGrade: updateData.calculatedFinalGrade
           });
-
-          if (updatedAssignment) {
-            savedCount++;
-            savedUpdates.push({
-              assignmentId: assignment.id,
-              attendanceGrade: update.attendanceGrade,
-              behaviorGrade: update.behaviorGrade,
-              finalExamGrade: update.finalExamGrade,
-              finalGrade: (update.attendanceGrade * 0.2) + (update.behaviorGrade * 0.3) + (update.finalExamGrade * 0.5)
-            });
-          }
-        } catch (error) {
-          console.error(`Error updating assignment ${update.assignmentId}:`, error);
         }
       }
 
@@ -2858,7 +2875,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
           const group = await storage.getTrainingCourseGroupWithStudents(firstAssignment.groupId);
           if (group) {
             const supervisorWithUser = await storage.getSupervisorWithUser(supervisor.id);
-            
+
             // Notify admin about grade entry
             try {
               await notificationService.notifyAdminGradeEntry(
@@ -2996,7 +3013,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
   app.get("/api/students/:id/evaluations", authMiddleware, async (req: Request, res: Response) => {
     try {
       const studentId = Number(req.params.id);
-      
+
       // Check permissions - admin can access all, students can access their own
       if (req.user!.role === "student") {
         const student = await storage.getStudentByUserId(req.user!.id);
@@ -3095,14 +3112,14 @@ const allGroups = await storage.getAllTrainingCourseGroups();
   app.post("/api/academic-years", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
       const academicYearData = schema.insertAcademicYearSchema.parse(req.body);
-      
+
       // If this is set as current, make all others non-current
       if (academicYearData.isCurrent) {
         await storage.setAllAcademicYearsNonCurrent();
       }
-      
+
       const academicYear = await storage.createAcademicYear(academicYearData);
-      
+
       await logActivity(
         req.user!.username,
         "create",
@@ -3110,7 +3127,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         academicYear.id,
         { message: `إنشاء سنة دراسية جديدة: ${academicYear.name}` }
       );
-      
+
       res.json(academicYear);
     } catch (error) {
       if (error instanceof ZodError) {
@@ -3126,17 +3143,17 @@ const allGroups = await storage.getAllTrainingCourseGroups();
     try {
       const id = parseInt(req.params.id);
       const academicYearData = schema.insertAcademicYearSchema.parse(req.body);
-      
+
       // If this is set as current, make all others non-current
       if (academicYearData.isCurrent) {
         await storage.setAllAcademicYearsNonCurrent();
       }
-      
+
       const academicYear = await storage.updateAcademicYear(id, academicYearData);
       if (!academicYear) {
         return res.status(404).json({ message: "السنة الدراسية غير موجودة" });
       }
-      
+
       await logActivity(
         req.user!.username,
         "update",
@@ -3144,7 +3161,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         academicYear.id,
         { message: `تحديث السنة الدراسية: ${academicYear.name}` }
       );
-      
+
       res.json(academicYear);
     } catch (error) {
       if (error instanceof ZodError) {
@@ -3162,7 +3179,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
   app.get("/api/notifications", authMiddleware, async (req: Request, res: Response) => {
     try {
       const notifications = await storage.getNotificationsByUserId(req.user!.id);
-      
+
       // تحويل البيانات لتتطابق مع الواجهة المطلوبة
       const formattedNotifications = notifications.map(notification => ({
         id: notification.id,
@@ -3173,7 +3190,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         createdAt: notification.timestamp,
         performer: notification.username || 'النظام'
       }));
-      
+
       res.json(formattedNotifications);
     } catch (error) {
       console.error("Error fetching notifications:", error);
@@ -3211,13 +3228,13 @@ const allGroups = await storage.getAllTrainingCourseGroups();
   });
 
   // Smart Notification System
-  
+
   // Helper functions for smart notifications
   async function notifyAdminGradeEntry(supervisorName: string, courseName: string, groupName: string) {
     try {
       const adminUsers = await storage.getAllUsers();
       const admins = adminUsers.filter(user => user.role === 'admin');
-      
+
       for (const admin of admins) {
         await storage.createNotification({
           userId: admin.id,
@@ -3235,7 +3252,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
     try {
       const adminUsers = await storage.getAllUsers();
       const admins = adminUsers.filter(user => user.role === 'admin');
-      
+
       for (const admin of admins) {
         await storage.createNotification({
           userId: admin.id,
@@ -3255,7 +3272,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
       if (!student) return;
 
       const gradeText = grade ? ` (الدرجة النهائية: ${grade.toFixed(1)})` : '';
-      
+
       await storage.createNotification({
         userId: student.user.id,
         title: 'تم إدراج درجاتك',
@@ -3303,32 +3320,32 @@ const allGroups = await storage.getAllTrainingCourseGroups();
   app.post("/api/smart-notifications/grade-entry", authMiddleware, requireRole("supervisor"), async (req: Request, res: Response) => {
     try {
       const { groupId, studentIds } = req.body;
-      
+
       // Get group and course info
       const group = await storage.getTrainingCourseGroup(groupId);
       if (!group) {
         return res.status(404).json({ message: "المجموعة غير موجودة" });
       }
-      
+
       const course = await storage.getTrainingCourse(group.courseId);
       if (!course) {
         return res.status(404).json({ message: "الدورة غير موجودة" });
       }
-      
+
       const supervisor = await storage.getSupervisorWithUser(group.supervisorId!);
-      
+
       // Notify admin about grade entry
       await notifyAdminGradeEntry(
         supervisor?.user.name || 'مشرف غير محدد',
         course.name || 'دورة غير محددة',
         group.groupName
       );
-      
+
       // Notify students about their grades
       for (const studentId of studentIds) {
         await notifyStudentGradesAdded(studentId, course.name || 'دورة غير محددة', group.groupName);
       }
-      
+
       res.json({ message: "تم إرسال الإشعارات بنجاح" });
     } catch (error) {
       console.error("Error sending grade entry notifications:", error);

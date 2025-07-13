@@ -358,19 +358,24 @@ const SupervisorCourses: React.FC = () => {
 
             if (editingGrades[assignment.studentId]) {
               const grades = editingGrades[assignment.studentId];
-
               console.log("Found assignment for student", assignment.studentId, ":", assignment);
 
-              if (assignment && 
-                  grades.attendanceGrade !== undefined && 
-                  grades.behaviorGrade !== undefined && 
-                  grades.finalExamGrade !== undefined) {
-                updates.push({
-                  assignmentId: assignment.id,
-                  attendanceGrade: grades.attendanceGrade,
-                  behaviorGrade: grades.behaviorGrade,
-                  finalExamGrade: grades.finalExamGrade
-                });
+              // التحقق من وجود جميع الدرجات الثلاث أو أي منها للحفظ الفردي
+              const hasAttendance = grades.attendanceGrade !== undefined && grades.attendanceGrade !== null;
+              const hasBehavior = grades.behaviorGrade !== undefined && grades.behaviorGrade !== null;
+              const hasFinalExam = grades.finalExamGrade !== undefined && grades.finalExamGrade !== null;
+
+              // حفظ إذا كان هناك أي درجة محدثة
+              if (assignment && (hasAttendance || hasBehavior || hasFinalExam)) {
+                const updateData: any = {
+                  assignmentId: assignment.id
+                };
+
+                if (hasAttendance) updateData.attendanceGrade = grades.attendanceGrade;
+                if (hasBehavior) updateData.behaviorGrade = grades.behaviorGrade;
+                if (hasFinalExam) updateData.finalExamGrade = grades.finalExamGrade;
+
+                updates.push(updateData);
               }
             }
           }
@@ -380,7 +385,7 @@ const SupervisorCourses: React.FC = () => {
     if (updates.length === 0) {
       toast({
         title: "تنبيه",
-        description: "لا توجد درجات صالحة للحفظ (يجب إدخال جميع الدرجات الثلاث)",
+        description: "لا توجد تغييرات للحفظ",
         variant: "destructive",
       });
       return;
