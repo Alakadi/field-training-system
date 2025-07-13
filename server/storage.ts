@@ -1442,6 +1442,20 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  // Update Student Detailed Grades operations
+  async updateStudentDetailedGrades(assignmentId: number, grades: {
+    attendanceGrade?: number;
+    behaviorGrade?: number;
+    finalExamGrade?: number;
+    calculatedFinalGrade?: number;
+  }): Promise<TrainingAssignment | undefined> {
+    const result = await db.update(trainingAssignments)
+      .set(grades)
+      .where(eq(trainingAssignments.id, assignmentId))
+      .returning();
+    return result[0];
+  }
+
   // Get Training Assignment by ID
   async getTrainingAssignmentById(id: number): Promise<TrainingAssignment | undefined> {
     const result = await db.select()
