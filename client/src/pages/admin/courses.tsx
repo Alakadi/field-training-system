@@ -392,7 +392,7 @@ const AdminCourses: React.FC = () => {
                         }`}>
                           {course.status === 'active' ? 'نشط' :
                            course.status === 'upcoming' ? 'قادم' :
-                           course.status === 'completed' ? 'مكتمل' : course.status} (تلقائية)
+                           course.status === 'completed' ? 'مكتمل' : course.status} 
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
