@@ -681,10 +681,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteSupervisor(id);
 
       // Log activity
-      await logActivity(
+      await logSecurityActivity(
         currentUser.username,
         "delete",
-        "supervisor",
+        "supervisors",
         id,
         { 
           message: `تم حذف المشرف: ${supervisorDetails?.user.name}`,
@@ -809,10 +809,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // تسجيل النشاط
       if (req.user) {
-        await logActivity(
+        await logSecurityActivity(
           req.user.username,
           "update",
-          "student",
+          "students",
           id,
           { 
             message: `تم تحديث بيانات الطالب: ${name || 'غير محدد'}`,
@@ -848,10 +848,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Log activity
       if (req.user) {
-        await logActivity(
+        await logSecurityActivity(
           req.user.username,
-          "update",
-          "student",
+          "toggle_active",
+          "students",
           student.id,
           { 
             message: `تم ${active ? 'تنشيط' : 'إلغاء تنشيط'} حساب الطالب`,
@@ -892,10 +892,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteStudent(id);
 
       // Log activity
-      await logActivity(
+      await logSecurityActivity(
         req.user!.username,
         "delete",
-        "student",
+        "students",
         id,
         { 
           message: `تم حذف الطالب: ${studentDetails?.user.name}`,
@@ -1026,7 +1026,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Log the import activity
       if (req.user) {
-        await logActivity(
+        await logSecurityActivity(
           req.user.username,
           "import",
           "students",
@@ -1077,10 +1077,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Log activity
       if (req.user) {
-        await logActivity(
+        await logSecurityActivity(
           req.user.username,
           "create",
-          "training_site",
+          "training_sites",
           site.id,
           { 
             message: `تم إنشاء جهة تدريب: ${name}`,
@@ -1102,10 +1102,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Log activity
       if (req.user) {
-        await logActivity(
+        await logSecurityActivity(
           req.user.username,
           "update",
-          "training_course",
+          "training_courses",
           null,
           { message: "تم تحديث حالات الدورات بناءً على التواريخ" }
         );
@@ -1284,10 +1284,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ? `تم إنشاء دورة تدريبية مع ${result.groups.length} مجموعة: ${name}. ${result.academicYearMessage}`
           : `تم إنشاء دورة تدريبية مع ${result.groups.length} مجموعة: ${name}`;
 
-        await logActivity(
+        await logSecurityActivity(
           req.user.username,
           "create",
-          "training_course",
+          "training_courses",
           result.course.id,
           { 
             message: logMessage,
@@ -1346,10 +1346,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteTrainingCourse(id);
 
       // Log activity
-      await logActivity(
+      await logSecurityActivity(
         req.user!.username,
         "delete",
-        "training_course",
+        "training_courses",
         id,
         { 
           message: `تم حذف الدورة التدريبية: ${courseDetails?.name}`,
@@ -1625,10 +1625,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Log activity
       if (req.user) {
-        await logActivity(
+        await logSecurityActivity(
           req.user.username,
           "create",
-          "training_course_group",
+          "training_course_groups",
           group.id,
           { 
             message: `تم إنشاء مجموعة تدريب: ${groupName}`,
@@ -1950,10 +1950,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const student = await storage.getStudent(Number(studentId));
         const studentUser = student ? await storage.getUser(student.userId) : null;
 
-        await logActivity(
+        await logSecurityActivity(
           req.user.username,
           "create",
-          "training_assignment",
+          "training_assignments",
           assignment.id,
           { 
             message: `تم تعيين طالب لمجموعة التدريب`,
@@ -3360,10 +3360,10 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         return res.status(404).json({ message: "السنة الدراسية غير موجودة" });
       }
 
-      await logActivity(
+      await logSecurityActivity(
         req.user!.username,
         "update",
-        "academic_year",
+        "academic_years",
         academicYear.id,
         { message: `تحديث السنة الدراسية: ${academicYear.name}` }
       );
