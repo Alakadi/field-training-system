@@ -2292,7 +2292,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Reports API endpoints
+  // Reports API endpoints - Modified to show each student-course as separate record
   app.get("/api/reports/students", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
       const academicYearId = req.query.academicYearId ? Number(req.query.academicYearId) : undefined;
@@ -2306,7 +2306,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!studentDetails) continue;
 
         const assignments = await storage.getTrainingAssignmentsByStudent(student.id);
-        const courses = [];
 
         for (const assignment of assignments) {
           // Check if this assignment has detailed grades or evaluations
@@ -2341,9 +2340,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
               finalGrade = latestEvaluation.score;
             }
 
-            courses.push({
-              id: group.course.id,
-              name: group.course.name,
+            // Each course registration is a separate record
+            studentsReport.push({
+              id: student.id,
+              name: studentDetails.user.name,
+              universityId: student.universityId,
+              faculty: studentDetails.faculty?.name || 'غير محدد',
+              major: studentDetails.major?.name || 'غير محدد',
+              level: studentDetails.level?.name || 'غير محدد',
+              // Single course details for this record
+              courseId: group.course.id,
+              courseName: group.course.name,
               grade: latestEvaluation?.score || null,
               // Prioritize calculated final grade from detailed grades
               calculatedFinal: finalGrade,
@@ -2356,22 +2363,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
               supervisor: supervisorDetails?.user?.name || 'غير محدد',
               hasDetailedGrades: hasDetailedGrades,
               hasEvaluations: hasEvaluations,
-              academicYear: group.course.academicYear?.name || 'غير محدد'
+              academicYear: group.course.academicYear?.name || 'غير محدد',
+              assignmentId: assignment.id
             });
           }
-        }
-
-        // Only include students who have been graded in at least one course
-        if (courses.length > 0) {
-          studentsReport.push({
-            id: student.id,
-            name: studentDetails.user.name,
-            universityId: student.universityId,
-            faculty: studentDetails.faculty?.name || 'غير محدد',
-            major: studentDetails.major?.name || 'غير محدد',
-            level: studentDetails.level?.name || 'غير محدد',
-            courses: courses
-          });
         }
       }
 

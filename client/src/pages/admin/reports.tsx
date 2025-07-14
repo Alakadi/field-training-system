@@ -17,18 +17,20 @@ interface StudentReport {
   faculty: string;
   major: string;
   level: string;
-  courses: {
-    id: number;
-    name: string;
-    grade: number | null;
-    calculatedFinal: number | null;
-    groupName: string;
-    site: string;
-    supervisor: string;
-    attendanceGrade?: number | null;
-    behaviorGrade?: number | null;
-    finalExamGrade?: number | null;
-  }[];
+  courseId: number;
+  courseName: string;
+  grade: number | null;
+  calculatedFinal: number | null;
+  groupName: string;
+  site: string;
+  supervisor: string;
+  attendanceGrade?: number | null;
+  behaviorGrade?: number | null;
+  finalExamGrade?: number | null;
+  hasDetailedGrades: boolean;
+  hasEvaluations: boolean;
+  academicYear: string;
+  assignmentId: number;
 }
 
 interface CourseReport {
@@ -103,7 +105,8 @@ export default function AdminReports() {
     student.name.includes(searchQuery) || 
     student.universityId.includes(searchQuery) ||
     student.faculty.includes(searchQuery) ||
-    student.major.includes(searchQuery)
+    student.major.includes(searchQuery) ||
+    student.courseName.includes(searchQuery)
   ) || [];
 
   const filteredCourses = coursesReport?.filter((course: CourseReport) =>
@@ -112,25 +115,23 @@ export default function AdminReports() {
     course.major.includes(searchQuery)
   ) || [];
 
-  // Prepare export data for students
-  const exportStudentsData = filteredStudents.flatMap((student: StudentReport) =>
-    student.courses.map((course) => ({
-      universityId: student.universityId,
-      studentName: student.name,
-      courseId: course.id,
-      courseName: course.name,
-      grade: course.calculatedFinal || course.grade || 0,
-      academicYear: "السنة الدراسية الحالية", // Replace with actual academic year from API
-      faculty: student.faculty,
-      major: student.major,
-      level: student.level,
-      site: course.site,
-      supervisor: course.supervisor,
-      attendanceGrade: course.attendanceGrade || 0,
-      behaviorGrade: course.behaviorGrade || 0,
-      finalExamGrade: course.finalExamGrade || 0,
-    }))
-  );
+  // Prepare export data for students - each record is already a student-course combination
+  const exportStudentsData = filteredStudents.map((student: StudentReport) => ({
+    universityId: student.universityId,
+    studentName: student.name,
+    courseId: student.courseId,
+    courseName: student.courseName,
+    grade: student.calculatedFinal || student.grade || 0,
+    academicYear: student.academicYear,
+    faculty: student.faculty,
+    major: student.major,
+    level: student.level,
+    site: student.site,
+    supervisor: student.supervisor,
+    attendanceGrade: student.attendanceGrade || 0,
+    behaviorGrade: student.behaviorGrade || 0,
+    finalExamGrade: student.finalExamGrade || 0,
+  }));
 
   // Define export columns
   const exportColumns = [
@@ -229,9 +230,9 @@ export default function AdminReports() {
           {activeTab === 'students' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">الطلاب المقيّمون</h2>
+                <h2 className="text-xl font-semibold">سجلات الطلاب والدورات</h2>
                 <Badge variant="secondary">
-                  {filteredStudents.length} طالب
+                  {filteredStudents.length} سجل
                 </Badge>
               </div>
 
@@ -240,7 +241,7 @@ export default function AdminReports() {
               ) : (
                 <div className="grid gap-4">
                   {filteredStudents.map((student: StudentReport) => (
-                    <Card key={student.id} className="hover:shadow-md transition-shadow">
+                    <Card key={`${student.id}-${student.courseId}`} className="hover:shadow-md transition-shadow">
                       <CardHeader>
                         <div className="flex justify-between items-start">
                           <div>
@@ -275,61 +276,57 @@ export default function AdminReports() {
                                     <strong>المستوى:</strong> {student.level}
                                   </div>
                                   <div>
-                                    <strong>عدد الدورات:</strong> {student.courses.length}
+                                    <strong>السنة الدراسية:</strong> {student.academicYear}
                                   </div>
                                 </div>
 
                                 <div>
-                                  <h3 className="font-semibold mb-3 text-right">الدورات والدرجات:</h3>
-                                  <div className="space-y-3">
-                                    {student.courses.map((course) => (
-                                      <div key={course.id} className="border rounded-lg p-4">
-                                        <div className="flex justify-between items-start">
-                                          <div className="text-right flex-1">
-                                            <div className="font-medium">{course.name}</div>
-                                            <div className="text-sm text-gray-600">
-                                              {course.groupName} - {course.site}
-                                            </div>
-                                            <div className="text-sm text-gray-600">
-                                              المشرف: {course.supervisor}
-                                            </div>
-                                          </div>
-                                          <div className="text-center space-y-2">
-                                            {course.calculatedFinal !== null ? (
-                                              <div>
-                                                <div className="text-xs text-gray-500 mb-1">الدرجة النهائية المحسوبة</div>
-                                                <Badge variant={course.calculatedFinal >= 75 ? "default" : course.calculatedFinal >= 60 ? "secondary" : "destructive"}>
-                                                  {course.calculatedFinal}/100
-                                                </Badge>
-                                              </div>
-                                            ) : course.grade !== null ? (
-                                              <div>
-                                                <div className="text-xs text-gray-500 mb-1">درجة التقييم</div>
-                                                <Badge variant={course.grade >= 75 ? "default" : course.grade >= 60 ? "secondary" : "destructive"}>
-                                                  {course.grade}/100
-                                                </Badge>
-                                              </div>
-                                            ) : (
-                                              <div>
-                                                <div className="text-xs text-gray-500 mb-1">الدرجة</div>
-                                                <Badge variant="outline">
-                                                  لم يتم التقييم
-                                                </Badge>
-                                              </div>
-                                            )}
-
-                                            {/* عرض الدرجات المفصلة إذا كانت متوفرة */}
-                                            {(course.attendanceGrade || course.behaviorGrade || course.finalExamGrade) && (
-                                              <div className="mt-2 text-xs text-gray-600">
-                                                <div>الحضور: {course.attendanceGrade || 0}/20</div>
-                                                <div>السلوك: {course.behaviorGrade || 0}/30</div>
-                                                <div>الاختبار: {course.finalExamGrade || 0}/50</div>
-                                              </div>
-                                            )}
-                                          </div>
+                                  <h3 className="font-semibold mb-3 text-right">تفاصيل الدورة:</h3>
+                                  <div className="border rounded-lg p-4">
+                                    <div className="flex justify-between items-start">
+                                      <div className="text-right flex-1">
+                                        <div className="font-medium">{student.courseName}</div>
+                                        <div className="text-sm text-gray-600">
+                                          {student.groupName} - {student.site}
+                                        </div>
+                                        <div className="text-sm text-gray-600">
+                                          المشرف: {student.supervisor}
                                         </div>
                                       </div>
-                                    ))}
+                                      <div className="text-center space-y-2">
+                                        {student.calculatedFinal !== null ? (
+                                          <div>
+                                            <div className="text-xs text-gray-500 mb-1">الدرجة النهائية المحسوبة</div>
+                                            <Badge variant={student.calculatedFinal >= 75 ? "default" : student.calculatedFinal >= 60 ? "secondary" : "destructive"}>
+                                              {student.calculatedFinal}/100
+                                            </Badge>
+                                          </div>
+                                        ) : student.grade !== null ? (
+                                          <div>
+                                            <div className="text-xs text-gray-500 mb-1">درجة التقييم</div>
+                                            <Badge variant={student.grade >= 75 ? "default" : student.grade >= 60 ? "secondary" : "destructive"}>
+                                              {student.grade}/100
+                                            </Badge>
+                                          </div>
+                                        ) : (
+                                          <div>
+                                            <div className="text-xs text-gray-500 mb-1">الدرجة</div>
+                                            <Badge variant="outline">
+                                              لم يتم التقييم
+                                            </Badge>
+                                          </div>
+                                        )}
+
+                                        {/* عرض الدرجات المفصلة إذا كانت متوفرة */}
+                                        {(student.attendanceGrade || student.behaviorGrade || student.finalExamGrade) && (
+                                          <div className="mt-2 text-xs text-gray-600">
+                                            <div>الحضور: {student.attendanceGrade || 0}/20</div>
+                                            <div>السلوك: {student.behaviorGrade || 0}/30</div>
+                                            <div>الاختبار: {student.finalExamGrade || 0}/50</div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
@@ -340,24 +337,32 @@ export default function AdminReports() {
                       <CardContent>
                         <div className="space-y-2">
                           <div className="text-sm text-gray-600 text-right">
-                            الدورات المكتملة: {student.courses.length}
+                            الدورة: {student.courseName}
+                          </div>
+                          <div className="text-sm text-gray-600 text-right">
+                            المجموعة: {student.groupName} - {student.site}
+                          </div>
+                          <div className="text-sm text-gray-600 text-right">
+                            المشرف: {student.supervisor}
                           </div>
                           <div className="flex flex-wrap gap-2 justify-end">
-                            {student.courses.slice(0, 3).map((course) => (
-                              <div key={course.id} className="flex flex-col gap-1">
-                                <Badge variant="outline" className="text-xs">
-                                  {course.name}: {course.calculatedFinal !== null ? `${course.calculatedFinal}/100` : 'لم يتم التقييم'}
-                                </Badge>
-                                {course.calculatedFinal !== null && (
-                                  <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
-                                    محسوبة: {course.calculatedFinal}/100
-                                  </Badge>
-                                )}
-                              </div>
-                            ))}
-                            {student.courses.length > 3 && (
+                            {student.calculatedFinal !== null ? (
+                              <Badge variant="default" className="text-xs">
+                                الدرجة النهائية: {student.calculatedFinal}/100
+                              </Badge>
+                            ) : student.grade !== null ? (
                               <Badge variant="secondary" className="text-xs">
-                                +{student.courses.length - 3} أخرى
+                                درجة التقييم: {student.grade}/100
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs">
+                                لم يتم التقييم
+                              </Badge>
+                            )}
+                            
+                            {student.hasDetailedGrades && (
+                              <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                                درجات مفصلة
                               </Badge>
                             )}
                           </div>
