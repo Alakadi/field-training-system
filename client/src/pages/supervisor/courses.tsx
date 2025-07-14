@@ -535,11 +535,27 @@ const SupervisorCourses: React.FC = () => {
               </CardHeader>
 
               <CardContent className="p-6">
-                <Tabs defaultValue="students" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="students">قائمة الطلاب ({group.students?.length || 0})</TabsTrigger>
-                    <TabsTrigger value="grades">إدارة الدرجات</TabsTrigger>
-                  </TabsList>
+                {group.course?.status === 'upcoming' ? (
+                  <div className="text-center py-12">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-8">
+                      <div className="flex flex-col items-center gap-4">
+                        <Calendar className="h-16 w-16 text-blue-500" />
+                        <h3 className="text-xl font-semibold text-blue-900">الدورة قادمة</h3>
+                        <p className="text-blue-700 text-center max-w-md">
+                          ستتمكن من عرض قائمة الطلاب وإدارة الدرجات عند بداية الدورة التدريبية في تاريخ {new Date(group.startDate).toLocaleDateString('ar-SA')}
+                        </p>
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                          بداية الدورة: {new Date(group.startDate).toLocaleDateString('ar-SA')}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <Tabs defaultValue="students" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="students">قائمة الطلاب ({group.students?.length || 0})</TabsTrigger>
+                      <TabsTrigger value="grades">إدارة الدرجات</TabsTrigger>
+                    </TabsList>
 
                   <TabsContent value="students" className="mt-4">
                     {group.students && group.students.length > 0 ? (
@@ -771,7 +787,8 @@ const SupervisorCourses: React.FC = () => {
                       </div>
                     )}
                   </TabsContent>
-                </Tabs>
+                  </Tabs>
+                )}
               </CardContent>
             </Card>
           ))}
