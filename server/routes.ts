@@ -2682,7 +2682,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
       // Get group and course details
       const group = await storage.getTrainingCourseGroupWithStudents(groupId);
       if (!group) {
-        return res.status(404).json({ message: "المجموعة غير موجودة");
+        return res.status(404).json({ message: "المجموعة غير موجودة" });
       }
 
       // Check if supervisor is assigned to this group
@@ -3326,10 +3326,10 @@ const allGroups = await storage.getAllTrainingCourseGroups();
 
       const academicYear = await storage.createAcademicYear(academicYearData);
 
-      await logActivity(
+      await logSecurityActivity(
         req.user!.username,
         "create",
-        "academic_year",
+        "academic_years",
         academicYear.id,
         { message: `إنشاء سنة دراسية جديدة: ${academicYear.name}` }
       );
