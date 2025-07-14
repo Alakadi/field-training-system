@@ -1,0 +1,90 @@
+ET /api/training-courses 304 in 1228ms :: [{"id":1,"name":"تطوير تطبيقات الويب…
+12:34:19 AM [express] GET /api/training-course-groups 304 in 469ms :: [{"id":2,"courseId":2,"groupNam…
+12:34:19 AM [express] GET /api/training-courses/2 200 in 736ms :: {"id":2,"name":"أمن المعلومات والشب…
+12:34:26 AM [express] PUT /api/training-courses/2 200 in 3ms
+Updating training course group: {
+  id: 2,
+  courseId: 2,
+  groupName: 'المجموعة الثانية',
+  siteId: 7,
+  supervisorId: 5,
+  capacity: 8,
+  location: '',
+  startDate: '2025-08-12',
+  endDate: '2025-09-11'
+}
+Training course group updated successfully: {
+  id: 2,
+  courseId: 2,
+  groupName: 'المجموعة الثانية',
+  siteId: 7,
+  supervisorId: 5,
+  startDate: '2025-08-12',
+  endDate: '2025-09-11',
+  capacity: 8,
+  currentEnrollment: 2,
+  location: '',
+  status: 'upcoming',
+  createdAt: 2025-07-13T23:21:41.340Z
+}
+12:34:27 AM [express] PUT /api/training-course-groups/2 200 in 999ms :: {"id":2,"courseId":2,"groupNa…
+12:34:29 AM [express] GET /api/training-course-groups 200 in 490ms :: [{"id":1,"courseId":1,"groupNam…
+12:34:29 AM [express] GET /api/training-courses 200 in 1206ms :: [{"id":1,"name":"تطوير تطبيقات الويب…
+12:35:00 AM [express] GET /api/notifications 304 in 1915ms :: []
+12:35:03 AM [express] GET /api/training-courses/1 200 in 701ms :: {"id":1,"name":"تطوير تطبيقات الويب…
+12:35:04 AM [express] GET /api/training-course-groups 304 in 1987ms :: [{"id":1,"courseId":1,"groupNa…
+12:35:14 AM [express] PUT /api/training-courses/1 200 in 4ms
+Updating training course group: {
+  id: 1,
+  courseId: 1,
+  groupName: 'المجموعة الأولى',
+  siteId: 7,
+  supervisorId: 5,
+  capacity: 10,
+  location: '',
+  startDate: '2025-07-03',
+  endDate: '2025-08-02'
+}
+Training course group updated successfully: {
+  id: 1,
+  courseId: 1,
+  groupName: 'المجموعة الأولى',
+  siteId: 7,
+  supervisorId: 5,
+  startDate: '2025-07-03',
+  endDate: '2025-08-02',
+  capacity: 10,
+  currentEnrollment: 3,
+  location: '',
+  status: 'active',
+  createdAt: 2025-07-13T23:21:41.102Z
+}
+12:35:17 AM [express] PUT /api/training-course-groups/1 200 in 2330ms :: {"id":1,"courseId":1,"groupN…
+12:35:19 AM [express] GET /api/training-course-groups 200 in 1879ms :: [{"id":2,"courseId":2,"groupNa…
+12:35:20 AM [express] GET /api/training-courses 200 in 2669ms :: [{"id":1,"name":"تطوير تطبيقات الويب…
+12:35:29 AM [express] PUT /api/training-courses/1 200 in 3ms
+Updating training course group: {
+  id: 1,
+  courseId: 1,
+  groupName: 'المجموعة الأولى',
+  siteId: 7,
+  supervisorId: 4,
+  capacity: 3,
+  location: '',
+  startDate: '2025-07-03',
+  endDate: '2025-08-02'
+}
+Training course group updated successfully: {
+  id: 1,
+  courseId: 1,
+  groupName: 'المجموعة الأولى',
+  siteId: 7,
+  supervisorId: 4,
+  startDate: '2025-07-03',
+  endDate: '2025-08-02',
+  capacity: 3,
+  currentEnrollment: 3,
+  location: '',
+  status: 'active',
+  createdAt: 2025-07-13T23:21:41.102Z
+}
