@@ -115,7 +115,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
 
   const onSubmit = async (data: AddCourseFormValues) => {
     setIsSubmitting(true);
-    
+
     try {
       // Validate groups
       const validatedGroups = groups.map(group => {
@@ -147,7 +147,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
       }
 
       const courseResult = await courseResponse.json();
-      
+
       // Extract course from result (the API returns { course, groups })
       const course = courseResult.course || courseResult;
 

@@ -87,45 +87,59 @@ export default function AcademicYearsPage() {
 
   // إنشاء سنة دراسية جديدة
   const createMutation = useMutation({
-    mutationFn: (data: AcademicYearFormData) =>
-      apiRequest("POST", "/api/academic-years", data),
-    onSuccess: () => {
+    mutationFn: async (data: AcademicYearFormData) => {
+      console.log("Creating academic year with data:", data);
+      const result = await apiRequest("POST", "/api/academic-years", data);
+      console.log("Academic year created successfully:", result);
+      return result;
+    },
+    onSuccess: (result) => {
+      console.log("Create mutation success:", result);
       queryClient.invalidateQueries({ queryKey: ["/api/academic-years"] });
       setIsDialogOpen(false);
       form.reset();
       toast({
-        title: "تم الحفظ",
-        description: "تم إنشاء السنة الدراسية بنجاح",
+        title: "تم الحفظ بنجاح",
+        description: `تم إنشاء السنة الدراسية "${result.name}" بنجاح`,
       });
     },
     onError: (error: any) => {
+      console.error("Create mutation error:", error);
+      const errorMessage = error.response?.data?.message || error.message || "حدث خطأ غير متوقع أثناء الحفظ";
       toast({
         variant: "destructive",
-        title: "خطأ",
-        description: error.response?.data?.message || "حدث خطأ أثناء الحفظ",
+        title: "فشل في الحفظ",
+        description: errorMessage,
       });
     },
   });
 
   // تحديث سنة دراسية
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: AcademicYearFormData }) =>
-      apiRequest("PUT", `/api/academic-years/${id}`, data),
-    onSuccess: () => {
+    mutationFn: async ({ id, data }: { id: number; data: AcademicYearFormData }) => {
+      console.log("Updating academic year with data:", { id, data });
+      const result = await apiRequest("PUT", `/api/academic-years/${id}`, data);
+      console.log("Academic year updated successfully:", result);
+      return result;
+    },
+    onSuccess: (result) => {
+      console.log("Update mutation success:", result);
       queryClient.invalidateQueries({ queryKey: ["/api/academic-years"] });
       setIsDialogOpen(false);
       setEditingYear(null);
       form.reset();
       toast({
-        title: "تم التحديث",
-        description: "تم تحديث السنة الدراسية بنجاح",
+        title: "تم التحديث بنجاح",
+        description: `تم تحديث السنة الدراسية "${result.name}" بنجاح`,
       });
     },
     onError: (error: any) => {
+      console.error("Update mutation error:", error);
+      const errorMessage = error.response?.data?.message || error.message || "حدث خطأ غير متوقع أثناء التحديث";
       toast({
         variant: "destructive",
-        title: "خطأ",
-        description: error.response?.data?.message || "حدث خطأ أثناء التحديث",
+        title: "فشل في التحديث",
+        description: errorMessage,
       });
     },
   });
@@ -170,23 +184,28 @@ export default function AcademicYearsPage() {
     return { isValid: true, error: null };
   };
 
-  const onSubmit = (data: AcademicYearFormData) => {
-    // Perform custom validation
-    const validation = validateAcademicYearDates(data);
-    
-    if (!validation.isValid) {
-      toast({
-        variant: "destructive",
-        title: "خطأ في التواريخ",
-        description: validation.error,
-      });
-      return;
-    }
+  const onSubmit = async (data: AcademicYearFormData) => {
+    try {
+      // Perform custom validation
+      const validation = validateAcademicYearDates(data);
+      
+      if (!validation.isValid) {
+        toast({
+          variant: "destructive",
+          title: "خطأ في التواريخ",
+          description: validation.error,
+        });
+        return;
+      }
 
-    if (editingYear) {
-      updateMutation.mutate({ id: editingYear.id, data });
-    } else {
-      createMutation.mutate(data);
+      if (editingYear) {
+        await updateMutation.mutateAsync({ id: editingYear.id, data });
+      } else {
+        await createMutation.mutateAsync(data);
+      }
+    } catch (error) {
+      console.error("Error in form submission:", error);
+      // The mutation will handle the error display, so we don't need to do anything here
     }
   };
 

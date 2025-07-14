@@ -43,7 +43,7 @@ async function logSecurityActivity(
     if (!allowedActions || !allowedActions.includes(action)) {
       return; // لا تسجل النشاط إذا لم يكن أمنياً مهماً
     }
-    
+
     await storage.logActivity({
       username,
       action,
@@ -1276,21 +1276,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdBy: req.user?.id
       }, groups || []);
 
-      // Log activity
+      console.log("Training course with groups created successfully:", result);
+
+      // Log activity with academic year information
       if (req.user) {
+        const logMessage = result.academicYearMessage 
+          ? `تم إنشاء دورة تدريبية مع ${result.groups.length} مجموعة: ${name}. ${result.academicYearMessage}`
+          : `تم إنشاء دورة تدريبية مع ${result.groups.length} مجموعة: ${name}`;
+
         await logActivity(
           req.user.username,
           "create",
           "training_course",
           result.course.id,
           { 
-            message: `تم إنشاء دورة تدريبية مع ${result.groups.length} مجموعة: ${name}`,
-            courseData: { name, facultyId, majorId, levelId, description, groupsCount: result.groups.length }
+            message: logMessage,
+            courseData: { 
+              name, 
+              facultyId, 
+              majorId, 
+              levelId, 
+              description, 
+              groupsCount: result.groups.length,
+              academicYearId: result.course.academicYearId,
+              academicYearMessage: result.academicYearMessage
+            }
           }
         );
       }
 
-      res.status(201).json(result);
+      // Return result with success message
+      const responseData = {
+        ...result,
+        message: result.academicYearMessage 
+          ? `تم إنشاء الدورة بنجاح. ${result.academicYearMessage}`
+          : "تم إنشاء الدورة بنجاح"
+      };
+
+      res.status(201).json(responseData);
     } catch (error) {
       console.error("Error creating course with groups:", error);
       res.status(500).json({ message: "خطأ في إنشاء دورة تدريبية جديدة" });
@@ -1777,7 +1800,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               },
               evaluation: evaluation
             };
-          } catch (error) {
+          } catch (error){
             console.error(`Failed to fetch details for assignment ${assignment.id}:`, error);
             return null;
           }
@@ -2659,7 +2682,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
       // Get group and course details
       const group = await storage.getTrainingCourseGroupWithStudents(groupId);
       if (!group) {
-        return res.status(404).json({ message: "المجموعة غير موجودة" });
+        return res.status(404).json({ message: "المجموعة غير موجودة");
       }
 
       // Check if supervisor is assigned to this group
@@ -3001,7 +3024,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
             if (finalExamGrade !== undefined && assignment.finalExamGrade !== finalExamGrade) {
               changes.push(`الاختبار النهائي: ${assignment.finalExamGrade || 'لم يتم إدخالها'} → ${finalExamGrade}/50`);
             }
-            
+
             if (changes.length > 0) {
               const student = await storage.getStudentById(assignment.studentId);
               validGrades[validGrades.length - 1].changes = changes;
