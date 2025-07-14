@@ -93,7 +93,11 @@ const EnhancedCourseCard: React.FC<EnhancedCourseCardProps> = ({
   };
 
   const canRegisterInCourse = () => {
-    return course.status === 'active' || course.status === 'upcoming';
+    return course.status === 'active';
+  };
+  
+  const isUpcomingCourse = () => {
+    return course.status === 'upcoming';
   };
 
   return (
@@ -222,6 +226,10 @@ const EnhancedCourseCard: React.FC<EnhancedCourseCardProps> = ({
                           className="text-xs"
                         >
                           إلغاء التسجيل
+                        </Button>
+                      ) : isUpcomingCourse() ? (
+                        <Button variant="secondary" size="sm" disabled className="text-xs bg-blue-100 text-blue-800">
+                          الدورة قادمة
                         </Button>
                       ) : canRegister ? (
                         <Button

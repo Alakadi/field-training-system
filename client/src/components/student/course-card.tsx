@@ -24,6 +24,7 @@ interface CourseCardProps {
     studentCount?: number;
     description?: string;
     location?: string;
+    status?: string;
   };
   onEnroll: () => void;
 }
@@ -72,11 +73,16 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, onEnroll }) => {
       </CardContent>
       <CardFooter className="p-4 pt-0">
         <Button
-          onClick={onEnroll}
-          className="w-full"
-          disabled={availableSeats <= 0}
+          onClick={course.status === 'upcoming' ? undefined : onEnroll}
+          className={`w-full ${course.status === 'upcoming' ? 'bg-blue-100 text-blue-800 cursor-not-allowed' : ''}`}
+          disabled={availableSeats <= 0 || course.status === 'upcoming'}
         >
-          {availableSeats > 0 ? "التسجيل في الدورة" : "لا توجد مقاعد متاحة"}
+          {course.status === 'upcoming' 
+            ? "الدورة قادمة" 
+            : availableSeats > 0 
+            ? "التسجيل في الدورة" 
+            : "لا توجد مقاعد متاحة"
+          }
         </Button>
       </CardFooter>
     </Card>
