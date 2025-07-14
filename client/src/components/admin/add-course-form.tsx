@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, AlertTriangle, Calendar } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 // import { queryClient } from "@/lib/queryClient";
 const addCourseSchema = z.object({
@@ -51,6 +52,13 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
     }
   ]);
   const [selectedFacultyId, setSelectedFacultyId] = useState<string>("");
+  
+  // حالة حوار تأكيد السنة الدراسية
+  const [showAcademicYearDialog, setShowAcademicYearDialog] = useState(false);
+  const [pendingCourseData, setPendingCourseData] = useState<any>(null);
+  const [academicYearOptions, setAcademicYearOptions] = useState<any[]>([]);
+  const [selectedAcademicYearId, setSelectedAcademicYearId] = useState<string | null>(null);
+  const [suggestedAcademicYear, setSuggestedAcademicYear] = useState<any>(null);
 
   // Fetch training sites
   const { data: trainingSites, isLoading: isLoadingSites } = useQuery({
@@ -69,6 +77,11 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
   // Fetch levels
   const { data: levels } = useQuery({
     queryKey: ["/api/levels"],
+  });
+
+  // Fetch academic years
+  const { data: academicYears } = useQuery({
+    queryKey: ["/api/academic-years"],
   });
 
 
@@ -113,6 +126,49 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
     setGroups(updatedGroups);
   };
 
+  // دالة للتحقق من السنوات الدراسية واقتراح الأقرب
+  const checkAcademicYears = (courseData: any, validatedGroups: any[]) => {
+    // إذا لم تكن هناك سنوات دراسية في النظام
+    if (!academicYears || academicYears.length === 0) {
+      setShowAcademicYearDialog(true);
+      setPendingCourseData({ ...courseData, groups: validatedGroups });
+      setAcademicYearOptions([]);
+      setSuggestedAcademicYear(null);
+      return false;
+    }
+
+    // تحديد تاريخ بداية الكورس من أقرب مجموعة
+    const groupDates = validatedGroups.map(group => new Date(group.startDate));
+    const earliestStartDate = new Date(Math.min(...groupDates.map(d => d.getTime())));
+
+    // البحث عن السنة الدراسية المناسبة
+    let suggestedYear = null;
+    let matchingYears = [];
+
+    for (const year of academicYears) {
+      const yearStart = new Date(year.startDate);
+      const yearEnd = new Date(year.endDate);
+      
+      if (earliestStartDate >= yearStart && earliestStartDate <= yearEnd) {
+        suggestedYear = year;
+        break;
+      }
+      matchingYears.push(year);
+    }
+
+    // إذا لم توجد سنة مناسبة، اعرض الحوار
+    if (!suggestedYear) {
+      setShowAcademicYearDialog(true);
+      setPendingCourseData({ ...courseData, groups: validatedGroups });
+      setAcademicYearOptions(academicYears);
+      setSuggestedAcademicYear(null);
+      return false;
+    }
+
+    // إذا وجدت سنة مناسبة، استخدمها مباشرة
+    return { ...courseData, academicYearId: suggestedYear.id, groups: validatedGroups };
+  };
+
   const onSubmit = async (data: AddCourseFormValues) => {
     setIsSubmitting(true);
 
@@ -129,17 +185,37 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
         };
       });
 
-      // Create the course with groups
+      // التحقق من السنوات الدراسية
+      const finalCourseData = checkAcademicYears(data, validatedGroups);
+      
+      // إذا كانت النتيجة false، فهذا يعني أن الحوار سيظهر
+      if (finalCourseData === false) {
+        setIsSubmitting(false);
+        return;
+      }
+
+      // إنشاء الدورة مباشرة إذا كانت هناك سنة دراسية مناسبة
+      await createCourse(finalCourseData);
+    } catch (error) {
+      toast({
+        title: "خطأ",
+        description: error instanceof Error ? error.message : "حدث خطأ أثناء إنشاء الدورة",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+    }
+  };
+
+  // دالة إنشاء الدورة
+  const createCourse = async (courseData: any) => {
+    try {
       const courseResponse = await fetch("/api/training-courses", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({
-          ...data,
-          groups: validatedGroups,
-        }),
+        body: JSON.stringify(courseData),
       });
 
       if (!courseResponse.ok) {
@@ -148,12 +224,9 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
 
       const courseResult = await courseResponse.json();
 
-      // Extract course from result (the API returns { course, groups })
-      const course = courseResult.course || courseResult;
-
       toast({
         title: "تم بنجاح",
-        description: "تم إنشاء الدورة التدريبية والمجموعات بنجاح",
+        description: courseResult.message || "تم إنشاء الدورة التدريبية والمجموعات بنجاح",
       });
 
       // Reset form
@@ -171,15 +244,22 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
       queryClient.invalidateQueries({ queryKey: ["/api/training-course-groups"] });
 
       if (onSuccess) onSuccess();
-    } catch (error) {
-      toast({
-        title: "خطأ",
-        description: error instanceof Error ? error.message : "حدث خطأ أثناء إنشاء الدورة",
-        variant: "destructive",
-      });
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // دالة للتأكيد من حوار السنة الدراسية
+  const handleAcademicYearConfirm = async () => {
+    if (!pendingCourseData) return;
+
+    const finalData = {
+      ...pendingCourseData,
+      academicYearId: selectedAcademicYearId ? Number(selectedAcademicYearId) : null
+    };
+
+    setShowAcademicYearDialog(false);
+    await createCourse(finalData);
   };
 
   const isLoading = isLoadingSites || isLoadingFaculties || isLoadingSupervisors;
@@ -460,6 +540,82 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
           </Form>
         )}
       </CardContent>
+
+      {/* حوار تأكيد السنة الدراسية */}
+      <Dialog open={showAcademicYearDialog} onOpenChange={setShowAcademicYearDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-yellow-500" />
+              <DialogTitle>تحديد السنة الدراسية</DialogTitle>
+            </div>
+            <DialogDescription className="text-right">
+              {academicYearOptions.length === 0 ? (
+                <div className="space-y-3">
+                  <p className="text-red-600 font-medium">لم يتم العثور على سنوات دراسية في النظام</p>
+                  <p>هل تريد إنشاء هذه الدورة بدون سنة دراسية؟</p>
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <p className="text-sm text-blue-800">
+                      💡 يمكنك إضافة السنوات الدراسية من قائمة "إدارة السنوات الدراسية" ثم ربط الدورات بها لاحقاً
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p>لم يتم العثور على سنة دراسية مناسبة لتاريخ بداية هذه الدورة.</p>
+                  
+                  {suggestedAcademicYear && (
+                    <div className="bg-green-50 p-3 rounded-lg">
+                      <p className="text-sm text-green-800">
+                        <Calendar className="w-4 h-4 inline mr-1" />
+                        السنة المقترحة: {suggestedAcademicYear.name}
+                      </p>
+                    </div>
+                  )}
+                  
+                  <p>يرجى اختيار إحدى الخيارات التالية:</p>
+                  
+                  {academicYearOptions.length > 0 && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">تعيين لسنة دراسية:</label>
+                      <Select 
+                        value={selectedAcademicYearId || ""} 
+                        onValueChange={setSelectedAcademicYearId}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="اختر السنة الدراسية" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {academicYearOptions.map((year: any) => (
+                            <SelectItem key={year.id} value={year.id.toString()}>
+                              {year.name} ({year.startDate} - {year.endDate})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <DialogFooter className="space-x-2 space-x-reverse">
+            <Button onClick={handleAcademicYearConfirm} disabled={isSubmitting}>
+              {academicYearOptions.length === 0 ? "المتابعة بدون سنة دراسية" : "تأكيد الإنشاء"}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowAcademicYearDialog(false);
+                setIsSubmitting(false);
+              }}
+            >
+              إلغاء
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
