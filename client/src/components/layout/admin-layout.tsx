@@ -25,7 +25,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     // { href: "/admin/academic-years", icon: "calendar", text: "السنوات الدراسية" },
     { href: "/admin/reports", icon: "bar_chart", text: "التقارير" },
     { href: "/admin/activity-logs", icon: "activity", text: "سجل النشاطات" },
-    { href: "/admin/field-access-demo", icon: "shield", text: "نظام التحكم في الحقول" },
+
     { href: "/admin/settings", icon: "settings", text: "الإعدادات" },
   ];
 

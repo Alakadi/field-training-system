@@ -25,30 +25,11 @@ const AdminDashboard: React.FC = () => {
     queryKey: ["/api/training-sites"]
   });
 
-  // Placeholder for recent activities - in a real app, this would be fetched from an API
-  const recentActivities = [
-    {
-      icon: "person_add",
-      iconClass: "bg-blue-100 text-primary",
-      title: "تم إضافة 24 طالب جديد من كلية الهندسة",
-      actor: "أحمد المشرف",
-      time: "منذ 2 ساعة"
-    },
-    {
-      icon: "update",
-      iconClass: "bg-green-100 text-success",
-      title: 'تم تحديث بيانات الدورة "أساسيات الشبكات"',
-      actor: "عبدالله المدير",
-      time: "منذ 5 ساعات"
-    },
-    {
-      icon: "school",
-      iconClass: "bg-purple-100 text-purple-600",
-      title: 'تم إضافة دورة تدريبية جديدة "مهارات التسويق الرقمي"',
-      actor: "خالد المشرف",
-      time: "منذ يوم واحد"
-    }
-  ];
+  // Fetch real activity logs
+  const { data: activityLogs, isLoading: isLoadingLogs } = useQuery({
+    queryKey: ["/api/activity-logs"],
+    select: (data) => data?.slice(0, 5) || [] // Show only last 5 activities
+  });
 
   return (
     <AdminLayout>
@@ -162,26 +143,42 @@ const AdminDashboard: React.FC = () => {
             </div>
             <div className="p-6">
               <div className="space-y-4">
-                {recentActivities.map((activity, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start pb-4 border-b border-neutral-200"
-                  >
-                    <div className={`p-2 ${activity.iconClass} rounded-full ml-4`}>
-                      <Icon name={activity.icon === "person_add" ? "user_plus" : activity.icon === "update" ? "edit" : "graduation_cap"} size={16} />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">{activity.title}</p>
-                      <p className="text-neutral-500 text-sm">قام بها: {activity.actor}</p>
-                      <p className="text-neutral-400 text-xs mt-1">{activity.time}</p>
-                    </div>
+                {isLoadingLogs ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                    <p className="mt-2 text-gray-500">جاري تحميل النشاطات...</p>
                   </div>
-                ))}
+                ) : activityLogs && activityLogs.length > 0 ? (
+                  activityLogs.map((activity: any, index: number) => (
+                    <div
+                      key={index}
+                      className="flex items-start pb-4 border-b border-neutral-200"
+                    >
+                      <div className="p-2 bg-blue-100 text-primary rounded-full ml-4">
+                        <Icon name="activity" size={16} />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium">{activity.description}</p>
+                        <p className="text-neutral-500 text-sm">المستخدم: {activity.username}</p>
+                        <p className="text-neutral-400 text-xs mt-1">
+                          {formatDate(activity.timestamp)}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-8">
+                    <Icon name="activity" size={48} className="mx-auto text-gray-400 mb-4" />
+                    <p className="text-gray-500">لا توجد نشاطات للعرض</p>
+                  </div>
+                )}
               </div>
               <div className="mt-4 text-center">
-                <Button variant="link" className="text-primary text-sm">
-                  عرض كل النشاطات
-                </Button>
+                <Link href="/admin/activity-logs">
+                  <Button variant="link" className="text-primary text-sm">
+                    عرض كل النشاطات
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>

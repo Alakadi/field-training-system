@@ -278,11 +278,74 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(activityLogs.timestamp));
       
       console.log("Query completed, found", result.length, "security logs");
-      return result;
+      
+      // إضافة description مناسب لكل نشاط
+      const resultWithDescription = result.map(log => ({
+        ...log,
+        description: this.generateActivityDescription(log)
+      }));
+      
+      return resultWithDescription;
     } catch (error) {
       console.error("Error in getAllActivityLogs:", error);
       throw error;
     }
+  }
+
+  private generateActivityDescription(log: any): string {
+    try {
+      const details = log.details || {};
+      
+      switch (log.action) {
+        case 'login':
+          return `تسجيل دخول المستخدم ${log.username}`;
+        case 'logout':
+          return `تسجيل خروج المستخدم ${log.username}`;
+        case 'create':
+          return `إنشاء ${this.getEntityTypeInArabic(log.entityType)} جديد`;
+        case 'update':
+          if (log.entityType === 'users' && details.message) {
+            return details.message;
+          }
+          return `تحديث ${this.getEntityTypeInArabic(log.entityType)}`;
+        case 'delete':
+          return `حذف ${this.getEntityTypeInArabic(log.entityType)}`;
+        case 'grade_entry':
+          return `إدخال درجات للطلاب`;
+        case 'grade_update':
+          return `تحديث درجات الطلاب`;
+        case 'assignment':
+          return `تعيين طلاب للدورات التدريبية`;
+        case 'import':
+          return `استيراد بيانات الطلاب`;
+        case 'export':
+          return `تصدير التقارير`;
+        case 'course_status_update':
+          return `تحديث حالة الدورات التدريبية`;
+        default:
+          return `نشاط ${log.action} على ${this.getEntityTypeInArabic(log.entityType)}`;
+      }
+    } catch (error) {
+      console.error("Error generating description:", error);
+      return `نشاط ${log.action}`;
+    }
+  }
+
+  private getEntityTypeInArabic(entityType: string): string {
+    const entityTypes: { [key: string]: string } = {
+      'users': 'المستخدمين',
+      'students': 'الطلاب',
+      'supervisors': 'المشرفين',
+      'training_courses': 'الدورات التدريبية',
+      'training_sites': 'مواقع التدريب',
+      'training_assignments': 'تعيينات التدريب',
+      'evaluations': 'التقييمات',
+      'faculties': 'الكليات',
+      'majors': 'التخصصات',
+      'academic_years': 'السنوات الدراسية',
+      'training_course_groups': 'مجموعات التدريب'
+    };
+    return entityTypes[entityType] || entityType;
   }
 
   async getActivityLog(id: number): Promise<ActivityLog | undefined> {
