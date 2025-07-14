@@ -123,6 +123,7 @@ export interface IStorage {
     supervisor: Supervisor & { user: User },
     availableSpots: number 
   })[]>;
+  updateTrainingCourseGroup(id: number, data: Partial<InsertTrainingCourseGroup>): Promise<TrainingCourseGroup | undefined>;
   updateGroupEnrollment(groupId: number, newEnrollment: number): Promise<TrainingCourseGroup | undefined>;
   getTrainingCourseGroupWithStudents(groupId: number): Promise<(TrainingCourseGroup & {
     course: TrainingCourse,
@@ -916,6 +917,14 @@ export class DatabaseStorage implements IStorage {
     const result = await db.update(trainingCourseGroups)
       .set({ currentEnrollment: newEnrollment })
       .where(eq(trainingCourseGroups.id, groupId))
+      .returning();
+    return result[0];
+  }
+
+  async updateTrainingCourseGroup(id: number, data: Partial<InsertTrainingCourseGroup>): Promise<TrainingCourseGroup | undefined> {
+    const result = await db.update(trainingCourseGroups)
+      .set(data)
+      .where(eq(trainingCourseGroups.id, id))
       .returning();
     return result[0];
   }

@@ -1635,6 +1635,89 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/training-course-groups/:id", authMiddleware, requireRole(["admin", "supervisor"]), async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const { 
+        courseId, groupName, siteId, supervisorId, startDate, endDate, 
+        capacity, location, status 
+      } = req.body;
+
+      console.log("Updating training course group:", { id, ...req.body });
+
+      // Validate required fields
+      if (!courseId || !siteId || !supervisorId || !startDate || !endDate || !capacity) {
+        return res.status(400).json({ 
+          message: "جميع الحقول مطلوبة",
+          missing: {
+            courseId: !courseId,
+            siteId: !siteId,
+            supervisorId: !supervisorId,
+            startDate: !startDate,
+            endDate: !endDate,
+            capacity: !capacity
+          }
+        });
+      }
+
+      // Check if group exists
+      const existingGroup = await storage.getTrainingCourseGroup(id);
+      if (!existingGroup) {
+        return res.status(404).json({ message: "مجموعة التدريب غير موجودة" });
+      }
+
+      // Determine group status based on dates
+      const currentDate = new Date().toISOString().split('T')[0];
+      let groupStatus = 'upcoming';
+
+      if (startDate && endDate) {
+        if (currentDate >= startDate && currentDate <= endDate) {
+          groupStatus = 'active';
+        } else if (currentDate > endDate) {
+          groupStatus = 'completed';
+        }
+      }
+
+      const updateData = {
+        courseId: Number(courseId),
+        groupName: groupName || existingGroup.groupName,
+        siteId: Number(siteId),
+        supervisorId: Number(supervisorId),
+        startDate: startDate,
+        endDate: endDate,
+        capacity: Number(capacity),
+        location,
+        status: groupStatus
+      };
+
+      const updatedGroup = await storage.updateTrainingCourseGroup(id, updateData);
+
+      if (!updatedGroup) {
+        return res.status(404).json({ message: "فشل في تحديث مجموعة التدريب" });
+      }
+
+      // Log activity
+      if (req.user) {
+        await logSecurityActivity(
+          req.user.username,
+          "update",
+          "training_course_groups",
+          id,
+          { 
+            message: `تم تحديث مجموعة تدريب: ${groupName}`,
+            groupData: { courseId, groupName, siteId, supervisorId, capacity, startDate, endDate, status: groupStatus }
+          }
+        );
+      }
+
+      console.log("Training course group updated successfully:", updatedGroup);
+      res.json(updatedGroup);
+    } catch (error) {
+      console.error("Error updating training course group:", error);
+      res.status(500).json({ message: "خطأ في تحديث مجموعة التدريب" });
+    }
+  });
+
   // Training Assignment Routes
   app.get("/api/training-assignments/student", authMiddleware, async (req: Request, res: Response) => {
     try {

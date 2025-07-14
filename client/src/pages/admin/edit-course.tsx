@@ -26,6 +26,8 @@ const courseGroupSchema = z.object({
   }),
   startDate: z.string().min(1, { message: "يرجى تحديد تاريخ البداية" }),
   endDate: z.string().min(1, { message: "يرجى تحديد تاريخ النهاية" }),
+  location: z.string().optional(),
+  groupName: z.string().optional(),
 });
 
 const editCourseSchema = z.object({
@@ -107,6 +109,8 @@ const EditCourse: React.FC = () => {
         capacity: String(group.capacity),
         startDate: group.startDate ? group.startDate.split('T')[0] : "",
         endDate: group.endDate ? group.endDate.split('T')[0] : "",
+        location: group.location || "",
+        groupName: group.groupName || "",
       }));
       setGroups(formattedGroups);
     } else if (!isLoadingGroups && groups.length === 0) {
@@ -116,7 +120,9 @@ const EditCourse: React.FC = () => {
         supervisorId: "", 
         capacity: "20", 
         startDate: "", 
-        endDate: "" 
+        endDate: "",
+        location: "",
+        groupName: ""
       }]);
     }
   }, [courseGroups, isLoadingGroups]);
@@ -127,7 +133,9 @@ const EditCourse: React.FC = () => {
       supervisorId: "", 
       capacity: "20", 
       startDate: "", 
-      endDate: "" 
+      endDate: "",
+      location: "",
+      groupName: ""
     }]);
   };
 
@@ -185,22 +193,26 @@ const EditCourse: React.FC = () => {
       }
 
       // Update or create groups
-      const groupPromises = groups.map(group => {
+      const groupPromises = groups.map(async (group, index) => {
         const groupData = {
           courseId: Number(id),
+          groupName: group.groupName || `المجموعة ${index + 1}`,
           siteId: Number(group.siteId),
           supervisorId: Number(group.supervisorId),
           capacity: Number(group.capacity),
+          location: group.location,
           startDate: group.startDate,
-          endDate: group.endDate,
+          endDate: group.endDate
         };
+
+        console.log("Processing group:", { id: group.id, groupData });
 
         if (group.id) {
           // Update existing group
-          return apiRequest("PUT", `/api/training-course-groups/${group.id}`, groupData);
+          return await apiRequest("PUT", `/api/training-course-groups/${group.id}`, groupData);
         } else {
           // Create new group
-          return apiRequest("POST", "/api/training-course-groups", groupData);
+          return await apiRequest("POST", "/api/training-course-groups", groupData);
         }
       });
 
@@ -493,6 +505,15 @@ const EditCourse: React.FC = () => {
                               type="date" 
                               value={group.endDate}
                               onChange={(e) => updateGroup(index, 'endDate', e.target.value)}
+                            />
+                          </div>
+
+                          <div className="md:col-span-2">
+                            <label className="text-sm font-medium">الموقع (اختياري)</label>
+                            <Input 
+                              placeholder="أدخل موقع التدريب" 
+                              value={group.location || ""}
+                              onChange={(e) => updateGroup(index, 'location', e.target.value)}
                             />
                           </div>
                         </div>
