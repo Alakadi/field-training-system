@@ -804,8 +804,7 @@ export class DatabaseStorage implements IStorage {
       id: trainingCourses.id,
       name: trainingCourses.name,
       facultyId: trainingCourses.facultyId,
-      majorId: training```
-Courses.majorId,
+      majorId: trainingCourses.majorId,
       levelId: trainingCourses.levelId,
       description: trainingCourses.description,
       status: trainingCourses.status,
