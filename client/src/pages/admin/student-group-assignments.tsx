@@ -496,8 +496,8 @@ const StudentGroupAssignments: React.FC = () => {
                         <p><span className="font-medium">المشرف:</span> {group.supervisor.user.name}</p>
                         <p><span className="font-medium">السعة:</span> {group.currentEnrollment}/{group.capacity}</p>
                         <p><span className="font-medium">المقاعد المتاحة:</span> {group.availableSpots}</p>
-                        <p><span className="font-medium">تاريخ البدء:</span> {new Date(group.startDate).toLocaleDateString('ar-SA')}</p>
-                        <p><span className="font-medium">تاريخ الانتهاء:</span> {new Date(group.endDate).toLocaleDateString('ar-SA')}</p>
+                        <p><span className="font-medium">تاريخ البدء:</span> {new Date(group.startDate).toLocaleDateString('en-US')}</p>
+                        <p><span className="font-medium">تاريخ الانتهاء:</span> {new Date(group.endDate).toLocaleDateString('en-US')}</p>
                       </div>
                     </CardContent>
                   </Card>

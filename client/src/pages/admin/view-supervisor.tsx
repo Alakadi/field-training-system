@@ -127,7 +127,7 @@ const ViewSupervisor: React.FC = () => {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-neutral-500">تاريخ التسجيل</p>
-                      <p>{new Date(supervisor?.user.createdAt).toLocaleDateString('ar-SA')}</p>
+                      <p>{new Date(supervisor?.user.createdAt).toLocaleDateString('en-US')}</p>
                     </div>
                   </div>
                 </div>
@@ -247,10 +247,10 @@ const ViewSupervisor: React.FC = () => {
                                   {course.trainingSite?.name || "-"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                                  {new Date(course.startDate).toLocaleDateString('ar-SA')}
+                                  {new Date(course.startDate).toLocaleDateString('en-US')}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                                  {new Date(course.endDate).toLocaleDateString('ar-SA')}
+                                  {new Date(course.endDate).toLocaleDateString('en-US')}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
                                   {course.studentCount} / {course.capacity}

@@ -225,11 +225,11 @@ const CourseAssignmentModal: React.FC<CourseAssignmentModalProps> = ({
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-green-600" />
-                              <span>البداية: {new Date(group.startDate).toLocaleDateString('ar-SA')}</span>
+                              <span>البداية: {new Date(group.startDate).toLocaleDateString('en-US')}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-red-600" />
-                              <span>النهاية: {new Date(group.endDate).toLocaleDateString('ar-SA')}</span>
+                              <span>النهاية: {new Date(group.endDate).toLocaleDateString('en-US')}</span>
                             </div>
                           </div>
 

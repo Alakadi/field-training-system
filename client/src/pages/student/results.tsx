@@ -169,7 +169,7 @@ const StudentResults: React.FC = () => {
                           )}
                           {evaluation.evaluationDate && (
                             <Badge variant="outline">
-                              {new Date(evaluation.evaluationDate).toLocaleDateString('ar-SA')}
+                              {new Date(evaluation.evaluationDate).toLocaleDateString('en-US')}
                             </Badge>
                           )}
                         </div>
@@ -181,10 +181,10 @@ const StudentResults: React.FC = () => {
                           <p className="text-sm font-medium text-neutral-500 mb-2">معلومات الدورة</p>
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                              <span className="text-neutral-600">تاريخ البدء:</span> {new Date(evaluation.course.startDate).toLocaleDateString('ar-SA')}
+                              <span className="text-neutral-600">تاريخ البدء:</span> {new Date(evaluation.course.startDate).toLocaleDateString('en-US')}
                             </div>
                             <div>
-                              <span className="text-neutral-600">تاريخ الانتهاء:</span> {new Date(evaluation.course.endDate).toLocaleDateString('ar-SA')}
+                              <span className="text-neutral-600">تاريخ الانتهاء:</span> {new Date(evaluation.course.endDate).toLocaleDateString('en-US')}
                             </div>
                           </div>
                         </div>

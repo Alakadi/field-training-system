@@ -150,7 +150,7 @@ export const NotificationBell: React.FC = () => {
                             ? 'text-red-600'
                             : 'text-blue-600'
                   }`}>
-                    {new Date(notification.timestamp).toLocaleString('ar-SA')}
+                    {new Date(notification.timestamp).toLocaleString('en-US')}
                   </div>
                 </div>
               ))

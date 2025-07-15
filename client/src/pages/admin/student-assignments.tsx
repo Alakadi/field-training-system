@@ -576,7 +576,7 @@ export default function AdminStudentAssignments() {
                           {assignment.status === 'active' ? 'نشط' : assignment.status}
                         </Badge>
                         <div className="text-xs text-gray-500 mt-1">
-                          {new Date(assignment.assignedAt).toLocaleDateString('ar-SA')}
+                          {new Date(assignment.assignedAt).toLocaleDateString('en-US')}
                         </div>
                       </div>
                     </div>

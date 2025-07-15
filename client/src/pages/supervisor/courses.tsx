@@ -518,12 +518,12 @@ const SupervisorCourses: React.FC = () => {
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4 text-green-600" />
                     <span className="font-medium">تاريخ البداية:</span>
-                    <span>{new Date(group.startDate).toLocaleDateString('ar-SA')}</span>
+                    <span>{new Date(group.startDate).toLocaleDateString('en-US')}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4 text-red-600" />
                     <span className="font-medium">تاريخ الانتهاء:</span>
-                    <span>{new Date(group.endDate).toLocaleDateString('ar-SA')}</span>
+                    <span>{new Date(group.endDate).toLocaleDateString('en-US')}</span>
                   </div>
                 </div>
 
@@ -542,10 +542,10 @@ const SupervisorCourses: React.FC = () => {
                         <Calendar className="h-16 w-16 text-blue-500" />
                         <h3 className="text-xl font-semibold text-blue-900">الدورة قادمة</h3>
                         <p className="text-blue-700 text-center max-w-md">
-                          ستتمكن من عرض قائمة الطلاب وإدارة الدرجات عند بداية الدورة التدريبية في تاريخ {new Date(group.startDate).toLocaleDateString('ar-SA')}
+                          ستتمكن من عرض قائمة الطلاب وإدارة الدرجات عند بداية الدورة التدريبية في تاريخ {new Date(group.startDate).toLocaleDateString('en-US')}
                         </p>
                         <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                          بداية الدورة: {new Date(group.startDate).toLocaleDateString('ar-SA')}
+                          بداية الدورة: {new Date(group.startDate).toLocaleDateString('en-US')}
                         </Badge>
                       </div>
                     </div>

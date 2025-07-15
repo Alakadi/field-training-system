@@ -338,8 +338,8 @@ const StudentCourses: React.FC = () => {
                         {assignment.course.site.name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                        {new Date(assignment.course.startDate).toLocaleDateString('ar-SA')} - 
-                        {new Date(assignment.course.endDate).toLocaleDateString('ar-SA')}
+                        {new Date(assignment.course.startDate).toLocaleDateString('en-US')} - 
+                        {new Date(assignment.course.endDate).toLocaleDateString('en-US')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
                         {assignment.course.supervisor?.user.name || "-"}

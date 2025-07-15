@@ -588,8 +588,8 @@ export const printData = (options: ExportOptions) => {
   }
 
   // Add print info
-  const currentDate = new Date().toLocaleDateString('ar-SA');
-  const currentTime = new Date().toLocaleTimeString('ar-SA');
+  const currentDate = new Date().toLocaleDateString('en-US');
+  const currentTime = new Date().toLocaleTimeString('en-US');
   printContent += `
     <div class="info-section">
       <strong>تاريخ الطباعة:</strong> ${currentDate} - ${currentTime}<br>
@@ -666,7 +666,7 @@ const getNestedValue = (obj: any, path: string): any => {
 export const formatDate = (date: string | Date): string => {
   if (!date) return '';
   const d = new Date(date);
-  return d.toLocaleDateString('ar-SA', {
+  return d.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'

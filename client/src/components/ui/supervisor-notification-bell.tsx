@@ -115,7 +115,7 @@ export const SupervisorNotificationBell: React.FC = () => {
                         <div>التخصص: {assignment.course?.major || 'غير محدد'}</div>
                         <div className="flex items-center justify-between">
                           <span>تم التعيين بواسطة: {assignment.assignedBy || 'المسؤول'}</span>
-                          <span>{new Date(assignment.assignedAt).toLocaleDateString('ar-SA')}</span>
+                          <span>{new Date(assignment.assignedAt).toLocaleDateString('en-US')}</span>
                         </div>
                       </div>
                     </div>

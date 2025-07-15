@@ -250,7 +250,7 @@ export default function ViewGroup() {
                   <div>
                     <p className="text-sm font-medium">تاريخ البدء</p>
                     <p className="text-sm text-neutral-600">
-                      {new Date(groupDetails.startDate).toLocaleDateString('ar-SA')}
+                      {new Date(groupDetails.startDate).toLocaleDateString('en-US')}
                     </p>
                   </div>
                 </div>
@@ -259,7 +259,7 @@ export default function ViewGroup() {
                   <div>
                     <p className="text-sm font-medium">تاريخ الانتهاء</p>
                     <p className="text-sm text-neutral-600">
-                      {new Date(groupDetails.endDate).toLocaleDateString('ar-SA')}
+                      {new Date(groupDetails.endDate).toLocaleDateString('en-US')}
                     </p>
                   </div>
                 </div>

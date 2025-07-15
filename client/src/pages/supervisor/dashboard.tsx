@@ -225,7 +225,7 @@ const SupervisorDashboard: React.FC = () => {
                         {group.students?.length || 0}/{group.capacity || 0}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                        {group.startDate ? new Date(group.startDate).toLocaleDateString('ar-SA') : "-"}
+                        {group.startDate ? new Date(group.startDate).toLocaleDateString('en-US') : "-"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">

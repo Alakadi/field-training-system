@@ -169,8 +169,8 @@ const StudentCourseDetails = () => {
                     <label className="text-sm font-medium text-gray-600">مدة التدريب</label>
                     <p className="text-gray-900 flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
-                      من {new Date(courseAssignment.course.startDate).toLocaleDateString('ar-SA')} 
-                      إلى {new Date(courseAssignment.course.endDate).toLocaleDateString('ar-SA')}
+                      من {new Date(courseAssignment.course.startDate).toLocaleDateString('en-US')} 
+                      إلى {new Date(courseAssignment.course.endDate).toLocaleDateString('en-US')}
                     </p>
                   </div>
                 )}
@@ -196,7 +196,7 @@ const StudentCourseDetails = () => {
                         <div>
                           <span className="text-sm text-green-600">تاريخ التقييم: </span>
                           <span className="text-green-800">
-                            {new Date(courseAssignment.evaluation.evaluationDate).toLocaleDateString('ar-SA')}
+                            {new Date(courseAssignment.evaluation.evaluationDate).toLocaleDateString('en-US')}
                           </span>
                         </div>
                       )}
@@ -249,7 +249,7 @@ const StudentCourseDetails = () => {
                         <span className="text-gray-600">المدة: </span>
                         <span>
                           {group.startDate && group.endDate ? 
-                            `${new Date(group.startDate).toLocaleDateString('ar-SA')} - ${new Date(group.endDate).toLocaleDateString('ar-SA')}` :
+                            `${new Date(group.startDate).toLocaleDateString('en-US')} - ${new Date(group.endDate).toLocaleDateString('en-US')}` :
                             'غير محددة'
                           }
                         </span>

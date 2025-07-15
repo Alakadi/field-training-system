@@ -204,13 +204,13 @@ const ViewCourse: React.FC = () => {
                                 <div>
                                   <p className="text-sm font-medium text-neutral-500">تاريخ البداية</p>
                                   <p className="text-lg">
-                                    {group.startDate ? new Date(group.startDate).toLocaleDateString('ar-SA') : "غير محدد"}
+                                    {group.startDate ? new Date(group.startDate).toLocaleDateString('en-US') : "غير محدد"}
                                   </p>
                                 </div>
                                 <div>
                                   <p className="text-sm font-medium text-neutral-500">تاريخ النهاية</p>
                                   <p className="text-lg">
-                                    {group.endDate ? new Date(group.endDate).toLocaleDateString('ar-SA') : "غير محدد"}
+                                    {group.endDate ? new Date(group.endDate).toLocaleDateString('en-US') : "غير محدد"}
                                   </p>
                                 </div>
                                 <div>
@@ -375,7 +375,7 @@ const ViewCourse: React.FC = () => {
                                   </Badge>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                                  {new Date(evaluation.evaluationDate).toLocaleDateString('ar-SA')}
+                                  {new Date(evaluation.evaluationDate).toLocaleDateString('en-US')}
                                 </td>
                               </tr>
                             ))}
