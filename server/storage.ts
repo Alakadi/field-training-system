@@ -89,6 +89,7 @@ export interface IStorage {
   getStudent(id: number): Promise<Student | undefined>;
   getStudentByUniversityId(universityId: string): Promise<Student | undefined>;
   getStudentByUserId(userId: number): Promise<Student | undefined>;
+  createUser(user: InsertUser): Promise<User>;
   createStudent(student: InsertStudent): Promise<Student>;
   updateStudent(id: number, student: Partial<Student>, userData?: Partial<User>): Promise<Student | undefined>;
   getStudentWithDetails(id: number): Promise<(Student & { user: User, faculty?: Faculty, major?: Major, level?: Level }) | undefined>;
@@ -219,6 +220,16 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.username, username));
+    return result[0];
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.email, email));
+    return result[0];
+  }
+
+  async getStudentByUniversityId(universityId: string): Promise<Student | undefined> {
+    const result = await db.select().from(students).where(eq(students.universityId, universityId));
     return result[0];
   }
 
@@ -485,13 +496,15 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getStudentByUniversityId(universityId: string): Promise<Student | undefined> {
-    const result = await db.select().from(students).where(eq(students.universityId, universityId));
-    return result[0];
-  }
+  
 
   async getStudentByUserId(userId: number): Promise<Student | undefined> {
     const result = await db.select().from(students).where(eq(students.userId, userId));
+    return result[0];
+  }
+
+   async createUser(user: InsertUser): Promise<User> {
+    const result = await db.insert(users).values(user).returning();
     return result[0];
   }
 
