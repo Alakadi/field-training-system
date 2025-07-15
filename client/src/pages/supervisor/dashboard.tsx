@@ -96,10 +96,10 @@ const SupervisorDashboard: React.FC = () => {
           <h1 className="text-2xl font-bold">لوحة تحكم المشرف</h1>
           <div className="flex space-x-2 space-x-reverse">
             <Link href="/supervisor/evaluations?action=new">
-              <Button className="bg-primary hover:bg-primary-dark text-white flex items-center text-sm">
+              {/* <Button className="bg-primary hover:bg-primary-dark text-white flex items-center text-sm">
                 <Icon name="plus" size={16} className="ml-1" />
                 إضافة تقييم جديد
-              </Button>
+              </Button> */}
             </Link>
           </div>
         </div>

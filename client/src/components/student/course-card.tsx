@@ -73,12 +73,13 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, onEnroll }) => {
       </CardContent>
       <CardFooter className="p-4 pt-0">
         <Button
-          onClick={course.status === 'upcoming' ? undefined : onEnroll}
-          className={`w-full ${course.status === 'upcoming' ? 'bg-blue-100 text-blue-800 cursor-not-allowed' : ''}`}
-          disabled={availableSeats <= 0 || course.status === 'upcoming'}
-        >
-          {course.status === 'upcoming' 
-            ? "الدورة قادمة" 
+          onClick={onEnroll}
+          disabled={availableSeats <= 0 || course.status === 'completed'}
+          >
+          {course.status === 'completed' 
+            ? "الدورة منتهية" 
+            : course.status === 'upcoming'
+            ? "التسجيل المبكر (قادمة)"
             : availableSeats > 0 
             ? "التسجيل في الدورة" 
             : "لا توجد مقاعد متاحة"
