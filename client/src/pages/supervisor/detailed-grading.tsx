@@ -102,35 +102,14 @@ const SupervisorDetailedGrading: React.FC = () => {
   const handleGradeChange = (assignmentId: number, field: keyof DetailedGrades, value: number) => {
     if (value < 0 || value > 100) return;
     
-    // التحقق من حالة المجموعة بناءً على التواريخ الفعلية
-    const currentDate = new Date().toISOString().split('T')[0];
-    const selectedGroup = courseAssignments.find((assignment: any) => 
-      String(assignment.course?.id) === selectedCourseId
-    );
-    
-    // التحقق من التواريخ مباشرة بدلاً من الاعتماد على حالة المجموعة المحفوظة
-    if (selectedGroup) {
-      // إذا لم تكن هناك تواريخ محددة، اسمح بإدخال الدرجات
-      if (selectedGroup.startDate && selectedGroup.endDate) {
-        // إذا كان التاريخ الحالي أقل من تاريخ البداية، فالمجموعة لم تبدأ بعد
-        if (currentDate < selectedGroup.startDate) {
-          toast({
-            title: "لا يمكن إدخال الدرجات",
-            description: `لا يمكن إدخال الدرجات قبل بداية المجموعة (${selectedGroup.startDate})`,
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-      // إذا كانت المجموعة محددة كـ "upcoming" صراحة، امنع الإدخال
-      else if (selectedGroup.groupStatus === 'upcoming') {
-        toast({
-          title: "لا يمكن إدخال الدرجات",
-          description: "لا يمكن إدخال الدرجات للمجموعات التي لم تبدأ بعد",
-          variant: "destructive",
-        });
-        return;
-      }
+    // التحقق من حالة المجموعة المحددة فقط
+    if (isCourseUpcoming) {
+      toast({
+        title: "لا يمكن إدخال الدرجات",
+        description: "لا يمكن إدخال الدرجات للمجموعات التي لم تبدأ بعد",
+        variant: "destructive",
+      });
+      return;
     }
 
     setGrades(prev => ({
