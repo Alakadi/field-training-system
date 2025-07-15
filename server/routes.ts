@@ -1974,6 +1974,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check email uniqueness endpoint
+  app.get("/api/students/check-email", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const email = req.query.email as string;
+      
+      if (!email) {
+        return res.status(400).json({ message: "البريد الإلكتروني مطلوب" });
+      }
+
+      const existingUser = await storage.getUserByEmail(email);
+      res.json({ exists: !!existingUser });
+    } catch (error) {
+      console.error("Error checking email:", error);
+      res.status(500).json({ message: "خطأ في التحقق من البريد الإلكتروني" });
+    }
+  });
+
+  // Check university ID uniqueness endpoint
+  app.get("/api/students/check-university-id", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const universityId = req.query.universityId as string;
+      
+      if (!universityId) {
+        return res.status(400).json({ message: "الرقم الجامعي مطلوب" });
+      }
+
+      const existingStudent = await storage.getStudentByUniversityId(universityId);
+      res.json({ exists: !!existingStudent });
+    } catch (error) {
+      console.error("Error checking university ID:", error);
+      res.status(500).json({ message: "خطأ في التحقق من الرقم الجامعي" });
+    }
+  });
+
   // Student self-registration endpoint
   app.post("/api/training-assignments/register", authMiddleware, requireRole("student"), async (req: Request, res: Response) => {
     try {
