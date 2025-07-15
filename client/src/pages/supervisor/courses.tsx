@@ -68,6 +68,7 @@ const SupervisorCourses: React.FC = () => {
   const [savingGrades, setSavingGrades] = useState(false);
 
   const [selectedGroups, setSelectedGroups] = useState<CourseGroup[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
 
   // Fetch supervisor data
   const { data: supervisorData } = useQuery({
@@ -225,8 +226,9 @@ const SupervisorCourses: React.FC = () => {
     else if (field === 'finalExamGrade') maxValue = 50;
 
     // Check if course is upcoming (prevent grade entry for upcoming courses)
-    const targetGroup = selectedGroups.find(g => g.students.some(s => s.id === studentId));
-    if (targetGroup?.course?.status === 'upcoming') {
+    // التحقق من حالة المجموعة الحالية المحددة فقط
+    const currentGroup = selectedGroups.find(g => g.id === selectedGroupId);
+    if (currentGroup?.course?.status === 'upcoming') {
       toast({
         title: "لا يمكن إدخال الدرجات",
         description: "لا يمكن إدخال الدرجات للدورات التدريبية التي لم تبدأ بعد",
@@ -241,15 +243,15 @@ const SupervisorCourses: React.FC = () => {
       setEditingGrades(prev => {
         // Try to get assignmentId from multiple sources
         let finalAssignmentId = assignmentId;
-        
+
         if (!finalAssignmentId) {
           // Try to get from previous state
           finalAssignmentId = prev[studentId]?.assignmentId;
         }
-        
+
         if (!finalAssignmentId) {
           // Try to get from student assignment data
-          const student = targetGroup?.students.find(s => s.id === studentId);
+          const student = currentGroup?.students.find(s => s.id === studentId);
           finalAssignmentId = student?.assignment?.id;
         }
 
@@ -287,7 +289,7 @@ const SupervisorCourses: React.FC = () => {
       'behaviorGrade': 30,
       'finalExamGrade': 50
     };
-    
+
     const fieldNames = {
       'attendanceGrade': 'الحضور',
       'behaviorGrade': 'السلوك', 
@@ -554,7 +556,7 @@ const SupervisorCourses: React.FC = () => {
                   <Tabs defaultValue="students" className="w-full">
                     <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="students">قائمة الطلاب ({group.students?.length || 0})</TabsTrigger>
-                      <TabsTrigger value="grades">إدارة الدرجات</TabsTrigger>
+                      <TabsTrigger value="grades" onClick={() => setSelectedGroupId(group.id)}>إدارة الدرجات</TabsTrigger>
                     </TabsList>
 
                   <TabsContent value="students" className="mt-4">
