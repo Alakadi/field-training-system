@@ -16,13 +16,30 @@ import { useToast } from "@/hooks/use-toast";
 
 // Define schema
 const addStudentSchema = z.object({
-  name: z.string().min(3, { message: "يجب أن يحتوي الاسم على الأقل على 3 أحرف" }),
+  name: z.string()
+    .min(3, { message: "يجب أن يحتوي الاسم على الأقل على 3 أحرف" })
+    .refine((name) => {
+      const nameParts = name.trim().split(/\s+/);
+      return nameParts.length >= 4;
+    }, { message: "يجب إدخال الاسم الرباعي (أربعة أسماء على الأقل)" }),
   universityId: z
   .string()
   // .regex(/^\d+$/, { message: "يجب أن يحتوي الرقم الجامعي على أرقام فقط" })
   .min(4, { message: "يجب أن يحتوي الرقم الجامعي على الأقل على 4 أرقام" }),
-  email: z.string().email({ message: "يرجى إدخال بريد إلكتروني صالح" }).optional().or(z.literal("")),
-  phone: z.string().optional().or(z.literal("")),
+  email: z.string()
+    .email({ message: "يرجى إدخال بريد إلكتروني صالح" })
+    .optional().or(z.literal("")),
+  phone: z.string()
+    .optional()
+    .or(z.literal(""))
+    .refine((phone) => {
+      if (!phone || phone === "") return true;
+      // Remove +967 if present and any spaces or dashes
+      const cleanPhone = phone.replace(/^\+967/, "").replace(/[\s-]/g, "");
+      // Check if it's exactly 9 digits and starts with valid prefixes
+      const phoneRegex = /^(73|77|78|71|70)\d{7}$/;
+      return phoneRegex.test(cleanPhone);
+    }, { message: "رقم الهاتف يجب أن يكون 9 أرقام ويبدأ بـ 73، 77، 78، 71، أو 70" }),
   facultyId: z.string().min(1, { message: "يرجى اختيار الكلية" }),
   majorId: z.string().min(1, { message: "يرجى اختيار التخصص" }),
   levelId: z.string().min(1, { message: "يرجى اختيار المستوى الدراسي" }),
@@ -106,6 +123,34 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
   const onSubmit = async (data: AddStudentFormValues) => {
     try {
       setIsSubmitting(true);
+      
+      // Check for email uniqueness if email is provided
+      if (data.email && data.email.trim() !== "") {
+        const emailCheckResponse = await fetch(`/api/students/check-email?email=${encodeURIComponent(data.email)}`, {
+          credentials: "include",
+        });
+        if (!emailCheckResponse.ok) {
+          const emailError = await emailCheckResponse.json();
+          throw new Error(emailError.message || "خطأ في التحقق من البريد الإلكتروني");
+        }
+        const emailExists = await emailCheckResponse.json();
+        if (emailExists.exists) {
+          throw new Error("البريد الإلكتروني مستخدم بالفعل من قبل طالب آخر");
+        }
+      }
+
+      // Check for university ID uniqueness
+      const universityIdCheckResponse = await fetch(`/api/students/check-university-id?universityId=${encodeURIComponent(data.universityId)}`, {
+        credentials: "include",
+      });
+      if (!universityIdCheckResponse.ok) {
+        const universityIdError = await universityIdCheckResponse.json();
+        throw new Error(universityIdError.message || "خطأ في التحقق من الرقم الجامعي");
+      }
+      const universityIdExists = await universityIdCheckResponse.json();
+      if (universityIdExists.exists) {
+        throw new Error("الرقم الجامعي مستخدم بالفعل من قبل طالب آخر");
+      }
       
       // Create student first
       const studentResponse = await fetch("/api/students", {
@@ -276,8 +321,19 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
                       <FormItem>
                         <FormLabel>رقم الهاتف</FormLabel>
                         <FormControl>
-                          <Input placeholder="أدخل رقم الهاتف" {...field} />
+                          <Input 
+                            placeholder="مثال: +967731234567 أو 731234567" 
+                            {...field}
+                            onChange={(e) => {
+                              // Allow only numbers, + symbol, and spaces/dashes
+                              const value = e.target.value.replace(/[^\d+\s-]/g, '');
+                              field.onChange(value);
+                            }}
+                          />
                         </FormControl>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          يجب أن يبدأ بـ 73، 77، 78، 71، أو 70 (يمكن إضافة +967)
+                        </p>
                         <FormMessage />
                       </FormItem>
                     )}

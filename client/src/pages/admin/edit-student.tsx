@@ -19,9 +19,26 @@ import { Separator } from "@/components/ui/separator";
 
 // تعريف مخطط البيانات للتعديل
 const editStudentSchema = z.object({
-  name: z.string().min(3, { message: "يجب أن يحتوي الاسم على الأقل على 3 أحرف" }),
-  email: z.string().email({ message: "يرجى إدخال بريد إلكتروني صالح" }).optional().or(z.literal("")),
-  phone: z.string().optional().or(z.literal("")),
+  name: z.string()
+    .min(3, { message: "يجب أن يحتوي الاسم على الأقل على 3 أحرف" })
+    .refine((name) => {
+      const nameParts = name.trim().split(/\s+/);
+      return nameParts.length >= 4;
+    }, { message: "يجب إدخال الاسم الرباعي (أربعة أسماء على الأقل)" }),
+  email: z.string()
+    .email({ message: "يرجى إدخال بريد إلكتروني صالح" })
+    .optional().or(z.literal("")),
+  phone: z.string()
+    .optional()
+    .or(z.literal(""))
+    .refine((phone) => {
+      if (!phone || phone === "") return true;
+      // Remove +967 if present and any spaces or dashes
+      const cleanPhone = phone.replace(/^\+967/, "").replace(/[\s-]/g, "");
+      // Check if it's exactly 9 digits and starts with valid prefixes
+      const phoneRegex = /^(73|77|78|71|70)\d{7}$/;
+      return phoneRegex.test(cleanPhone);
+    }, { message: "رقم الهاتف يجب أن يكون 9 أرقام ويبدأ بـ 73، 77، 78، 71، أو 70" }),
   facultyId: z.string().min(1, { message: "يرجى اختيار الكلية" }),
   majorId: z.string().min(1, { message: "يرجى اختيار التخصص" }),
   levelId: z.string().min(1, { message: "يرجى اختيار المستوى" }),
