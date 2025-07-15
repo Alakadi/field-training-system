@@ -76,6 +76,36 @@ const EditSupervisor: React.FC = () => {
 
     setIsSubmitting(true);
     try {
+      // التحقق من تطابق البريد الإلكتروني مع مستخدمين آخرين
+      if (data.email && data.email !== supervisor?.user.email) {
+        const emailCheckResponse = await fetch(`/api/supervisors/check-email?email=${encodeURIComponent(data.email)}&excludeId=${supervisor?.user.id}`, {
+          credentials: "include",
+        });
+        if (!emailCheckResponse.ok) {
+          const emailError = await emailCheckResponse.json();
+          throw new Error(emailError.message || "خطأ في التحقق من البريد الإلكتروني");
+        }
+        const emailExists = await emailCheckResponse.json();
+        if (emailExists.exists) {
+          throw new Error("البريد الإلكتروني مستخدم بالفعل من قبل مستخدم آخر");
+        }
+      }
+
+      // التحقق من تطابق رقم الهاتف مع مستخدمين آخرين
+      if (data.phone && data.phone !== supervisor?.user.phone) {
+        const phoneCheckResponse = await fetch(`/api/supervisors/check-phone?phone=${encodeURIComponent(data.phone)}&excludeId=${supervisor?.user.id}`, {
+          credentials: "include",
+        });
+        if (!phoneCheckResponse.ok) {
+          const phoneError = await phoneCheckResponse.json();
+          throw new Error(phoneError.message || "خطأ في التحقق من رقم الهاتف");
+        }
+        const phoneExists = await phoneCheckResponse.json();
+        if (phoneExists.exists) {
+          throw new Error("رقم الهاتف مستخدم بالفعل من قبل مستخدم آخر");
+        }
+      }
+
       // تحويل البيانات إلى الشكل المطلوب للواجهة البرمجية
       const formattedData = {
         ...data,

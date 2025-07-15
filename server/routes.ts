@@ -582,6 +582,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "المشرف غير موجود" });
       }
 
+      // Get current user details for exclusion checks
+      const currentUser = await storage.getUser(supervisor.userId);
+      if (!currentUser) {
+        return res.status(404).json({ message: "المستخدم غير موجود" });
+      }
+
+      // Check for duplicate username if username is provided and different from current
+      if (username && username !== currentUser.username) {
+        const existingUsernameUser = await storage.getUserByUsername(username);
+        if (existingUsernameUser && existingUsernameUser.id !== currentUser.id) {
+          return res.status(400).json({ message: "اسم المستخدم موجود بالفعل" });
+        }
+      }
+
+      // Check for duplicate email if email is provided and different from current
+      if (email && email !== currentUser.email) {
+        const existingEmailUser = await storage.getUserByEmail(email);
+        if (existingEmailUser && existingEmailUser.id !== currentUser.id) {
+          return res.status(400).json({ message: "مستخدم بهذا البريد الإلكتروني موجود بالفعل" });
+        }
+      }
+
+      // Check for duplicate phone if phone is provided and different from current
+      if (phone && phone !== currentUser.phone) {
+        const existingPhoneUser = await storage.getUserByPhone(phone);
+        if (existingPhoneUser && existingPhoneUser.id !== currentUser.id) {
+          return res.status(400).json({ message: "مستخدم بهذا رقم الهاتف موجود بالفعل" });
+        }
+      }
+
       // Update user data
       const updatedUser = await storage.updateUser(supervisor.userId, {
         username,
@@ -805,6 +835,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const student = await storage.getStudent(id);
       if (!student) {
         return res.status(404).json({ message: "الطالب غير موجود" });
+      }
+
+      // Get current user details for exclusion checks
+      const currentUser = await storage.getUser(student.userId);
+      if (!currentUser) {
+        return res.status(404).json({ message: "المستخدم غير موجود" });
+      }
+
+      // Check for duplicate email if email is provided and different from current
+      if (email && email !== currentUser.email) {
+        const existingEmailUser = await storage.getUserByEmail(email);
+        if (existingEmailUser && existingEmailUser.id !== currentUser.id) {
+          return res.status(400).json({ message: "مستخدم بهذا البريد الإلكتروني موجود بالفعل" });
+        }
+      }
+
+      // Check for duplicate phone if phone is provided and different from current
+      if (phone && phone !== currentUser.phone) {
+        const existingPhoneUser = await storage.getUserByPhone(phone);
+        if (existingPhoneUser && existingPhoneUser.id !== currentUser.id) {
+          return res.status(400).json({ message: "مستخدم بهذا رقم الهاتف موجود بالفعل" });
+        }
       }
 
       // تحديث بيانات الطالب
