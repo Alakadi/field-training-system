@@ -54,9 +54,27 @@ const SupervisorDetailedGrading: React.FC = () => {
     String(assignment.course?.id) === selectedCourseId
   );
   
-  // Get group status from the actual group data
-  const isCourseUpcoming = selectedGroupData?.groupStatus === 'upcoming';
-  const isCourseCompleted = selectedGroupData?.groupStatus === 'completed';
+  // Get group status from the actual group data and dates
+  const currentDate = new Date().toISOString().split('T')[0];
+  let isCourseUpcoming = false;
+  let isCourseCompleted = false;
+  
+  if (selectedGroupData) {
+    // التحقق من التواريخ أولاً
+    if (selectedGroupData.startDate && selectedGroupData.endDate) {
+      if (currentDate < selectedGroupData.startDate) {
+        isCourseUpcoming = true;
+      } else if (currentDate > selectedGroupData.endDate) {
+        isCourseCompleted = true;
+      }
+    }
+    // إذا لم تكن هناك تواريخ، استخدم الحالة المحفوظة
+    else if (selectedGroupData.groupStatus === 'upcoming') {
+      isCourseUpcoming = true;
+    } else if (selectedGroupData.groupStatus === 'completed') {
+      isCourseCompleted = true;
+    }
+  }
 
   // Save detailed grades mutation
   const saveGradesMutation = useMutation({
@@ -84,20 +102,35 @@ const SupervisorDetailedGrading: React.FC = () => {
   const handleGradeChange = (assignmentId: number, field: keyof DetailedGrades, value: number) => {
     if (value < 0 || value > 100) return;
     
-    // التحقق من حالة المجموعة المحددة بدلاً من الدورة العامة
+    // التحقق من حالة المجموعة بناءً على التواريخ الفعلية
     const currentDate = new Date().toISOString().split('T')[0];
     const selectedGroup = courseAssignments.find((assignment: any) => 
       String(assignment.course?.id) === selectedCourseId
     );
     
-    // منع إدخال الدرجات للمجموعات التي لم تبدأ بعد فقط
-    if (selectedGroup?.groupStatus === 'upcoming') {
-      toast({
-        title: "لا يمكن إدخال الدرجات",
-        description: "لا يمكن إدخال الدرجات للمجموعات التي لم تبدأ بعد",
-        variant: "destructive",
-      });
-      return;
+    // التحقق من التواريخ مباشرة بدلاً من الاعتماد على حالة المجموعة المحفوظة
+    if (selectedGroup) {
+      // إذا لم تكن هناك تواريخ محددة، اسمح بإدخال الدرجات
+      if (selectedGroup.startDate && selectedGroup.endDate) {
+        // إذا كان التاريخ الحالي أقل من تاريخ البداية، فالمجموعة لم تبدأ بعد
+        if (currentDate < selectedGroup.startDate) {
+          toast({
+            title: "لا يمكن إدخال الدرجات",
+            description: `لا يمكن إدخال الدرجات قبل بداية المجموعة (${selectedGroup.startDate})`,
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+      // إذا كانت المجموعة محددة كـ "upcoming" صراحة، امنع الإدخال
+      else if (selectedGroup.groupStatus === 'upcoming') {
+        toast({
+          title: "لا يمكن إدخال الدرجات",
+          description: "لا يمكن إدخال الدرجات للمجموعات التي لم تبدأ بعد",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     setGrades(prev => ({

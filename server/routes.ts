@@ -2496,7 +2496,9 @@ const allGroups = await storage.getAllTrainingCourseGroups();
               status: groupWithDetails.course.status
             },
             groupName: group.groupName,
-            groupStatus: group.status, // إضافة حالة المجموعة
+            groupStatus: group.status, // حالة المجموعة
+            startDate: group.startDate, // تاريخ بداية المجموعة
+            endDate: group.endDate, // تاريخ نهاية المجموعة
             site: {
               name: groupWithDetails.site.name
             },
