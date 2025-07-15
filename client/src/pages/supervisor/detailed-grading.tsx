@@ -49,9 +49,14 @@ const SupervisorDetailedGrading: React.FC = () => {
     String(assignment.course?.id) === selectedCourseId
   );
 
-  // Check if course is upcoming (not started yet)
-  const isCourseUpcoming = selectedCourseData?.course?.status === 'upcoming';
-  const isCourseCompleted = selectedCourseData?.course?.status === 'completed';
+  // Check if group is upcoming (not started yet) - use group status not course status
+  const selectedGroupData = courseAssignments.find((assignment: any) => 
+    String(assignment.course?.id) === selectedCourseId
+  );
+  
+  // Get group status from the actual group data
+  const isCourseUpcoming = selectedGroupData?.groupStatus === 'upcoming';
+  const isCourseCompleted = selectedGroupData?.groupStatus === 'completed';
 
   // Save detailed grades mutation
   const saveGradesMutation = useMutation({
@@ -79,11 +84,17 @@ const SupervisorDetailedGrading: React.FC = () => {
   const handleGradeChange = (assignmentId: number, field: keyof DetailedGrades, value: number) => {
     if (value < 0 || value > 100) return;
     
-    // منع إدخال الدرجات للكورسات القادمة
-    if (isCourseUpcoming) {
+    // التحقق من حالة المجموعة المحددة بدلاً من الدورة العامة
+    const currentDate = new Date().toISOString().split('T')[0];
+    const selectedGroup = courseAssignments.find((assignment: any) => 
+      String(assignment.course?.id) === selectedCourseId
+    );
+    
+    // منع إدخال الدرجات للمجموعات التي لم تبدأ بعد فقط
+    if (selectedGroup?.groupStatus === 'upcoming') {
       toast({
         title: "لا يمكن إدخال الدرجات",
-        description: "لا يمكن إدخال الدرجات للدورات التدريبية التي لم تبدأ بعد",
+        description: "لا يمكن إدخال الدرجات للمجموعات التي لم تبدأ بعد",
         variant: "destructive",
       });
       return;
@@ -208,16 +219,16 @@ const SupervisorDetailedGrading: React.FC = () => {
           </Card>
         )}
 
-        {/* Course Status Alert */}
+        {/* Group Status Alert */}
         {selectedCourseId && isCourseUpcoming && (
           <Card className="border-yellow-200 bg-yellow-50">
             <CardContent className="pt-6">
               <div className="flex items-center gap-2">
                 <Icon name="alert_triangle" size={20} className="text-yellow-600" />
                 <div>
-                  <p className="font-medium text-yellow-800">دورة لم تبدأ بعد</p>
+                  <p className="font-medium text-yellow-800">مجموعة لم تبدأ بعد</p>
                   <p className="text-sm text-yellow-700">
-                    لا يمكن إدخال الدرجات للدورات التدريبية التي لم تبدأ بعد. يرجى الانتظار حتى تبدأ الدورة.
+                    لا يمكن إدخال الدرجات للمجموعات التي لم تبدأ بعد. يرجى الانتظار حتى تبدأ المجموعة.
                   </p>
                 </div>
               </div>

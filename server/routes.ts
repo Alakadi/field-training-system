@@ -2489,11 +2489,14 @@ const allGroups = await storage.getAllTrainingCourseGroups();
             id: group.id,
             supervisorId: supervisor.id,
             course: {
+              id: groupWithDetails.course.id,
               name: groupWithDetails.course.name,
               faculty: courseDetails?.faculty?.name || 'غير محدد',
-              major: courseDetails?.major?.name || 'غير محدد'
+              major: courseDetails?.major?.name || 'غير محدد',
+              status: groupWithDetails.course.status
             },
             groupName: group.groupName,
+            groupStatus: group.status, // إضافة حالة المجموعة
             site: {
               name: groupWithDetails.site.name
             },
