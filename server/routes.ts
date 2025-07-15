@@ -502,6 +502,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "اسم المستخدم موجود بالفعل" });
       }
 
+      // Check for duplicate email
+      if (email) {
+        const existingEmailUser = await storage.getUserByEmail(email);
+        if (existingEmailUser) {
+          return res.status(400).json({ message: "مستخدم بهذا البريد الإلكتروني موجود بالفعل" });
+        }
+      }
+
+      // Check for duplicate phone
+      if (phone) {
+        const existingPhoneUser = await storage.getUserByPhone(phone);
+        if (existingPhoneUser) {
+          return res.status(400).json({ message: "مستخدم بهذا رقم الهاتف موجود بالفعل" });
+        }
+      }
+
       // Create user
       console.log("Creating user...");
       const user = await storage.createUser({
@@ -915,10 +931,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { name, universityId, email, phone, facultyId, majorId, levelId } = req.body;
 
-      // Check if student with this university ID already exists
+      if (!name || !universityId) {
+        return res.status(400).json({ message: "الاسم والرقم الجامعي مطلوبان" });
+      }
+
+      // Check for duplicate university ID
       const existingStudent = await storage.getStudentByUniversityId(universityId);
       if (existingStudent) {
-        return res.status(400).json({ message: "الطالب برقم جامعي موجود بالفعل" });
+        return res.status(400).json({ message: "طالب بهذا الرقم الجامعي موجود بالفعل" });
+      }
+
+      // Check for duplicate email
+      if (email) {
+        const existingEmailUser = await storage.getUserByEmail(email);
+        if (existingEmailUser) {
+          return res.status(400).json({ message: "مستخدم بهذا البريد الإلكتروني موجود بالفعل" });
+        }
+      }
+
+      // Check for duplicate phone
+      if (phone) {
+        const existingPhoneUser = await storage.getUserByPhone(phone);
+        if (existingPhoneUser) {
+          return res.status(400).json({ message: "مستخدم بهذا رقم الهاتف موجود بالفعل" });
+        }
       }
 
       // Create user
@@ -957,6 +993,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json({ ...student, user });
     } catch (error) {
+      console.error("Error creating student:", error);
       res.status(500).json({ message: "خطأ في إنشاء حساب الطالب" });
     }
   });
@@ -1974,16 +2011,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Check email uniqueness endpoint
+  // Check email uniqueness endpoint for students
   app.get("/api/students/check-email", authMiddleware, async (req: Request, res: Response) => {
     try {
       const email = req.query.email as string;
+      const excludeId = req.query.excludeId ? Number(req.query.excludeId) : undefined;
       
       if (!email) {
         return res.status(400).json({ message: "البريد الإلكتروني مطلوب" });
       }
 
       const existingUser = await storage.getUserByEmail(email);
+      // If editing, exclude the current user
+      if (excludeId && existingUser?.id === excludeId) {
+        return res.json({ exists: false });
+      }
       res.json({ exists: !!existingUser });
     } catch (error) {
       console.error("Error checking email:", error);
@@ -1995,16 +2037,87 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/students/check-university-id", authMiddleware, async (req: Request, res: Response) => {
     try {
       const universityId = req.query.universityId as string;
+      const excludeId = req.query.excludeId ? Number(req.query.excludeId) : undefined;
       
       if (!universityId) {
         return res.status(400).json({ message: "الرقم الجامعي مطلوب" });
       }
 
       const existingStudent = await storage.getStudentByUniversityId(universityId);
+      // If editing, exclude the current student
+      if (excludeId && existingStudent?.id === excludeId) {
+        return res.json({ exists: false });
+      }
       res.json({ exists: !!existingStudent });
     } catch (error) {
       console.error("Error checking university ID:", error);
       res.status(500).json({ message: "خطأ في التحقق من الرقم الجامعي" });
+    }
+  });
+
+  // Check phone uniqueness endpoint for students
+  app.get("/api/students/check-phone", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const phone = req.query.phone as string;
+      const excludeId = req.query.excludeId ? Number(req.query.excludeId) : undefined;
+      
+      if (!phone) {
+        return res.status(400).json({ message: "رقم الهاتف مطلوب" });
+      }
+
+      const existingUser = await storage.getUserByPhone(phone);
+      // If editing, exclude the current user
+      if (excludeId && existingUser?.id === excludeId) {
+        return res.json({ exists: false });
+      }
+      res.json({ exists: !!existingUser });
+    } catch (error) {
+      console.error("Error checking phone:", error);
+      res.status(500).json({ message: "خطأ في التحقق من رقم الهاتف" });
+    }
+  });
+
+  // Check email uniqueness endpoint for supervisors
+  app.get("/api/supervisors/check-email", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const email = req.query.email as string;
+      const excludeId = req.query.excludeId ? Number(req.query.excludeId) : undefined;
+      
+      if (!email) {
+        return res.status(400).json({ message: "البريد الإلكتروني مطلوب" });
+      }
+
+      const existingUser = await storage.getUserByEmail(email);
+      // If editing, exclude the current user
+      if (excludeId && existingUser?.id === excludeId) {
+        return res.json({ exists: false });
+      }
+      res.json({ exists: !!existingUser });
+    } catch (error) {
+      console.error("Error checking email:", error);
+      res.status(500).json({ message: "خطأ في التحقق من البريد الإلكتروني" });
+    }
+  });
+
+  // Check phone uniqueness endpoint for supervisors
+  app.get("/api/supervisors/check-phone", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const phone = req.query.phone as string;
+      const excludeId = req.query.excludeId ? Number(req.query.excludeId) : undefined;
+      
+      if (!phone) {
+        return res.status(400).json({ message: "رقم الهاتف مطلوب" });
+      }
+
+      const existingUser = await storage.getUserByPhone(phone);
+      // If editing, exclude the current user
+      if (excludeId && existingUser?.id === excludeId) {
+        return res.json({ exists: false });
+      }
+      res.json({ exists: !!existingUser });
+    } catch (error) {
+      console.error("Error checking phone:", error);
+      res.status(500).json({ message: "خطأ في التحقق من رقم الهاتف" });
     }
   });
 

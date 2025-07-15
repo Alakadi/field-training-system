@@ -139,6 +139,21 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
         }
       }
 
+      // Check for phone uniqueness if phone is provided
+      if (data.phone && data.phone.trim() !== "") {
+        const phoneCheckResponse = await fetch(`/api/students/check-phone?phone=${encodeURIComponent(data.phone)}`, {
+          credentials: "include",
+        });
+        if (!phoneCheckResponse.ok) {
+          const phoneError = await phoneCheckResponse.json();
+          throw new Error(phoneError.message || "خطأ في التحقق من رقم الهاتف");
+        }
+        const phoneExists = await phoneCheckResponse.json();
+        if (phoneExists.exists) {
+          throw new Error("رقم الهاتف مستخدم بالفعل من قبل مستخدم آخر");
+        }
+      }
+
       // Check for university ID uniqueness
       const universityIdCheckResponse = await fetch(`/api/students/check-university-id?universityId=${encodeURIComponent(data.universityId)}`, {
         credentials: "include",
