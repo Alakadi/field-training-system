@@ -286,9 +286,9 @@ const EditSupervisor: React.FC = () => {
                     name="department"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>القسم</FormLabel>
+                        <FormLabel>الوصف</FormLabel>
                         <FormControl>
-                          <Input placeholder="أدخل اسم القسم" {...field} />
+                          <Input placeholder=" أدخل الوصف" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

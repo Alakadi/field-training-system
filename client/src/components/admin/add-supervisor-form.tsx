@@ -26,7 +26,7 @@ const addSupervisorSchema = z.object({
       const words = trimmedName.split(/\s+/).filter(word => word.length > 0);
       return words.length >= 3;
     }, { 
-      message: "الاسم يجب أن يحتوي على 3 أسماء على الأقل وحروف عربية فقط (مثال: محمد عبدالملك عبدالله)" 
+      message: "الاسم يجب أن يحتوي على 3 أسماء على الأقل وحروف عربية فقط (مثال: محمد احمد علي)" 
     }),
   username: z.string().min(4, { message: "يجب أن يحتوي اسم المستخدم على الأقل على 4 أحرف" }),
   password: z.string().min(6, { message: "يجب أن تحتوي كلمة المرور على الأقل على 6 أحرف" }),
@@ -304,9 +304,9 @@ const AddSupervisorForm: React.FC<AddSupervisorFormProps> = ({ onSuccess }) => {
                   name="department"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>القسم</FormLabel>
+                      <FormLabel>الوصف</FormLabel>
                       <FormControl>
-                        <Input placeholder="أدخل اسم القسم" {...field} />
+                        <Input placeholder="أدخل الوصف" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
