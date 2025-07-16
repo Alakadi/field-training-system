@@ -17,10 +17,51 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 // تعريف مخطط البيانات للتعديل
 const editSupervisorSchema = z.object({
-  name: z.string().min(3, { message: "يجب أن يحتوي الاسم على الأقل على 3 أحرف" }),
+  name: z.string()
+    .min(1, { message: "الاسم مطلوب" })
+    .refine((name) => {
+      const trimmedName = name.trim();
+      // Check if name contains only Arabic letters and spaces
+      const arabicNameRegex = /^[\u0600-\u06FF\s]+$/;
+      if (!arabicNameRegex.test(trimmedName)) {
+        return false;
+      }
+      // Check if name has at least 3 words
+      const words = trimmedName.split(/\s+/).filter(word => word.length > 0);
+      return words.length >= 3;
+    }, { 
+      message: "الاسم يجب أن يحتوي على 3 أسماء على الأقل وحروف عربية فقط (مثال: محمد عبدالملك عبدالله)" 
+    }),
   email: z.string().email({ message: "يرجى إدخال بريد إلكتروني صالح" }).optional().or(z.literal("")),
-  phone: z.string().optional().or(z.literal("")),
-  // facultyId: z.string().min(1, { message: "يرجى اختيار الكلية" }),
+  phone: z.string().optional().or(z.literal("")).refine((phone) => {
+    if (!phone || phone.trim() === "") return true; // Optional field
+
+    let cleanPhone = phone.trim();
+
+    // Remove country code if present
+    if (cleanPhone.startsWith("+967")) {
+      cleanPhone = cleanPhone.substring(4);
+    } else if (cleanPhone.startsWith("967")) {
+      cleanPhone = cleanPhone.substring(3);
+    }
+
+    // Remove any spaces or dashes
+    cleanPhone = cleanPhone.replace(/[\s-]/g, "");
+
+    // Check if it's exactly 9 digits
+    if (!/^\d{9}$/.test(cleanPhone)) {
+      return false;
+    }
+
+    // Check if it starts with valid prefixes
+    const validPrefixes = ["73", "77", "78", "71", "70"];
+    const prefix = cleanPhone.substring(0, 2);
+
+    return validPrefixes.includes(prefix);
+  }, { 
+    message: "رقم الهاتف يجب أن يكون 9 أرقام ويبدأ بـ 73 أو 77 أو 78 أو 71 أو 70 (يمكن إضافة رمز البلد +967)" 
+  }),
+  facultyId: z.string().optional().or(z.literal("")),
   department: z.string().optional().or(z.literal("")),
   active: z.boolean().default(true),
 });
