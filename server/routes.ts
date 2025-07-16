@@ -2191,9 +2191,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "البريد الإلكتروني مطلوب" });
       }
 
-      // استخدام SQL مباشر بدلاً من Drizzle ORM
-      const result = await db.execute(sql`SELECT * FROM users WHERE email = ${email}`);
-      const existingUser = result.rows[0] as any;
+      // استخدام storage بدلاً من SQL مباشر
+      const existingUser = await storage.getUserByEmail(email);
       
       // If editing, exclude the current user
       if (excludeId && existingUser?.id === excludeId) {
@@ -2216,9 +2215,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "رقم الهاتف مطلوب" });
       }
 
-      // استخدام SQL مباشر بدلاً من Drizzle ORM
-      const result = await db.execute(sql`SELECT * FROM users WHERE phone = ${phone}`);
-      const existingUser = result.rows[0] as any;
+      // استخدام storage بدلاً من SQL مباشر
+      const existingUser = await storage.getUserByPhone(phone);
       
       // If editing, exclude the current user
       if (excludeId && existingUser?.id === excludeId) {
