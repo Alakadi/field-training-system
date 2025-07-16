@@ -126,9 +126,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
       
       // Check for email uniqueness if email is provided
       if (data.email && data.email.trim() !== "") {
-        const emailCheckResponse = await fetch(`/api/students/check-email?email=${encodeURIComponent(data.email)}`, {
-          credentials: "include",
-        });
+        const emailCheckResponse = await fetch(`/api/validate/email?email=${encodeURIComponent(data.email)}`);
         if (!emailCheckResponse.ok) {
           const emailError = await emailCheckResponse.json();
           throw new Error(emailError.message || "خطأ في التحقق من البريد الإلكتروني");
@@ -141,9 +139,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
 
       // Check for phone uniqueness if phone is provided
       if (data.phone && data.phone.trim() !== "") {
-        const phoneCheckResponse = await fetch(`/api/students/check-phone?phone=${encodeURIComponent(data.phone)}`, {
-          credentials: "include",
-        });
+        const phoneCheckResponse = await fetch(`/api/validate/phone?phone=${encodeURIComponent(data.phone)}`);
         if (!phoneCheckResponse.ok) {
           const phoneError = await phoneCheckResponse.json();
           throw new Error(phoneError.message || "خطأ في التحقق من رقم الهاتف");
@@ -155,9 +151,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
       }
 
       // Check for university ID uniqueness
-      const universityIdCheckResponse = await fetch(`/api/students/check-university-id?universityId=${encodeURIComponent(data.universityId)}`, {
-        credentials: "include",
-      });
+      const universityIdCheckResponse = await fetch(`/api/validate/university-id?universityId=${encodeURIComponent(data.universityId)}`);
       if (!universityIdCheckResponse.ok) {
         const universityIdError = await universityIdCheckResponse.json();
         throw new Error(universityIdError.message || "خطأ في التحقق من الرقم الجامعي");
