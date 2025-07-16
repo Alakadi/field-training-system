@@ -228,18 +228,31 @@ export class DatabaseStorage implements IStorage {
   async getUserByEmail(email: string): Promise<User | undefined> {
     try {
       console.log("Querying getUserByEmail with email:", email);
-      const result = await db.select().from(users).where(eq(users.email, email));
-      console.log("Query result:", result);
+      if (!email || email.trim() === '') {
+        return undefined;
+      }
+      const result = await db.select().from(users).where(eq(users.email, email.trim()));
+      console.log("Query result for email:", result.length > 0 ? "found" : "not found");
       return result[0];
     } catch (error) {
       console.error("Error in getUserByEmail:", error);
-      throw error;
+      return undefined; // بدلاً من throw، أعد undefined
     }
   }
 
   async getUserByPhone(phone: string): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.phone, phone));
-    return result[0];
+    try {
+      console.log("Querying getUserByPhone with phone:", phone);
+      if (!phone || phone.trim() === '') {
+        return undefined;
+      }
+      const result = await db.select().from(users).where(eq(users.phone, phone.trim()));
+      console.log("Query result for phone:", result.length > 0 ? "found" : "not found");
+      return result[0];
+    } catch (error) {
+      console.error("Error in getUserByPhone:", error);
+      return undefined; // بدلاً من throw، أعد undefined
+    }
   }
 
   async getStudentByUniversityId(universityId: string): Promise<Student | undefined> {

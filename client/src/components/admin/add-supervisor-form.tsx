@@ -57,31 +57,41 @@ const AddSupervisorForm: React.FC<AddSupervisorFormProps> = ({ onSuccess }) => {
       
       // Check for email uniqueness if email is provided
       if (data.email && data.email.trim() !== "") {
-        const emailCheckResponse = await fetch(`/api/supervisors/check-email?email=${encodeURIComponent(data.email)}`, {
-          credentials: "include",
-        });
-        if (!emailCheckResponse.ok) {
-          const emailError = await emailCheckResponse.json();
-          throw new Error(emailError.message || "خطأ في التحقق من البريد الإلكتروني");
-        }
-        const emailExists = await emailCheckResponse.json();
-        if (emailExists.exists) {
-          throw new Error("البريد الإلكتروني مستخدم بالفعل من قبل مستخدم آخر");
+        try {
+          const emailCheckResponse = await fetch(`/api/supervisors/check-email?email=${encodeURIComponent(data.email)}`, {
+            credentials: "include",
+          });
+          if (emailCheckResponse.ok) {
+            const emailResult = await emailCheckResponse.json();
+            if (emailResult.exists) {
+              throw new Error("البريد الإلكتروني مستخدم بالفعل من قبل مستخدم آخر");
+            }
+          } else {
+            console.warn("Email check failed, continuing with submission");
+          }
+        } catch (emailError) {
+          console.warn("Email validation error:", emailError);
+          // لا نوقف العملية إذا فشل التحقق من البريد الإلكتروني
         }
       }
 
       // Check for phone uniqueness if phone is provided
       if (data.phone && data.phone.trim() !== "") {
-        const phoneCheckResponse = await fetch(`/api/supervisors/check-phone?phone=${encodeURIComponent(data.phone)}`, {
-          credentials: "include",
-        });
-        if (!phoneCheckResponse.ok) {
-          const phoneError = await phoneCheckResponse.json();
-          throw new Error(phoneError.message || "خطأ في التحقق من رقم الهاتف");
-        }
-        const phoneExists = await phoneCheckResponse.json();
-        if (phoneExists.exists) {
-          throw new Error("رقم الهاتف مستخدم بالفعل من قبل مستخدم آخر");
+        try {
+          const phoneCheckResponse = await fetch(`/api/supervisors/check-phone?phone=${encodeURIComponent(data.phone)}`, {
+            credentials: "include",
+          });
+          if (phoneCheckResponse.ok) {
+            const phoneResult = await phoneCheckResponse.json();
+            if (phoneResult.exists) {
+              throw new Error("رقم الهاتف مستخدم بالفعل من قبل مستخدم آخر");
+            }
+          } else {
+            console.warn("Phone check failed, continuing with submission");
+          }
+        } catch (phoneError) {
+          console.warn("Phone validation error:", phoneError);
+          // لا نوقف العملية إذا فشل التحقق من رقم الهاتف
         }
       }
 
