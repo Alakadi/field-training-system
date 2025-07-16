@@ -523,7 +523,7 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  
+
 
   async getStudentByUserId(userId: number): Promise<Student | undefined> {
     const result = await db.select().from(students).where(eq(students.userId, userId));
@@ -1772,6 +1772,28 @@ export class DatabaseStorage implements IStorage {
       ));
 
     return result.map(row => row.training_assignments);
+  }
+
+  async getAllAcademicYears(): Promise<AcademicYear[]> {
+    return await db.select().from(academicYears).orderBy(desc(academicYears.isCurrent), desc(academicYears.startDate));
+  }
+
+  async getAllLevels(): Promise<Level[]> {
+    return await db.select().from(levels).orderBy(desc(levels.id));
+  }
+
+  async createLevel(level: InsertLevel): Promise<Level> {
+      const result = await db.insert(levels).values(level).returning();
+      return result[0];
+  }
+
+  async deleteLevel(id: number): Promise<void> {
+      await db.delete(levels).where(eq(levels.id, id));
+  }
+
+  async getStudentsByLevel(levelId: number): Promise<Student[]> {
+      const result = await db.select().from(students).where(eq(students.levelId, levelId));
+      return result;
   }
 }
 

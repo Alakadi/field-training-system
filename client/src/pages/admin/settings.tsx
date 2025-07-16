@@ -21,6 +21,27 @@ import {
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import Icon from "@/components/ui/icon-map";
 // Validation schemas
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, { message: "كلمة المرور الحالية مطلوبة" }),
@@ -45,10 +66,16 @@ const systemSchema = z.object({
   semester: z.string().min(1, { message: "الفصل الدراسي مطلوب" }),
 });
 
+const levelSchema = z.object({
+  name: z.string().min(1, { message: "اسم المستوى مطلوب" }),
+  description: z.string().optional().or(z.literal("")),
+});
+
 const AdminSettings: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("profile");
+  const [isAddingLevel, setIsAddingLevel] = useState(false);
   
   // Fetch user profile data
   const { data: profileData, isLoading: isLoadingProfile } = useQuery({
@@ -63,6 +90,11 @@ const AdminSettings: React.FC = () => {
   // Fetch faculties for settings
   const { data: faculties, isLoading: isLoadingFaculties } = useQuery({
     queryKey: ["/api/faculties"]
+  });
+  
+  // Fetch levels
+  const { data: levels, isLoading: isLoadingLevels } = useQuery({
+    queryKey: ["/api/levels"]
   });
   
   // Password form
@@ -94,6 +126,15 @@ const AdminSettings: React.FC = () => {
       defaultFacultyId: systemSettings?.defaultFacultyId || "",
       academicYear: systemSettings?.academicYear || "",
       semester: systemSettings?.semester || "1",
+    },
+  });
+  
+  // Level form
+  const levelForm = useForm<z.infer<typeof levelSchema>>({
+    resolver: zodResolver(levelSchema),
+    defaultValues: {
+      name: "",
+      description: "",
     },
   });
   
@@ -178,6 +219,46 @@ const AdminSettings: React.FC = () => {
     },
   });
   
+  // Add level mutation
+  const addLevelMutation = useMutation({
+    mutationFn: (data: z.infer<typeof levelSchema>) => 
+      apiRequest("POST", "/api/levels", data),
+    onSuccess: () => {
+      toast({
+        title: "تم إضافة المستوى بنجاح",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/levels"] });
+      levelForm.reset();
+      setIsAddingLevel(false);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "فشل إضافة المستوى",
+        description: error.message || "حدث خطأ أثناء إضافة المستوى",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Delete level mutation
+  const deleteLevelMutation = useMutation({
+    mutationFn: (levelId: number) => 
+      apiRequest("DELETE", `/api/levels/${levelId}`),
+    onSuccess: () => {
+      toast({
+        title: "تم حذف المستوى بنجاح",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/levels"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "فشل حذف المستوى",
+        description: error.message || "حدث خطأ أثناء حذف المستوى",
+        variant: "destructive",
+      });
+    },
+  });
+  
   // Form submissions
   const onPasswordSubmit = (data: z.infer<typeof passwordSchema>) => {
     updatePasswordMutation.mutate(data);
@@ -190,6 +271,14 @@ const AdminSettings: React.FC = () => {
   const onSystemSubmit = (data: z.infer<typeof systemSchema>) => {
     updateSystemSettingsMutation.mutate(data);
   };
+  
+  const onLevelSubmit = (data: z.infer<typeof levelSchema>) => {
+    addLevelMutation.mutate(data);
+  };
+  
+  const handleDeleteLevel = (levelId: number) => {
+    deleteLevelMutation.mutate(levelId);
+  };
 
   return (
     <AdminLayout>
@@ -199,10 +288,11 @@ const AdminSettings: React.FC = () => {
         </div>
 
         <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsList className="grid w-full grid-cols-6 mb-6">
             <TabsTrigger value="profile">الملف الشخصي</TabsTrigger>
             <TabsTrigger value="password">كلمة المرور</TabsTrigger>
             <TabsTrigger value="system">إعدادات النظام</TabsTrigger>
+            <TabsTrigger value="levels">المستويات</TabsTrigger>
             <TabsTrigger value="faculties">الكليات والتخصصات</TabsTrigger>
             <TabsTrigger value="academic-years">السنوات الدراسية</TabsTrigger>
           </TabsList>
@@ -480,6 +570,155 @@ const AdminSettings: React.FC = () => {
                     </div>
                   </form>
                 </Form>
+              )}
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="levels">
+            <Card className="bg-white p-6 rounded-lg shadow">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold">إدارة المستويات الدراسية</h2>
+                <Button 
+                  onClick={() => setIsAddingLevel(true)}
+                  className="bg-primary hover:bg-primary-dark text-white"
+                >
+                  <Icon name="add" size={16} />
+                  إضافة مستوى
+                </Button>
+              </div>
+              
+              {isAddingLevel && (
+                <Card className="mb-6 p-4 bg-gray-50">
+                  <h3 className="text-lg font-medium mb-4">إضافة مستوى جديد</h3>
+                  <Form {...levelForm}>
+                    <form onSubmit={levelForm.handleSubmit(onLevelSubmit)} className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={levelForm.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>اسم المستوى</FormLabel>
+                              <FormControl>
+                                <Input placeholder="مثال: المستوى الأول" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={levelForm.control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>الوصف</FormLabel>
+                              <FormControl>
+                                <Input placeholder="مثال: السنة الأولى" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      
+                      <div className="flex justify-end space-x-2 space-x-reverse">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setIsAddingLevel(false);
+                            levelForm.reset();
+                          }}
+                        >
+                          إلغاء
+                        </Button>
+                        <Button 
+                          type="submit" 
+                          disabled={addLevelMutation.isPending}
+                          className="bg-primary hover:bg-primary-dark text-white"
+                        >
+                          {addLevelMutation.isPending ? "جاري الحفظ..." : "حفظ"}
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </Card>
+              )}
+              
+              {isLoadingLevels ? (
+                <div className="text-center p-8">
+                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                  <p>جاري تحميل المستويات...</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableCaption>قائمة المستويات الدراسية في النظام</TableCaption>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>#</TableHead>
+                        <TableHead>اسم المستوى</TableHead>
+                        <TableHead>الوصف</TableHead>
+                        <TableHead>تاريخ الإنشاء</TableHead>
+                        <TableHead className="text-left">الإجراءات</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {levels?.map((level: any, index: number) => (
+                        <TableRow key={level.id}>
+                          <TableCell className="font-medium">{index + 1}</TableCell>
+                          <TableCell>{level.name}</TableCell>
+                          <TableCell>{level.description || "-"}</TableCell>
+                          <TableCell>
+                            {level.createdAt ? new Date(level.createdAt).toLocaleDateString('ar-SA') : "-"}
+                          </TableCell>
+                          <TableCell className="text-left">
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="destructive" 
+                                  size="sm" 
+                                  className="text-xs"
+                                  disabled={deleteLevelMutation.isPending}
+                                >
+                                  <Icon name="delete" size={14} />
+                                  حذف
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    هل أنت متأكد من حذف المستوى "{level.name}"؟ 
+                                    لا يمكن التراجع عن هذا الإجراء.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>إلغاء</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDeleteLevel(level.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    حذف
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      
+                      {levels?.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-6 text-neutral-500">
+                            لا توجد مستويات لعرضها
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
               )}
             </Card>
           </TabsContent>
