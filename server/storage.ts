@@ -1794,7 +1794,7 @@ export class DatabaseStorage implements IStorage {
   async getStudentsByLevel(levelId: number): Promise<Student[]> {
       const result = await db.select().from(students).where(eq(students.levelId, levelId));
       return result;
-  }
+  }</old_str>
 }
 
 // Create storage instance

@@ -448,6 +448,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(levels);
   });
 
+  app.post("/api/levels", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
+    try {
+      const { name, description } = req.body;
+
+      if (!name || !name.trim()) {
+        return res.status(400).json({ message: "اسم المستوى مطلوب" });
+      }
+
+      const level = await storage.createLevel({ name: name.trim(), description: description || null });
+      
+      // Log activity
+      if (req.user) {
+        await logSecurityActivity(
+          req.user.username,
+          "create",
+          "levels",
+          level.id,
+          { message: `تم إنشاء مستوى جديد: ${name}` }
+        );
+      }
+
+      res.status(201).json(level);
+    } catch (error) {
+      console.error("Error creating level:", error);
+      res.status(500).json({ message: "فشل في إضافة المستوى" });
+    }
+  });
+
+  app.delete("/api/levels/:id", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+
+      // Check if level exists
+      const level = await storage.getLevel(id);
+      if (!level) {
+        return res.status(404).json({ message: "المستوى غير موجود" });
+      }
+
+      // Check if any students are using this level
+      const studentsWithLevel = await storage.getStudentsByLevel(id);
+      if (studentsWithLevel.length > 0) {
+        return res.status(400).json({ 
+          message: `لا يمكن حذف هذا المستوى لأنه مرتبط بـ ${studentsWithLevel.length} طالب. يرجى نقل الطلاب إلى مستوى آخر أولاً.` 
+        });
+      }
+
+      await storage.deleteLevel(id);
+
+      // Log activity
+      if (req.user) {
+        await logSecurityActivity(
+          req.user.username,
+          "delete",
+          "levels",
+          id,
+          { message: `تم حذف المستوى: ${level.name}` }
+        );
+      }
+
+      res.json({ message: "تم حذف المستوى بنجاح" });
+    } catch (error) {
+      console.error("Error deleting level:", error);
+      res.status(500).json({ message: "فشل في حذف المستوى" });
+    }
+  });</old_str>
+
   // Supervisor Routes
   app.get("/api/supervisors", authMiddleware, async (req: Request, res: Response) => {
     try {

@@ -68,7 +68,6 @@ const systemSchema = z.object({
 
 const levelSchema = z.object({
   name: z.string().min(1, { message: "اسم المستوى مطلوب" }),
-  description: z.string().optional().or(z.literal("")),
 });
 
 const AdminSettings: React.FC = () => {
@@ -134,7 +133,6 @@ const AdminSettings: React.FC = () => {
     resolver: zodResolver(levelSchema),
     defaultValues: {
       name: "",
-      description: "",
     },
   });
   
@@ -592,35 +590,19 @@ const AdminSettings: React.FC = () => {
                   <h3 className="text-lg font-medium mb-4">إضافة مستوى جديد</h3>
                   <Form {...levelForm}>
                     <form onSubmit={levelForm.handleSubmit(onLevelSubmit)} className="space-y-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                          control={levelForm.control}
-                          name="name"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>اسم المستوى</FormLabel>
-                              <FormControl>
-                                <Input placeholder="مثال: المستوى الأول" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        
-                        <FormField
-                          control={levelForm.control}
-                          name="description"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>الوصف</FormLabel>
-                              <FormControl>
-                                <Input placeholder="مثال: السنة الأولى" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                      <FormField
+                        control={levelForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>اسم المستوى</FormLabel>
+                            <FormControl>
+                              <Input placeholder="مثال: المستوى الأول" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                       
                       <div className="flex justify-end space-x-2 space-x-reverse">
                         <Button
@@ -659,8 +641,6 @@ const AdminSettings: React.FC = () => {
                       <TableRow>
                         <TableHead>#</TableHead>
                         <TableHead>اسم المستوى</TableHead>
-                        <TableHead>الوصف</TableHead>
-                        <TableHead>تاريخ الإنشاء</TableHead>
                         <TableHead className="text-left">الإجراءات</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -669,10 +649,6 @@ const AdminSettings: React.FC = () => {
                         <TableRow key={level.id}>
                           <TableCell className="font-medium">{index + 1}</TableCell>
                           <TableCell>{level.name}</TableCell>
-                          <TableCell>{level.description || "-"}</TableCell>
-                          <TableCell>
-                            {level.createdAt ? new Date(level.createdAt).toLocaleDateString('ar-SA') : "-"}
-                          </TableCell>
                           <TableCell className="text-left">
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
@@ -711,7 +687,7 @@ const AdminSettings: React.FC = () => {
                       
                       {levels?.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center py-6 text-neutral-500">
+                          <TableCell colSpan={3} className="text-center py-6 text-neutral-500">
                             لا توجد مستويات لعرضها
                           </TableCell>
                         </TableRow>
