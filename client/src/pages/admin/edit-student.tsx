@@ -22,9 +22,18 @@ const editStudentSchema = z.object({
   name: z.string()
     .min(3, { message: "يجب أن يحتوي الاسم على الأقل على 3 أحرف" })
     .refine((name) => {
-      const nameParts = name.trim().split(/\s+/);
-      return nameParts.length >= 4;
-    }, { message: "يجب إدخال الاسم الرباعي (أربعة أسماء على الأقل)" }),
+      const trimmedName = name.trim();
+      // Check if name contains only Arabic letters and spaces
+      const arabicNameRegex = /^[\u0600-\u06FF\s]+$/;
+      if (!arabicNameRegex.test(trimmedName)) {
+        return false;
+      }
+      // Check if name has at least 4 words
+      const words = trimmedName.split(/\s+/).filter(word => word.length > 0);
+      return words.length >= 4;
+    }, { 
+      message: "الاسم يجب أن يحتوي على 4 أسماء على الأقل وحروف عربية فقط (مثال: محمد احمد علي حسن)" 
+    }),
   email: z.string()
     .email({ message: "يرجى إدخال بريد إلكتروني صالح" })
     .optional().or(z.literal("")),
@@ -32,13 +41,33 @@ const editStudentSchema = z.object({
     .optional()
     .or(z.literal(""))
     .refine((phone) => {
-      if (!phone || phone === "") return true;
-      // Remove +967 if present and any spaces or dashes
-      const cleanPhone = phone.replace(/^\+967/, "").replace(/[\s-]/g, "");
-      // Check if it's exactly 9 digits and starts with valid prefixes
-      const phoneRegex = /^(73|77|78|71|70)\d{7}$/;
-      return phoneRegex.test(cleanPhone);
-    }, { message: "رقم الهاتف يجب أن يكون 9 أرقام ويبدأ بـ 73، 77، 78، 71، أو 70" }),
+      if (!phone || phone.trim() === "") return true; // Optional field
+      
+      let cleanPhone = phone.trim();
+      
+      // Remove country code if present
+      if (cleanPhone.startsWith("+967")) {
+        cleanPhone = cleanPhone.substring(4);
+      } else if (cleanPhone.startsWith("967")) {
+        cleanPhone = cleanPhone.substring(3);
+      }
+      
+      // Remove any spaces or dashes
+      cleanPhone = cleanPhone.replace(/[\s-]/g, "");
+      
+      // Check if it's exactly 9 digits
+      if (!/^\d{9}$/.test(cleanPhone)) {
+        return false;
+      }
+      
+      // Check if it starts with valid prefixes
+      const validPrefixes = ["73", "77", "78", "71", "70"];
+      const prefix = cleanPhone.substring(0, 2);
+      
+      return validPrefixes.includes(prefix);
+    }, { 
+      message: "رقم الهاتف يجب أن يكون 9 أرقام ويبدأ بـ 73 أو 77 أو 78 أو 71 أو 70 (يمكن إضافة رمز البلد +967)" 
+    }),
   facultyId: z.string().min(1, { message: "يرجى اختيار الكلية" }),
   majorId: z.string().min(1, { message: "يرجى اختيار التخصص" }),
   levelId: z.string().min(1, { message: "يرجى اختيار المستوى" }),
@@ -217,6 +246,24 @@ const EditStudent: React.FC = () => {
 
     setIsSubmitting(true);
     try {
+      // Clean and format phone number
+      let cleanedPhone = "";
+      if (data.phone && data.phone.trim() !== "") {
+        let phone = data.phone.trim();
+        
+        // Remove country code if present
+        if (phone.startsWith("+967")) {
+          phone = phone.substring(4);
+        } else if (phone.startsWith("967")) {
+          phone = phone.substring(3);
+        }
+        
+        // Remove any spaces or dashes
+        phone = phone.replace(/[\s-]/g, "");
+        
+        cleanedPhone = phone;
+      }
+
       // التحقق من تطابق البريد الإلكتروني مع مستخدمين آخرين
       if (data.email && data.email !== student?.user.email) {
         const emailCheckResponse = await fetch(`/api/validate/email?email=${encodeURIComponent(data.email)}&excludeId=${student?.user.id}`);
@@ -231,8 +278,8 @@ const EditStudent: React.FC = () => {
       }
 
       // التحقق من تطابق رقم الهاتف مع مستخدمين آخرين
-      if (data.phone && data.phone !== student?.user.phone) {
-        const phoneCheckResponse = await fetch(`/api/validate/phone?phone=${encodeURIComponent(data.phone)}&excludeId=${student?.user.id}`);
+      if (cleanedPhone !== "" && cleanedPhone !== student?.user.phone) {
+        const phoneCheckResponse = await fetch(`/api/validate/phone?phone=${encodeURIComponent(cleanedPhone)}&excludeId=${student?.user.id}`);
         if (!phoneCheckResponse.ok) {
           const phoneError = await phoneCheckResponse.json();
           throw new Error(phoneError.message || "خطأ في التحقق من رقم الهاتف");
@@ -247,7 +294,7 @@ const EditStudent: React.FC = () => {
       const formattedData = {
         name: data.name,
         email: data.email,
-        phone: data.phone,
+        phone: cleanedPhone || null,
         facultyId: parseInt(data.facultyId),
         majorId: parseInt(data.majorId),
         levelId: parseInt(data.levelId),
@@ -374,7 +421,7 @@ const EditStudent: React.FC = () => {
                       <FormItem>
                         <FormLabel>رقم الهاتف</FormLabel>
                         <FormControl>
-                          <Input placeholder="أدخل رقم الهاتف" {...field} />
+                          <Input placeholder="مثال: 771234567 أو +967771234567" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
