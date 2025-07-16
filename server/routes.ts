@@ -512,7 +512,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error deleting level:", error);
       res.status(500).json({ message: "فشل في حذف المستوى" });
     }
-  });</old_str>
+  });
 
   // Supervisor Routes
   app.get("/api/supervisors", authMiddleware, async (req: Request, res: Response) => {
