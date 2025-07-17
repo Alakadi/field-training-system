@@ -628,9 +628,9 @@ const SupervisorCourses: React.FC = () => {
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                           <h4 className="font-medium text-blue-900 mb-2">إدراج الدرجات المفصلة</h4>
                           <p className="text-sm text-blue-700">
-                            {course.attendanceGradeLabel || "درجة الحضور"} ({course.attendancePercentage || 20}%)، 
-                            {course.behaviorGradeLabel || "درجة السلوك"} ({course.behaviorPercentage || 30}%)، 
-                            {course.finalExamGradeLabel || "الاختبار النهائي"} ({course.finalExamPercentage || 50}%). 
+                            {group.course?.attendanceGradeLabel || "درجة الحضور"} ({group.course?.attendancePercentage || 20}%)، 
+                            {group.course?.behaviorGradeLabel || "درجة السلوك"} ({group.course?.behaviorPercentage || 30}%)، 
+                            {group.course?.finalExamGradeLabel || "الاختبار النهائي"} ({group.course?.finalExamPercentage || 50}%). 
                             سيتم حساب الدرجة النهائية تلقائياً بناءً على هذه النسب.
                           </p>
                         </div>
@@ -670,13 +670,13 @@ const SupervisorCourses: React.FC = () => {
                                   اسم الطالب
                                 </th>
                                 <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  {course.attendanceGradeLabel || "الحضور"}<br/><span className="text-blue-600">({course.attendancePercentage || 20}%)</span>
+                                  {group.course?.attendanceGradeLabel || "الحضور"}<br/><span className="text-blue-600">({group.course?.attendancePercentage || 20}%)</span>
                                 </th>
                                 <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  {course.behaviorGradeLabel || "السلوك"}<br/><span className="text-green-600">({course.behaviorPercentage || 30}%)</span>
+                                  {group.course?.behaviorGradeLabel || "السلوك"}<br/><span className="text-green-600">({group.course?.behaviorPercentage || 30}%)</span>
                                 </th>
                                 <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  {course.finalExamGradeLabel || "الاختبار النهائي"}<br/><span className="text-purple-600">({course.finalExamPercentage || 50}%)</span>
+                                  {group.course?.finalExamGradeLabel || "الاختبار النهائي"}<br/><span className="text-purple-600">({group.course?.finalExamPercentage || 50}%)</span>
                                 </th>
                                 <th className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                                   الدرجة النهائية<br/><span className="text-orange-600">(محسوبة)</span>
@@ -692,7 +692,7 @@ const SupervisorCourses: React.FC = () => {
                                   typeof currentAttendance === 'number' ? currentAttendance : undefined,
                                   typeof currentBehavior === 'number' ? currentBehavior : undefined,
                                   typeof currentFinalExam === 'number' ? currentFinalExam : undefined,
-                                  course
+                                  group.course
                                 );
                                 const hasChanges = hasDetailedGradeChanged(student);
 
@@ -714,7 +714,7 @@ const SupervisorCourses: React.FC = () => {
                                         min="0"
                                         max="100"
                                         step="0.5"
-                                        placeholder={getDetailedGradePlaceholder(student, 'attendanceGrade', course)}
+                                        placeholder={getDetailedGradePlaceholder(student, 'attendanceGrade', group.course)}
                                         className={`w-20 text-center ${hasChanges ? 'border-blue-400 bg-blue-50' : ''}`}
                                         value={currentAttendance}
                                         onChange={(e) => {
@@ -730,7 +730,7 @@ const SupervisorCourses: React.FC = () => {
                                         min="0"
                                         max="100"
                                         step="0.5"
-                                        placeholder={getDetailedGradePlaceholder(student, 'behaviorGrade', course)}
+                                        placeholder={getDetailedGradePlaceholder(student, 'behaviorGrade', group.course)}
                                         className={`w-20 text-center ${hasChanges ? 'border-green-400 bg-green-50' : ''}`}
                                         value={currentBehavior}
                                         onChange={(e) => {
@@ -746,7 +746,7 @@ const SupervisorCourses: React.FC = () => {
                                         min="0"
                                         max="100"
                                         step="0.5"
-                                        placeholder={getDetailedGradePlaceholder(student, 'finalExamGrade', course)}
+                                        placeholder={getDetailedGradePlaceholder(student, 'finalExamGrade', group.course)}
                                         className={`w-20 text-center ${hasChanges ? 'border-purple-400 bg-purple-50' : ''}`}
                                         value={currentFinalExam}
                                         onChange={(e) => {
