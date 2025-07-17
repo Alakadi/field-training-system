@@ -697,6 +697,13 @@ export class DatabaseStorage implements IStorage {
     const finalCourseData = {
       ...courseData,
       academicYearId: appropriateAcademicYearId,
+      // إضافة القيم الافتراضية للحقول الجديدة إذا لم تكن موجودة
+      attendancePercentage: courseData.attendancePercentage || 20,
+      behaviorPercentage: courseData.behaviorPercentage || 30,
+      finalExamPercentage: courseData.finalExamPercentage || 50,
+      attendanceGradeLabel: courseData.attendanceGradeLabel || "درجة الحضور",
+      behaviorGradeLabel: courseData.behaviorGradeLabel || "درجة السلوك",
+      finalExamGradeLabel: courseData.finalExamGradeLabel || "درجة الاختبار النهائي",
       // يمكن إضافة حقول startDate و endDate إذا كانت موجودة في schema
     };
 

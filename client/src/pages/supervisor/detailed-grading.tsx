@@ -133,6 +133,17 @@ const SupervisorDetailedGrading: React.FC = () => {
   };
 
   const calculateFinalGrade = (attendance: number, behavior: number, finalExam: number) => {
+    // استخدام النسب المخصصة للدورة المحددة
+    const course = selectedCourseData?.course;
+    if (course) {
+      const attendancePercentage = course.attendancePercentage || 20;
+      const behaviorPercentage = course.behaviorPercentage || 30;
+      const finalExamPercentage = course.finalExamPercentage || 50;
+      
+      return (attendance * attendancePercentage / 100) + (behavior * behaviorPercentage / 100) + (finalExam * finalExamPercentage / 100);
+    }
+    
+    // النسب الافتراضية إذا لم تكن الدورة متاحة
     return (attendance * 0.2) + (behavior * 0.3) + (finalExam * 0.5);
   };
 
@@ -169,7 +180,7 @@ const SupervisorDetailedGrading: React.FC = () => {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-neutral-900">الدرجات المفصلة</h1>
-            <p className="text-neutral-600 mt-2">إدارة الدرجات المفصلة للطلاب (حضور 20% + سلوك 30% + اختبار نهائي 50%)</p>
+            <p className="text-neutral-600 mt-2">إدارة الدرجات المفصلة للطلاب</p>
           </div>
         </div>
 
@@ -263,15 +274,24 @@ const SupervisorDetailedGrading: React.FC = () => {
                 <div className="grid grid-cols-3 gap-4 mt-2">
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                    <span>درجة الحضور (20%)</span>
+                    <span>
+                      {selectedCourseData?.course?.attendanceGradeLabel || "درجة الحضور"} 
+                      ({selectedCourseData?.course?.attendancePercentage || 20}%)
+                    </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 bg-green-500 rounded"></div>
-                    <span>درجة السلوك (30%)</span>
+                    <span>
+                      {selectedCourseData?.course?.behaviorGradeLabel || "درجة السلوك"} 
+                      ({selectedCourseData?.course?.behaviorPercentage || 30}%)
+                    </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 bg-purple-500 rounded"></div>
-                    <span>الاختبار النهائي (50%)</span>
+                    <span>
+                      {selectedCourseData?.course?.finalExamGradeLabel || "الاختبار النهائي"} 
+                      ({selectedCourseData?.course?.finalExamPercentage || 50}%)
+                    </span>
                   </div>
                 </div>
               </div>
@@ -296,19 +316,19 @@ const SupervisorDetailedGrading: React.FC = () => {
                         <th className="text-right p-3 font-medium">اسم الطالب</th>
                         <th className="text-right p-3 font-medium">الرقم الجامعي</th>
                         <th className="text-right p-3 font-medium text-blue-600">
-                          درجة الحضور
+                          {selectedCourseData?.course?.attendanceGradeLabel || "درجة الحضور"}
                           <br />
-                          <span className="text-xs font-normal">(20%)</span>
+                          <span className="text-xs font-normal">({selectedCourseData?.course?.attendancePercentage || 20}%)</span>
                         </th>
                         <th className="text-right p-3 font-medium text-green-600">
-                          درجة السلوك
+                          {selectedCourseData?.course?.behaviorGradeLabel || "درجة السلوك"}
                           <br />
-                          <span className="text-xs font-normal">(30%)</span>
+                          <span className="text-xs font-normal">({selectedCourseData?.course?.behaviorPercentage || 30}%)</span>
                         </th>
                         <th className="text-right p-3 font-medium text-purple-600">
-                          الاختبار النهائي
+                          {selectedCourseData?.course?.finalExamGradeLabel || "الاختبار النهائي"}
                           <br />
-                          <span className="text-xs font-normal">(50%)</span>
+                          <span className="text-xs font-normal">({selectedCourseData?.course?.finalExamPercentage || 50}%)</span>
                         </th>
                         <th className="text-right p-3 font-medium text-orange-600">
                           الدرجة النهائية

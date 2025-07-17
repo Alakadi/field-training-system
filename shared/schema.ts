@@ -84,6 +84,14 @@ export const trainingCourses = pgTable("training_courses", {
   academicYearId: integer("academic_year_id").references(() => academicYears.id), // ربط بالسنة الدراسية
   description: text("description"),
   status: text("status").default("upcoming"), // "upcoming", "active", "completed", "cancelled", "registration_closed"
+  // حقول نسب الدرجات القابلة للتعديل
+  attendancePercentage: integer("attendance_percentage").default(20), // نسبة درجة الحضور (افتراضي 20%)
+  behaviorPercentage: integer("behavior_percentage").default(30), // نسبة درجة السلوك (افتراضي 30%)
+  finalExamPercentage: integer("final_exam_percentage").default(50), // نسبة درجة الاختبار النهائي (افتراضي 50%)
+  // أسماء الحقول القابلة للتعديل
+  attendanceGradeLabel: text("attendance_grade_label").default("درجة الحضور"), // تسمية درجة الحضور
+  behaviorGradeLabel: text("behavior_grade_label").default("درجة السلوك"), // تسمية درجة السلوك
+  finalExamGradeLabel: text("final_exam_grade_label").default("درجة الاختبار النهائي"), // تسمية درجة الاختبار النهائي
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: integer("created_by").references(() => users.id),
 });

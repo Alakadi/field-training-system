@@ -20,9 +20,22 @@ const addCourseSchema = z.object({
   majorId: z.string().min(1, "التخصص مطلوب"),
   levelId: z.string().min(1, "المستوى مطلوب"),
   description: z.string().optional(),
+  // إعدادات النسب والتسميات
+  attendancePercentage: z.number().min(0).max(100).default(20),
+  behaviorPercentage: z.number().min(0).max(100).default(30),
+  finalExamPercentage: z.number().min(0).max(100).default(50),
+  attendanceGradeLabel: z.string().default("درجة الحضور"),
+  behaviorGradeLabel: z.string().default("درجة السلوك"),
+  finalExamGradeLabel: z.string().default("درجة الاختبار النهائي"),
   // إزالة حقل الحالة - سيتم تحديدها تلقائياً بناءً على تواريخ المجموعات
   // إزالة حقل السنة الدراسية - سيتم تحديدها تلقائياً بناءً على تاريخ بدء الكورس
-});
+}).refine(
+  (data) => data.attendancePercentage + data.behaviorPercentage + data.finalExamPercentage === 100,
+  {
+    message: "يجب أن يكون مجموع النسب الثلاث 100%",
+    path: ["finalExamPercentage"],
+  }
+);
 
 const courseGroupSchema = z.object({
   siteId: z.string().min(1, "جهة التدريب مطلوبة"),
@@ -101,6 +114,12 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
       majorId: "",
       levelId: "",
       description: "",
+      attendancePercentage: 20,
+      behaviorPercentage: 30,
+      finalExamPercentage: 50,
+      attendanceGradeLabel: "درجة الحضور",
+      behaviorGradeLabel: "درجة السلوك",
+      finalExamGradeLabel: "درجة الاختبار النهائي",
     },
   });
 
@@ -403,6 +422,137 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                     </FormItem>
                   )}
                 />
+              </div>
+
+              {/* Grade Settings */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold border-b pb-2">إعدادات الدرجات</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Attendance Grade */}
+                  <div className="space-y-2">
+                    <FormField
+                      control={form.control}
+                      name="attendanceGradeLabel"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>تسمية درجة الحضور</FormLabel>
+                          <FormControl>
+                            <Input placeholder="درجة الحضور" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="attendancePercentage"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>نسبة درجة الحضور (%)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min="0" 
+                              max="100" 
+                              placeholder="20"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Behavior Grade */}
+                  <div className="space-y-2">
+                    <FormField
+                      control={form.control}
+                      name="behaviorGradeLabel"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>تسمية درجة السلوك</FormLabel>
+                          <FormControl>
+                            <Input placeholder="درجة السلوك" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="behaviorPercentage"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>نسبة درجة السلوك (%)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min="0" 
+                              max="100" 
+                              placeholder="30"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Final Exam Grade */}
+                  <div className="space-y-2">
+                    <FormField
+                      control={form.control}
+                      name="finalExamGradeLabel"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>تسمية درجة الاختبار النهائي</FormLabel>
+                          <FormControl>
+                            <Input placeholder="درجة الاختبار النهائي" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="finalExamPercentage"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>نسبة درجة الاختبار النهائي (%)</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min="0" 
+                              max="100" 
+                              placeholder="50"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Total Percentage Display */}
+                  <div className="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
+                    <div className="text-center">
+                      <div className="text-sm text-gray-600">المجموع</div>
+                      <div className={`text-xl font-bold ${
+                        (form.watch("attendancePercentage") + form.watch("behaviorPercentage") + form.watch("finalExamPercentage")) === 100
+                          ? "text-green-600" 
+                          : "text-red-600"
+                      }`}>
+                        {(form.watch("attendancePercentage") + form.watch("behaviorPercentage") + form.watch("finalExamPercentage")) || 0}%
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Course Groups */}
