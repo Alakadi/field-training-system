@@ -100,7 +100,24 @@ const SupervisorDetailedGrading: React.FC = () => {
   });
 
   const handleGradeChange = (assignmentId: number, field: keyof DetailedGrades, value: number) => {
-    if (value < 0 || value > 100) return;
+    // استخدام النسب المخصصة للدورة بدلاً من القيمة الثابتة 100
+    let maxValue = 100; // القيمة الافتراضية
+    if (selectedCourseData?.course) {
+      if (field === 'attendanceGrade') {
+        maxValue = selectedCourseData.course.attendancePercentage || 20;
+      } else if (field === 'behaviorGrade') {
+        maxValue = selectedCourseData.course.behaviorPercentage || 30;
+      } else if (field === 'finalExamGrade') {
+        maxValue = selectedCourseData.course.finalExamPercentage || 50;
+      }
+    } else {
+      // النسب الافتراضية إذا لم تتوفر بيانات الدورة
+      if (field === 'attendanceGrade') maxValue = 20;
+      else if (field === 'behaviorGrade') maxValue = 30;
+      else if (field === 'finalExamGrade') maxValue = 50;
+    }
+
+    if (value < 0 || value > maxValue) return;
     
     // التحقق من حالة المجموعة المحددة فقط
     if (isCourseUpcoming) {
@@ -355,33 +372,33 @@ const SupervisorDetailedGrading: React.FC = () => {
                               <Input
                                 type="number"
                                 min="0"
-                                max="100"
+                                max={selectedCourseData?.course?.attendancePercentage || 20}
                                 value={attendanceGrade}
                                 onChange={(e) => handleGradeChange(student.assignmentId, 'attendanceGrade', parseFloat(e.target.value) || 0)}
                                 className="w-20 text-center border-blue-300 focus:border-blue-500"
-                                placeholder="0-100"
+                                placeholder={`0-${selectedCourseData?.course?.attendancePercentage || 20}`}
                               />
                             </td>
                             <td className="p-3">
                               <Input
                                 type="number"
                                 min="0"
-                                max="100"
+                                max={selectedCourseData?.course?.behaviorPercentage || 30}
                                 value={behaviorGrade}
                                 onChange={(e) => handleGradeChange(student.assignmentId, 'behaviorGrade', parseFloat(e.target.value) || 0)}
                                 className="w-20 text-center border-green-300 focus:border-green-500"
-                                placeholder="0-100"
+                                placeholder={`0-${selectedCourseData?.course?.behaviorPercentage || 30}`}
                               />
                             </td>
                             <td className="p-3">
                               <Input
                                 type="number"
                                 min="0"
-                                max="100"
+                                max={selectedCourseData?.course?.finalExamPercentage || 50}
                                 value={finalExamGrade}
                                 onChange={(e) => handleGradeChange(student.assignmentId, 'finalExamGrade', parseFloat(e.target.value) || 0)}
                                 className="w-20 text-center border-purple-300 focus:border-purple-500"
-                                placeholder="0-100"
+                                placeholder={`0-${selectedCourseData?.course?.finalExamPercentage || 50}`}
                               />
                             </td>
                             <td className="p-3">

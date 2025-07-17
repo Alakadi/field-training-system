@@ -219,13 +219,6 @@ const SupervisorCourses: React.FC = () => {
   const handleDetailedGradeChange = (studentId: number, field: 'attendanceGrade' | 'behaviorGrade' | 'finalExamGrade', value: string, assignmentId?: number) => {
     const gradeNumber = value === '' ? undefined : parseFloat(value);
 
-    // Check specific ranges for each field
-    let maxValue = 100;
-    if (field === 'attendanceGrade') maxValue = 20;
-    else if (field === 'behaviorGrade') maxValue = 30;
-    else if (field === 'finalExamGrade') maxValue = 50;
-
-    // Check if course is upcoming (prevent grade entry for upcoming courses)
     // التحقق من حالة المجموعة الحالية المحددة فقط
     const currentGroup = selectedGroups.find(g => g.id === selectedGroupId);
     if (currentGroup?.course?.status === 'upcoming') {
@@ -235,6 +228,23 @@ const SupervisorCourses: React.FC = () => {
         variant: "destructive",
       });
       return;
+    }
+
+    // استخدام النسب المخصصة للدورة بدلاً من القيم الثابتة
+    let maxValue = 100; // القيمة الافتراضية
+    if (currentGroup?.course) {
+      if (field === 'attendanceGrade') {
+        maxValue = currentGroup.course.attendancePercentage || 20;
+      } else if (field === 'behaviorGrade') {
+        maxValue = currentGroup.course.behaviorPercentage || 30;
+      } else if (field === 'finalExamGrade') {
+        maxValue = currentGroup.course.finalExamPercentage || 50;
+      }
+    } else {
+      // النسب الافتراضية إذا لم تتوفر بيانات الدورة
+      if (field === 'attendanceGrade') maxValue = 20;
+      else if (field === 'behaviorGrade') maxValue = 30;
+      else if (field === 'finalExamGrade') maxValue = 50;
     }
 
     if (value === '' || (!isNaN(gradeNumber!) && gradeNumber! >= 0 && gradeNumber! <= maxValue)) {
@@ -712,7 +722,7 @@ const SupervisorCourses: React.FC = () => {
                                       <Input
                                         type="number"
                                         min="0"
-                                        max="100"
+                                        max={group.course?.attendancePercentage || 20}
                                         step="0.5"
                                         placeholder={getDetailedGradePlaceholder(student, 'attendanceGrade', group.course)}
                                         className={`w-20 text-center ${hasChanges ? 'border-blue-400 bg-blue-50' : ''}`}
@@ -728,7 +738,7 @@ const SupervisorCourses: React.FC = () => {
                                       <Input
                                         type="number"
                                         min="0"
-                                        max="100"
+                                        max={group.course?.behaviorPercentage || 30}
                                         step="0.5"
                                         placeholder={getDetailedGradePlaceholder(student, 'behaviorGrade', group.course)}
                                         className={`w-20 text-center ${hasChanges ? 'border-green-400 bg-green-50' : ''}`}
@@ -744,7 +754,7 @@ const SupervisorCourses: React.FC = () => {
                                       <Input
                                         type="number"
                                         min="0"
-                                        max="100"
+                                        max={group.course?.finalExamPercentage || 50}
                                         step="0.5"
                                         placeholder={getDetailedGradePlaceholder(student, 'finalExamGrade', group.course)}
                                         className={`w-20 text-center ${hasChanges ? 'border-purple-400 bg-purple-50' : ''}`}
