@@ -66,9 +66,27 @@ const SupervisorCourses: React.FC = () => {
     assignmentId?: number;
   } }>({});
   const [savingGrades, setSavingGrades] = useState(false);
+  const [gradeErrors, setGradeErrors] = useState<{ [key: string]: {
+    attendanceGrade?: string;
+    behaviorGrade?: string;
+    finalExamGrade?: string;
+  } }>({});
 
   const [selectedGroups, setSelectedGroups] = useState<CourseGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
+
+  // تحويل الأرقام العربية إلى إنجليزية
+  const convertArabicToEnglishNumbers = (value: string): string => {
+    const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    const englishNumbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    
+    let convertedValue = value;
+    arabicNumbers.forEach((arabic, index) => {
+      convertedValue = convertedValue.replace(new RegExp(arabic, 'g'), englishNumbers[index]);
+    });
+    
+    return convertedValue;
+  };
 
   // Fetch supervisor data
   const { data: supervisorData } = useQuery({
@@ -217,7 +235,9 @@ const SupervisorCourses: React.FC = () => {
   });
 
   const handleDetailedGradeChange = (studentId: number, field: 'attendanceGrade' | 'behaviorGrade' | 'finalExamGrade', value: string, assignmentId?: number) => {
-    const gradeNumber = value === '' ? undefined : parseFloat(value);
+    // تحويل الأرقام العربية إلى إنجليزية
+    const convertedValue = convertArabicToEnglishNumbers(value);
+    const gradeNumber = convertedValue === '' ? undefined : parseFloat(convertedValue);
 
     // التحقق من حالة المجموعة الحالية المحددة فقط
     const currentGroup = selectedGroups.find(g => g.id === selectedGroupId);
@@ -247,9 +267,35 @@ const SupervisorCourses: React.FC = () => {
       else if (field === 'finalExamGrade') maxValue = 50;
     }
 
-    if (value === '' || (!isNaN(gradeNumber!) && gradeNumber! >= 0 && gradeNumber! <= maxValue)) {
-      console.log(`Setting grade for student ${studentId}, field ${field}, value ${gradeNumber}, assignmentId ${assignmentId}`);
+    console.log(`Setting grade for student ${studentId}, field ${field}, value ${gradeNumber}, assignmentId ${assignmentId}`);
 
+    // التحقق من صحة القيمة وإدارة الأخطاء
+    let errorMessage = '';
+    if (convertedValue !== '' && (isNaN(gradeNumber!) || gradeNumber! < 0 || gradeNumber! > maxValue)) {
+      errorMessage = `يجب أن تكون الدرجة بين 0 و ${maxValue}`;
+    }
+
+    // تحديث أو إزالة رسائل الخطأ
+    setGradeErrors(prev => {
+      const newErrors = { ...prev };
+      if (!newErrors[studentId]) {
+        newErrors[studentId] = {};
+      }
+      
+      if (errorMessage) {
+        newErrors[studentId][field] = errorMessage;
+      } else {
+        delete newErrors[studentId][field];
+        if (Object.keys(newErrors[studentId]).length === 0) {
+          delete newErrors[studentId];
+        }
+      }
+      
+      return newErrors;
+    });
+
+    // تحديث القيمة فقط إذا لم يكن هناك خطأ
+    if (!errorMessage) {
       setEditingGrades(prev => {
         // Try to get assignmentId from multiple sources
         let finalAssignmentId = assignmentId;
@@ -319,20 +365,20 @@ const SupervisorCourses: React.FC = () => {
       behavior !== undefined &&
       finalExam !== undefined
     ) {
-      // التحقق من أن القيم ضمن الحدود المسموحة (من 0 إلى 100)
+      // التحقق من أن القيم ضمن الحدود المسموحة
+      const attendanceMax = course?.attendancePercentage || 20;
+      const behaviorMax = course?.behaviorPercentage || 30;
+      const finalExamMax = course?.finalExamPercentage || 50;
+      
       if (
-        attendance >= 0 && attendance <= 100 &&
-        behavior >= 0 && behavior <= 100 &&
-        finalExam >= 0 && finalExam <= 100
+        attendance >= 0 && attendance <= attendanceMax &&
+        behavior >= 0 && behavior <= behaviorMax &&
+        finalExam >= 0 && finalExam <= finalExamMax
       ) {
-        // استخدام النسب المخصصة للدورة
-        const attendancePercentage = course?.attendancePercentage || 20;
-        const behaviorPercentage = course?.behaviorPercentage || 30;
-        const finalExamPercentage = course?.finalExamPercentage || 50;
-        
-        return (attendance * attendancePercentage / 100) + (behavior * behaviorPercentage / 100) + (finalExam * finalExamPercentage / 100);
+        // حساب مجموع الدرجات مباشرة
+        return attendance + behavior + finalExam;
       } else {
-        throw new Error("إحدى الدرجات تتجاوز الحد المسموح به (0-100)");
+        throw new Error("إحدى الدرجات تتجاوز الحد المسموح به");
       }
     }
 
@@ -343,6 +389,16 @@ const SupervisorCourses: React.FC = () => {
   const saveAllDetailedGrades = async (groupId: number) => {
           console.log("Starting saveAllDetailedGrades for group:", groupId);
           console.log("Current editing grades:", editingGrades);
+
+          // التحقق من وجود أخطاء
+          if (Object.keys(gradeErrors).length > 0) {
+            toast({
+              title: "لا يمكن الحفظ",
+              description: "يوجد أخطاء في بعض الدرجات. يرجى تصحيحها أولاً",
+              variant: "destructive",
+            });
+            return;
+          }
 
           const targetGroup = selectedGroups.find(g => g.id === groupId);
           console.log("Target group:", targetGroup);
@@ -719,50 +775,62 @@ const SupervisorCourses: React.FC = () => {
 
                                     {/* Attendance Grade */}
                                     <td className="px-3 py-4 whitespace-nowrap text-center">
-                                      <Input
-                                        type="number"
-                                        min="0"
-                                        max={group.course?.attendancePercentage || 20}
-                                        step="0.5"
-                                        placeholder={getDetailedGradePlaceholder(student, 'attendanceGrade', group.course)}
-                                        className={`w-20 text-center ${hasChanges ? 'border-blue-400 bg-blue-50' : ''}`}
-                                        value={currentAttendance}
-                                        onChange={(e) => {
-                                          handleDetailedGradeChange(student.id, 'attendanceGrade', e.target.value, student.assignment?.id);
-                                        }}
-                                      />
+                                      <div className="flex flex-col items-center">
+                                        <Input
+                                          type="text"
+                                          placeholder={getDetailedGradePlaceholder(student, 'attendanceGrade', group.course)}
+                                          className={`w-20 text-center ${hasChanges ? 'border-blue-400 bg-blue-50' : ''} ${gradeErrors[student.id]?.attendanceGrade ? 'border-red-500' : ''}`}
+                                          value={currentAttendance}
+                                          onChange={(e) => {
+                                            handleDetailedGradeChange(student.id, 'attendanceGrade', e.target.value, student.assignment?.id);
+                                          }}
+                                        />
+                                        {gradeErrors[student.id]?.attendanceGrade && (
+                                          <span className="text-xs text-red-500 mt-1">
+                                            {gradeErrors[student.id].attendanceGrade}
+                                          </span>
+                                        )}
+                                      </div>
                                     </td>
 
                                     {/* Behavior Grade */}
                                     <td className="px-3 py-4 whitespace-nowrap text-center">
-                                      <Input
-                                        type="number"
-                                        min="0"
-                                        max={group.course?.behaviorPercentage || 30}
-                                        step="0.5"
-                                        placeholder={getDetailedGradePlaceholder(student, 'behaviorGrade', group.course)}
-                                        className={`w-20 text-center ${hasChanges ? 'border-green-400 bg-green-50' : ''}`}
-                                        value={currentBehavior}
-                                        onChange={(e) => {
-                                          handleDetailedGradeChange(student.id, 'behaviorGrade', e.target.value, student.assignment?.id);
-                                        }}
-                                      />
+                                      <div className="flex flex-col items-center">
+                                        <Input
+                                          type="text"
+                                          placeholder={getDetailedGradePlaceholder(student, 'behaviorGrade', group.course)}
+                                          className={`w-20 text-center ${hasChanges ? 'border-green-400 bg-green-50' : ''} ${gradeErrors[student.id]?.behaviorGrade ? 'border-red-500' : ''}`}
+                                          value={currentBehavior}
+                                          onChange={(e) => {
+                                            handleDetailedGradeChange(student.id, 'behaviorGrade', e.target.value, student.assignment?.id);
+                                          }}
+                                        />
+                                        {gradeErrors[student.id]?.behaviorGrade && (
+                                          <span className="text-xs text-red-500 mt-1">
+                                            {gradeErrors[student.id].behaviorGrade}
+                                          </span>
+                                        )}
+                                      </div>
                                     </td>
 
                                     {/* Final Exam Grade */}
                                     <td className="px-3 py-4 whitespace-nowrap text-center">
-                                      <Input
-                                        type="number"
-                                        min="0"
-                                        max={group.course?.finalExamPercentage || 50}
-                                        step="0.5"
-                                        placeholder={getDetailedGradePlaceholder(student, 'finalExamGrade', group.course)}
-                                        className={`w-20 text-center ${hasChanges ? 'border-purple-400 bg-purple-50' : ''}`}
-                                        value={currentFinalExam}
-                                        onChange={(e) => {
-                                          handleDetailedGradeChange(student.id, 'finalExamGrade', e.target.value, student.assignment?.id);
-                                        }}
-                                      />
+                                      <div className="flex flex-col items-center">
+                                        <Input
+                                          type="text"
+                                          placeholder={getDetailedGradePlaceholder(student, 'finalExamGrade', group.course)}
+                                          className={`w-20 text-center ${hasChanges ? 'border-purple-400 bg-purple-50' : ''} ${gradeErrors[student.id]?.finalExamGrade ? 'border-red-500' : ''}`}
+                                          value={currentFinalExam}
+                                          onChange={(e) => {
+                                            handleDetailedGradeChange(student.id, 'finalExamGrade', e.target.value, student.assignment?.id);
+                                          }}
+                                        />
+                                        {gradeErrors[student.id]?.finalExamGrade && (
+                                          <span className="text-xs text-red-500 mt-1">
+                                            {gradeErrors[student.id].finalExamGrade}
+                                          </span>
+                                        )}
+                                      </div>
                                     </td>
 
                                     {/* Calculated Final Grade */}
