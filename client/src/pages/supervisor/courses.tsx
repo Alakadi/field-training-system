@@ -180,8 +180,8 @@ const SupervisorCourses: React.FC = () => {
 
   // Update multiple student detailed grades mutation
   const updateDetailedGradesMutation = useMutation({
-    mutationFn: async (updates: { assignmentId: number; attendanceGrade: number; behaviorGrade: number; finalExamGrade: number }[]) => {
-      console.log("Sending detailed grades request:", updates);
+    mutationFn: async ({ updates, groupId }: { updates: { assignmentId: number; attendanceGrade: number; behaviorGrade: number; finalExamGrade: number }[]; groupId: number }) => {
+      console.log("Sending detailed grades request:", updates, "for group:", groupId);
 
       const response = await fetch("/api/students/detailed-grades/bulk", {
         method: "POST",
@@ -189,7 +189,7 @@ const SupervisorCourses: React.FC = () => {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({ updates }),
+        body: JSON.stringify({ updates, groupId }),
       });
 
       console.log("Response status:", response.status);
@@ -470,7 +470,7 @@ const SupervisorCourses: React.FC = () => {
 
     setSavingGrades(true);
     try {
-      await updateDetailedGradesMutation.mutateAsync(updates);
+      await updateDetailedGradesMutation.mutateAsync({ updates, groupId });
     } catch (error) {
       console.error("Error saving detailed grades:", error);
     } finally {

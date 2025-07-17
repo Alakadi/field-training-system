@@ -96,8 +96,14 @@ const SupervisorDetailedGrading: React.FC = () => {
 
   // Save detailed grades mutation
   const saveGradesMutation = useMutation({
-    mutationFn: (updates: DetailedGrades[]) =>
-      apiRequest("POST", "/api/students/detailed-grades/bulk", { updates }),
+    mutationFn: (updates: DetailedGrades[]) => {
+      // الحصول على groupId من البيانات المختارة
+      const groupId = selectedCourseData?.groupId;
+      if (!groupId) {
+        throw new Error("معرف المجموعة غير متوفر");
+      }
+      return apiRequest("POST", "/api/students/detailed-grades/bulk", { updates, groupId });
+    },
     onSuccess: () => {
       toast({
         title: "تم الحفظ بنجاح",

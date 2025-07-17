@@ -3294,10 +3294,14 @@ const allGroups = await storage.getAllTrainingCourseGroups();
   // API endpoint to save detailed grades (attendance, behavior, final exam)
   app.post("/api/students/detailed-grades/bulk", authMiddleware, requireRole("supervisor"), async (req: Request, res: Response) => {
     try {
-      const { updates } = req.body;
+      const { updates, groupId } = req.body;
 
       if (!updates || !Array.isArray(updates)) {
         return res.status(400).json({ message: "بيانات غير صحيحة" });
+      }
+
+      if (!groupId) {
+        return res.status(400).json({ message: "معرف المجموعة مطلوب" });
       }
 
       // Validate detailed grades using course-specific percentages
@@ -3343,11 +3347,42 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         return res.status(403).json({ message: "غير مصرح بالوصول" });
       }
 
+      // التحقق من المجموعة والتأكد من أن المشرف مخول للوصول إليها
+      const group = await storage.getTrainingCourseGroupWithStudents(groupId);
+      if (!group) {
+        return res.status(404).json({ message: "المجموعة غير موجودة" });
+      }
+
+      // التحقق من أن المشرف مخول لهذه المجموعة
+      if (group.supervisorId !== supervisor.id) {
+        return res.status(403).json({ message: "غير مصرح بالوصول لهذه المجموعة" });
+      }
+
       const savedUpdates = [];
       const validGrades = [];
 
       for (const update of updates) {
         const { assignmentId, attendanceGrade, behaviorGrade, finalExamGrade } = update;
+
+        // التحقق من صحة التعيين والتأكد من أنه ينتمي للمجموعة المحددة
+        const assignment = await storage.getTrainingAssignmentById(assignmentId);
+        if (!assignment) {
+          console.error(`Assignment ${assignmentId} not found`);
+          continue;
+        }
+
+        // التحقق من أن الطالب ينتمي لهذه المجموعة
+        if (assignment.groupId !== groupId) {
+          console.error(`Assignment ${assignmentId} does not belong to group ${groupId}`);
+          continue;
+        }
+
+        // التحقق من أن الطالب موجود في المجموعة
+        const studentInGroup = group.students.find(s => s.id === assignment.studentId);
+        if (!studentInGroup) {
+          console.error(`Student ${assignment.studentId} not found in group ${groupId}`);
+          continue;
+        }
 
         // إعداد البيانات للتحديث
         const updateData: any = {};
@@ -3356,7 +3391,6 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         if (finalExamGrade !== undefined) updateData.finalExamGrade = Number(finalExamGrade);
 
         // حساب الدرجة النهائية فقط إذا كانت جميع الدرجات متوفرة
-        const assignment = await storage.getTrainingAssignmentById(assignmentId);
         if (assignment) {
           const currentAttendance = updateData.attendanceGrade ?? assignment.attendanceGrade;
           const currentBehavior = updateData.behaviorGrade ?? assignment.behaviorGrade;

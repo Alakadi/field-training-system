@@ -11,11 +11,17 @@ dotenv.config();
 
 // Check if DATABASE_URL is set in environment variables
 if (!process.env.DATABASE_URL) {
-  console.error("DATABASE_URL is not set in environment variables");
-  console.error("Available environment variables:", Object.keys(process.env).filter(key => key.includes('DATABASE') || key.includes('PG')));
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
-  );
+  // بناء URL من متغيرات البيئة المتاحة
+  if (process.env.PGUSER && process.env.PGPASSWORD && process.env.PGHOST && process.env.PGPORT && process.env.PGDATABASE) {
+    process.env.DATABASE_URL = `postgresql://${process.env.PGUSER}:${process.env.PGPASSWORD}@${process.env.PGHOST}:${process.env.PGPORT}/${process.env.PGDATABASE}`;
+    console.log("DATABASE_URL created from environment variables");
+  } else {
+    console.error("DATABASE_URL is not set in environment variables");
+    console.error("Available environment variables:", Object.keys(process.env).filter(key => key.includes('DATABASE') || key.includes('PG')));
+    throw new Error(
+      "DATABASE_URL must be set. Did you forget to provision a database?",
+    );
+  }
 }
 
 let pool: any;
