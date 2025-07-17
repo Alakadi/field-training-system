@@ -3363,25 +3363,9 @@ const allGroups = await storage.getAllTrainingCourseGroups();
           const currentFinalExam = updateData.finalExamGrade ?? assignment.finalExamGrade;
 
           if (currentAttendance !== null && currentBehavior !== null && currentFinalExam !== null) {
-            // الحصول على تفاصيل الدورة للنسب المخصصة
-            const course = await storage.getTrainingCourse(assignment.courseId);
-            if (course) {
-              const attendancePercentage = course.attendancePercentage || 20;
-              const behaviorPercentage = course.behaviorPercentage || 30;
-              const finalExamPercentage = course.finalExamPercentage || 50;
-              
-              // حساب الدرجة النهائية بناءً على النسب المخصصة
-              updateData.calculatedFinalGrade = 
-                (Number(currentAttendance) * attendancePercentage / 100) +
-                (Number(currentBehavior) * behaviorPercentage / 100) +
-                (Number(currentFinalExam) * finalExamPercentage / 100);
-            } else {
-              // استخدام النسب الافتراضية إذا لم تكن الدورة متاحة
-              updateData.calculatedFinalGrade = 
-                (Number(currentAttendance) * 0.2) +
-                (Number(currentBehavior) * 0.3) +
-                (Number(currentFinalExam) * 0.5);
-            }
+            // حساب الدرجة النهائية كمجموع بسيط للدرجات الثلاث
+            updateData.calculatedFinalGrade = 
+              Number(currentAttendance) + Number(currentBehavior) + Number(currentFinalExam);
           }
         }
 
