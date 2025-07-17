@@ -3300,24 +3300,40 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         return res.status(400).json({ message: "بيانات غير صحيحة" });
       }
 
-      // Validate detailed grades - specific ranges for each grade
+      // Validate detailed grades using course-specific percentages
       for (const update of updates) {
         if (!update.assignmentId) {
           return res.status(400).json({ message: "معرف التعيين مطلوب" });
         }
 
-        // التحقق من الدرجات المرسلة فقط (يمكن أن تكون undefined)
-        // سيتم التحقق من النسب الفعلية بناءً على كل دورة
-        if (update.attendanceGrade !== undefined && (update.attendanceGrade < 0 || update.attendanceGrade > 100)) {
-          return res.status(400).json({ message: "درجة الحضور يجب أن تكون بين 0 و 100" });
+        // الحصول على تفاصيل التعيين والدورة للتحقق من النسب
+        const assignment = await storage.getTrainingAssignmentById(update.assignmentId);
+        if (!assignment) {
+          return res.status(400).json({ message: "التعيين غير موجود" });
         }
 
-        if (update.behaviorGrade !== undefined && (update.behaviorGrade < 0 || update.behaviorGrade > 100)) {
-          return res.status(400).json({ message: "درجة السلوك يجب أن تكون بين 0 و 100" });
+        // الحصول على تفاصيل الدورة للنسب المخصصة
+        const course = await storage.getTrainingCourse(assignment.courseId);
+        if (!course) {
+          return res.status(400).json({ message: "الدورة غير موجودة" });
         }
 
-        if (update.finalExamGrade !== undefined && (update.finalExamGrade < 0 || update.finalExamGrade > 100)) {
-          return res.status(400).json({ message: "درجة الاختبار النهائي يجب أن تكون بين 0 و 100" });
+        // استخدام النسب المخصصة للدورة
+        const attendanceMax = course.attendancePercentage || 20;
+        const behaviorMax = course.behaviorPercentage || 30;
+        const finalExamMax = course.finalExamPercentage || 50;
+
+        // التحقق من الدرجات بناءً على النسب المخصصة
+        if (update.attendanceGrade !== undefined && (update.attendanceGrade < 0 || update.attendanceGrade > attendanceMax)) {
+          return res.status(400).json({ message: `درجة الحضور يجب أن تكون بين 0 و ${attendanceMax}` });
+        }
+
+        if (update.behaviorGrade !== undefined && (update.behaviorGrade < 0 || update.behaviorGrade > behaviorMax)) {
+          return res.status(400).json({ message: `درجة السلوك يجب أن تكون بين 0 و ${behaviorMax}` });
+        }
+
+        if (update.finalExamGrade !== undefined && (update.finalExamGrade < 0 || update.finalExamGrade > finalExamMax)) {
+          return res.status(400).json({ message: `درجة الاختبار النهائي يجب أن تكون بين 0 و ${finalExamMax}` });
         }
       }
 
