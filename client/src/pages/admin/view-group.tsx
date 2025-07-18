@@ -350,8 +350,8 @@ export default function ViewGroup() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {student.assignment?.calculatedFinalGrade ? (
-                              <Badge variant={student.assignment.calculatedFinalGrade >= 75 ? "default" : student.grade >= 60 ? "secondary" : "destructive"}>
-                                {student.grade}/100
+                              <Badge variant={student.assignment.calculatedFinalGrade >= 75 ? "default" : student.assignment.calculatedFinalGrade >= 60 ? "secondary" : "destructive"}>
+                                {student.assignment.calculatedFinalGrade}/100
                               </Badge>
                             ) : (
                               <Badge variant="outline">لم يتم التقييم</Badge>
