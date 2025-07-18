@@ -234,7 +234,7 @@ const SupervisorCourses: React.FC = () => {
     },
   });
 
-  const handleDetailedGradeChange = (studentId: number, field: 'attendanceGrade' | 'behaviorGrade' | 'finalExamGrade', value: string, assignmentId?: number) => {
+  const handleDetailedGradeChange = (studentId: number, field: 'attendanceGrade' | 'behaviorGrade' | 'finalExamGrade', value: string, assignmentId?: number, groupId?: number) => {
     // تحويل الأرقام العربية إلى إنجليزية
     const convertedValue = convertArabicToEnglishNumbers(value);
     const gradeNumber = convertedValue === '' ? undefined : parseFloat(convertedValue);
@@ -297,12 +297,15 @@ const SupervisorCourses: React.FC = () => {
     // تحديث القيمة فقط إذا لم يكن هناك خطأ
     if (!errorMessage) {
       setEditingGrades(prev => {
+        // إنشاء مفتاح فريد يجمع بين معرف الطالب ومعرف المجموعة
+        const gradeKey = groupId ? `${studentId}_${groupId}` : studentId;
+        
         // Try to get assignmentId from multiple sources
         let finalAssignmentId = assignmentId;
 
         if (!finalAssignmentId) {
           // Try to get from previous state
-          finalAssignmentId = prev[studentId]?.assignmentId;
+          finalAssignmentId = prev[gradeKey]?.assignmentId;
         }
 
         if (!finalAssignmentId) {
@@ -315,8 +318,8 @@ const SupervisorCourses: React.FC = () => {
 
         return {
           ...prev,
-          [studentId]: {
-            ...prev[studentId],
+          [gradeKey]: {
+            ...prev[gradeKey],
             [field]: gradeNumber,
             assignmentId: finalAssignmentId
           }
@@ -327,10 +330,14 @@ const SupervisorCourses: React.FC = () => {
 
   const getCurrentDetailedGrade = (
     student: Student,
-    field: 'attendanceGrade' | 'behaviorGrade' | 'finalExamGrade'
+    field: 'attendanceGrade' | 'behaviorGrade' | 'finalExamGrade',
+    groupId?: number
   ): number | '' => {
+    // إنشاء مفتاح فريد يجمع بين معرف الطالب ومعرف المجموعة لمنع التداخل
+    const gradeKey = groupId ? `${student.id}_${groupId}` : student.id;
+    
     // 1. إذا حررتَ الدرجة مؤخرًا، اعرضها:
-    const edited = editingGrades[student.id]?.[field];
+    const edited = editingGrades[gradeKey]?.[field];
     if (edited !== undefined) {
       return edited;
     }
@@ -349,8 +356,9 @@ const SupervisorCourses: React.FC = () => {
     return `أدخل درجة ${fieldNames[field]} (0-100)`;
   };
 
-  const hasDetailedGradeChanged = (student: Student) => {
-    const editingGrade = editingGrades[student.id];
+  const hasDetailedGradeChanged = (student: Student, groupId?: number) => {
+    const gradeKey = groupId ? `${student.id}_${groupId}` : student.id;
+    const editingGrade = editingGrades[gradeKey];
     return editingGrade !== undefined && (
       editingGrade.attendanceGrade !== undefined ||
       editingGrade.behaviorGrade !== undefined ||
@@ -431,10 +439,11 @@ const SupervisorCourses: React.FC = () => {
           const assignments = await assignmentsResponse.json();
 
           for (const assignment of assignments) {
-            console.log("Processing student:", assignment.studentId, editingGrades[assignment.studentId]);
+            const gradeKey = `${assignment.studentId}_${groupId}`;
+            console.log("Processing student:", assignment.studentId, editingGrades[gradeKey]);
 
-            if (editingGrades[assignment.studentId]) {
-              const grades = editingGrades[assignment.studentId];
+            if (editingGrades[gradeKey]) {
+              const grades = editingGrades[gradeKey];
               console.log("Found assignment for student", assignment.studentId, ":", assignment);
 
               // التحقق من وجود جميع الدرجات الثلاث أو أي منها للحفظ الفردي
@@ -479,7 +488,8 @@ const SupervisorCourses: React.FC = () => {
   };
 
   const hasUnsavedChanges = (groupId: number) => {
-    return Object.keys(editingGrades).length > 0;
+    // التحقق من وجود تغييرات للمجموعة المحددة فقط
+    return Object.keys(editingGrades).some(key => key.includes(`_${groupId}`));
   };
 
   const getStatusBadge = (status: string) => {
@@ -707,10 +717,19 @@ const SupervisorCourses: React.FC = () => {
                               {hasUnsavedChanges(group.id) && (
                                 <div className="flex items-center gap-2">
                                   <span className="text-amber-600 font-medium">
-                                    ⚠ يوجد {Object.keys(editingGrades).length} تغييرات غير محفوظة
+                                    ⚠ يوجد {Object.keys(editingGrades).filter(key => key.includes(`_${group.id}`)).length} تغييرات غير محفوظة
                                   </span>
                                   <button
-                                    onClick={() => setEditingGrades({})}
+                                    onClick={() => {
+                                      // إلغاء التغييرات للمجموعة المحددة فقط
+                                      const newGrades = { ...editingGrades };
+                                      Object.keys(newGrades).forEach(key => {
+                                        if (key.includes(`_${group.id}`)) {
+                                          delete newGrades[key];
+                                        }
+                                      });
+                                      setEditingGrades(newGrades);
+                                    }}
                                     className="text-xs text-gray-500 hover:text-gray-700 underline"
                                   >
                                     إلغاء التغييرات
@@ -751,16 +770,16 @@ const SupervisorCourses: React.FC = () => {
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                               {group.students.map((student: Student) => {
-                                const currentAttendance = getCurrentDetailedGrade(student, 'attendanceGrade');
-                                const currentBehavior = getCurrentDetailedGrade(student, 'behaviorGrade');
-                                const currentFinalExam = getCurrentDetailedGrade(student, 'finalExamGrade');
+                                const currentAttendance = getCurrentDetailedGrade(student, 'attendanceGrade', group.id);
+                                const currentBehavior = getCurrentDetailedGrade(student, 'behaviorGrade', group.id);
+                                const currentFinalExam = getCurrentDetailedGrade(student, 'finalExamGrade', group.id);
                                 const calculatedFinal = calculateFinalGrade(
                                   typeof currentAttendance === 'number' ? currentAttendance : undefined,
                                   typeof currentBehavior === 'number' ? currentBehavior : undefined,
                                   typeof currentFinalExam === 'number' ? currentFinalExam : undefined,
                                   group.course
                                 );
-                                const hasChanges = hasDetailedGradeChanged(student);
+                                const hasChanges = hasDetailedGradeChanged(student, group.id);
 
                                 return (
                                   <tr key={student.id} className="hover:bg-gray-50">
@@ -782,7 +801,7 @@ const SupervisorCourses: React.FC = () => {
                                           className={`w-20 text-center ${hasChanges ? 'border-blue-400 bg-blue-50' : ''} ${gradeErrors[student.id]?.attendanceGrade ? 'border-red-500' : ''}`}
                                           value={currentAttendance}
                                           onChange={(e) => {
-                                            handleDetailedGradeChange(student.id, 'attendanceGrade', e.target.value, student.assignment?.id);
+                                            handleDetailedGradeChange(student.id, 'attendanceGrade', e.target.value, student.assignment?.id, group.id);
                                           }}
                                         />
                                         {gradeErrors[student.id]?.attendanceGrade && (
@@ -802,7 +821,7 @@ const SupervisorCourses: React.FC = () => {
                                           className={`w-20 text-center ${hasChanges ? 'border-green-400 bg-green-50' : ''} ${gradeErrors[student.id]?.behaviorGrade ? 'border-red-500' : ''}`}
                                           value={currentBehavior}
                                           onChange={(e) => {
-                                            handleDetailedGradeChange(student.id, 'behaviorGrade', e.target.value, student.assignment?.id);
+                                            handleDetailedGradeChange(student.id, 'behaviorGrade', e.target.value, student.assignment?.id, group.id);
                                           }}
                                         />
                                         {gradeErrors[student.id]?.behaviorGrade && (
@@ -822,7 +841,7 @@ const SupervisorCourses: React.FC = () => {
                                           className={`w-20 text-center ${hasChanges ? 'border-purple-400 bg-purple-50' : ''} ${gradeErrors[student.id]?.finalExamGrade ? 'border-red-500' : ''}`}
                                           value={currentFinalExam}
                                           onChange={(e) => {
-                                            handleDetailedGradeChange(student.id, 'finalExamGrade', e.target.value, student.assignment?.id);
+                                            handleDetailedGradeChange(student.id, 'finalExamGrade', e.target.value, student.assignment?.id, group.id);
                                           }}
                                         />
                                         {gradeErrors[student.id]?.finalExamGrade && (

@@ -17,8 +17,8 @@ const SupervisorLayout: React.FC<SupervisorLayoutProps> = ({ children }) => {
   const supervisorLinks: SidebarLink[] = [
     { href: "/supervisor/dashboard", icon: "dashboard", text: "الرئيسية" },
     { href: "/supervisor/courses", icon: "school", text: "إدارة الكورسات" },
-    // { href: "/supervisor/detailed-grading", icon: "grading", text: "الدرجات المفصلة" },
-    // { href: "/supervisor/evaluations", icon: "trophy", text: " الاعدادات" },
+    { href: "/supervisor/detailed-grading", icon: "grading", text: "الدرجات المفصلة" },
+    { href: "/supervisor/evaluations", icon: "trophy", text: " الاعدادات" },
   ];
 
   // Check if user is supervisor
