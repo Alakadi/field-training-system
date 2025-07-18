@@ -349,8 +349,8 @@ export default function ViewGroup() {
                             <Badge className="bg-green-100 text-green-800">مسجل</Badge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {student.grade ? (
-                              <Badge variant={student.grade >= 75 ? "default" : student.grade >= 60 ? "secondary" : "destructive"}>
+                            {student.assignment?.calculatedFinalGrade ? (
+                              <Badge variant={student.assignment.calculatedFinalGrade >= 75 ? "default" : student.grade >= 60 ? "secondary" : "destructive"}>
                                 {student.grade}/100
                               </Badge>
                             ) : (
