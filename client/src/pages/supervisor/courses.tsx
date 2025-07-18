@@ -678,12 +678,12 @@ const SupervisorCourses: React.FC = () => {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <div className="text-sm text-gray-900">
-                                    {student.grade ? (
-                                      <Badge variant="secondary">{student.grade}/100</Badge>
-                                    ) : student.assignment?.calculatedFinalGrade ? (
-                                      <Badge variant="default" className="bg-blue-500 text-white">
-                                        {parseFloat(student.assignment.calculatedFinalGrade).toFixed(1)}/100
-                                      </Badge>
+                                    {student.assignment?.calculatedFinalGrade ? (
+                                      <Badge variant="secondary">{student.assignment.calculatedFinalGrade}</Badge>
+                                    // ) : student.assignment?.calculatedFinalGrade ? (
+                                    //   <Badge variant="default" className="bg-blue-500 text-white">
+                                    //     {parseFloat(student.assignment.calculatedFinalGrade).toFixed(1)}/100
+                                    //   </Badge>
                                     ) : (
                                       <span className="text-gray-400">لم يتم التقييم</span>
                                     )}
