@@ -147,13 +147,7 @@ export default function ViewGroup() {
               ...student,
               grade: evaluation?.score || null,
               assignmentId: assignment.id,
-              assignment: {
-                id: assignment.id,
-                attendanceGrade: assignment.attendanceGrade,
-                behaviorGrade: assignment.behaviorGrade,
-                finalExamGrade: assignment.finalExamGrade,
-                calculatedFinalGrade: assignment.calculatedFinalGrade
-              }
+              assignment: assignment
             };
           } catch (error) {
             console.error("Error fetching student details:", error);
