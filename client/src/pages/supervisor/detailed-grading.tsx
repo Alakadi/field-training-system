@@ -30,6 +30,14 @@ const SupervisorDetailedGrading: React.FC = () => {
     finalExamGrade?: string;
   } }>({});
 
+  // مسح الدرجات عند تغيير الدورة لمنع التداخل بين المجموعات
+  useEffect(() => {
+    setGrades({});
+    setHasUnsavedChanges(false);
+    setChangesCount(0);
+    setGradeErrors({});
+  }, [selectedCourseId]);
+
   // تحويل الأرقام العربية إلى إنجليزية
   const convertArabicToEnglishNumbers = (value: string): string => {
     const arabicNumbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
