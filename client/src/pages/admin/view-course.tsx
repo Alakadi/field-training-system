@@ -15,29 +15,17 @@ const ViewCourse: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [, setLocation] = useLocation();
 
-  // الحصول على بيانات الدورة التدريبية
-  const { data: course, isLoading: isLoadingCourse } = useQuery({
-    queryKey: [`/api/training-courses/${id}`],
+  // جلب جميع بيانات الدورة في استدعاء واحد موحد
+  const { data: courseData, isLoading: isLoadingCourse } = useQuery({
+    queryKey: [`/api/training-courses/${id}/complete`],
     enabled: !!id,
   });
 
-  // الحصول على بيانات مجموعات الدورة
-  const { data: courseGroups, isLoading: isLoadingGroups } = useQuery({
-    queryKey: [`/api/training-course-groups?courseId=${id}`],
-    enabled: !!id,
-  });
-
-  // الحصول على بيانات الطلاب المسجلين في الدورة
-  const { data: courseStudents, isLoading: isLoadingStudents } = useQuery({
-    queryKey: [`/api/training-courses/${id}/students`],
-    enabled: !!id,
-  });
-
-  // الحصول على بيانات التقييمات في الدورة
-  const { data: courseEvaluations, isLoading: isLoadingEvaluations } = useQuery({
-    queryKey: [`/api/training-courses/${id}/evaluations`],
-    enabled: !!id,
-  });
+  // استخراج البيانات من الاستجابة الموحدة
+  const course = courseData?.course;
+  const courseGroups = courseData?.groups;
+  const courseStudents = courseData?.students;
+  const courseEvaluations = courseData?.evaluations;
 
   if (isLoadingCourse) {
     return (
@@ -170,7 +158,7 @@ const ViewCourse: React.FC = () => {
               <TabsContent value="groups" className="mt-4">
                 <Card>
                   <CardContent className="p-4">
-                    {isLoadingGroups ? (
+                    {isLoadingCourse ? (
                       <div className="space-y-2 py-2">
                         <Skeleton className="h-4 w-full" />
                         <Skeleton className="h-4 w-full" />
@@ -241,7 +229,7 @@ const ViewCourse: React.FC = () => {
               <TabsContent value="students" className="mt-4">
                 <Card>
                   <CardContent className="p-4">
-                    {isLoadingStudents ? (
+                    {isLoadingCourse ? (
                       <div className="space-y-2 py-2">
                         <Skeleton className="h-4 w-full" />
                         <Skeleton className="h-4 w-full" />
@@ -314,7 +302,7 @@ const ViewCourse: React.FC = () => {
               <TabsContent value="evaluations" className="mt-4">
                 <Card>
                   <CardContent className="p-4">
-                    {isLoadingEvaluations ? (
+                    {isLoadingCourse ? (
                       <div className="space-y-2 py-2">
                         <Skeleton className="h-4 w-full" />
                         <Skeleton className="h-4 w-full" />

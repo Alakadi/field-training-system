@@ -1472,6 +1472,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // New unified endpoint for course details with all related data
+  app.get("/api/training-courses/:id/complete", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      
+      // Get main course details
+      const course = await storage.getTrainingCourseWithDetails(id);
+      if (!course) {
+        return res.status(404).json({ message: "الدورة التدريبية غير موجودة" });
+      }
+
+      // Get all groups for this course with their details
+      const groups = await storage.getTrainingCourseGroupsByCourse(id);
+      
+      // Get course students with their group information
+      const courseStudents = [];
+      for (const group of groups) {
+        const groupWithStudents = await storage.getTrainingCourseGroupWithStudents(group.id);
+        if (groupWithStudents) {
+          groupWithStudents.students.forEach(student => {
+            courseStudents.push({
+              id: Math.random(), // Temporary ID for frontend mapping
+              student: student,
+              group: {
+                id: group.id,
+                name: group.groupName
+              },
+              status: 'assigned' // Default status for now
+            });
+          });
+        }
+      }
+
+      // Get course evaluations
+      const courseEvaluations = [];
+      for (const group of groups) {
+        const assignments = await storage.getTrainingAssignmentsByGroup(group.id);
+        for (const assignment of assignments) {
+          const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
+          courseEvaluations.push(...evaluations);
+        }
+      }
+
+      const totalEnrolled = groups.reduce((sum, group) => sum + (group.currentEnrollment || 0), 0);
+
+      // Return all data in one response
+      res.json({
+        course: {
+          ...course,
+          totalStudents: totalEnrolled
+        },
+        groups: groups,
+        students: courseStudents,
+        evaluations: courseEvaluations
+      });
+    } catch (error) {
+      console.error("Error fetching complete course details:", error);
+      res.status(500).json({ message: "خطأ في استرجاع تفاصيل الدورة التدريبية الكاملة" });
+    }
+  });
+
   app.post("/api/training-courses", authMiddleware, requireRole(["admin", "supervisor"]), async (req: Request, res: Response) => {
     try {
       const { 
