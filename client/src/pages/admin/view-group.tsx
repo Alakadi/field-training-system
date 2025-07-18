@@ -146,7 +146,8 @@ export default function ViewGroup() {
             return {
               ...student,
               grade: evaluation?.score || null,
-              assignmentId: assignment.id,assignment
+              assignmentId: assignment.id,
+              assignment: assignment
             };
           } catch (error) {
             console.error("Error fetching student details:", error);
@@ -367,7 +368,7 @@ export default function ViewGroup() {
                             <Badge className="bg-green-100 text-green-800">مسجل</Badge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {student.assignment.calculatedFinalGrade ? (
+                            {student.assignment?.calculatedFinalGrade ? (
                               <Badge variant={student.assignment.calculatedFinalGrade >= 75 ? "default" : student.assignment.calculatedFinalGrade >= 60 ? "secondary" : "destructive"}>
                                 {student.assignment.calculatedFinalGrade}/100
                               </Badge>
