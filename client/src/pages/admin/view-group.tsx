@@ -10,12 +10,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface GroupStudent {
   id: number;
-  userId: number;
   universityId: string;
-  facultyId: number;
-  majorId: number;
-  levelId: number;
-  grade?: number;
+  faculty?: {
+    name: string;
+  };
+  major?: {
+    name: string;
+  };
+  level?: {
+    name: string;
+  };
+  assignment?: {
+    id: number;
+    attendanceGrade?: number;
+    behaviorGrade?: number;
+    finalExamGrade?: number;
+    calculatedFinalGrade?: number;
+  };
   user: {
     id: number;
     username: string;
@@ -69,6 +80,13 @@ interface GroupDetails {
       email: string;
       phone?: string;
     };
+  assignment?: {
+    id: number;
+    attendanceGrade?: number;
+    behaviorGrade?: number;
+    finalExamGrade?: number;
+    calculatedFinalGrade?: number;
+  };
   };
   students: GroupStudent[];
 }
@@ -128,7 +146,7 @@ export default function ViewGroup() {
             return {
               ...student,
               grade: evaluation?.score || null,
-              assignmentId: assignment.id
+              assignmentId: assignment.id,assignment
             };
           } catch (error) {
             console.error("Error fetching student details:", error);
@@ -349,7 +367,7 @@ export default function ViewGroup() {
                             <Badge className="bg-green-100 text-green-800">مسجل</Badge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {student.assignment?.calculatedFinalGrade ? (
+                            {student.assignment.calculatedFinalGrade ? (
                               <Badge variant={student.assignment.calculatedFinalGrade >= 75 ? "default" : student.assignment.calculatedFinalGrade >= 60 ? "secondary" : "destructive"}>
                                 {student.assignment.calculatedFinalGrade}/100
                               </Badge>
