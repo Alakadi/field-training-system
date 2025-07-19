@@ -187,26 +187,26 @@ const ViewCourse: React.FC = () => {
                                 </div>
                                 <div>
                                   <p className="text-sm font-medium text-neutral-500">عدد الطلاب</p>
-                                  <p className="text-lg">{group.currentEnrollment || 0} / {group.capacity}</p>
-                                </div>
+                                  <p className="text-lg">{group.currentEnrollment || 0} / {group.capacity || 0}</p>
+                                </div></old_str>
                                 <div>
                                   <p className="text-sm font-medium text-neutral-500">تاريخ البداية</p>
                                   <p className="text-lg">
-                                    {group.startDate ? new Date(group.startDate).toLocaleDateString('en-US') : "غير محدد"}
+                                    {group.startDate ? new Date(group.startDate).toLocaleDateString('ar-EG') : "غير محدد"}
                                   </p>
                                 </div>
                                 <div>
                                   <p className="text-sm font-medium text-neutral-500">تاريخ النهاية</p>
                                   <p className="text-lg">
-                                    {group.endDate ? new Date(group.endDate).toLocaleDateString('en-US') : "غير محدد"}
+                                    {group.endDate ? new Date(group.endDate).toLocaleDateString('ar-EG') : "غير محدد"}
                                   </p>
-                                </div>
+                                </div></old_str>
                                 <div>
                                   <p className="text-sm font-medium text-neutral-500">المقاعد المتاحة</p>
                                   <p className="text-lg font-semibold text-green-600">
-                                    {group.capacity - (group.currentEnrollment || 0)}
+                                    {(group.capacity || 0) - (group.currentEnrollment || 0)}
                                   </p>
-                                </div>
+                                </div></old_str>
                               </div>
                               
                               <div className="flex justify-end mt-4 pt-4 border-t">
@@ -265,16 +265,16 @@ const ViewCourse: React.FC = () => {
                             {courseStudents?.map((registration: any) => (
                               <tr key={registration.id} className="hover:bg-neutral-50">
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
-                                  {registration.student?.user.name}
+                                  {registration.student?.user?.name || "غير محدد"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                                  {registration.student?.universityId}
+                                  {registration.student?.universityId || "غير محدد"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                                  {registration.student?.major?.name || "-"}
+                                  {registration.student?.major?.name || "غير محدد"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                                  {registration.student?.gpa || "-"}
+                                  {registration.student?.gpa ? registration.student.gpa.toFixed(2) : "غير محدد"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                   <Badge className={`
@@ -282,13 +282,15 @@ const ViewCourse: React.FC = () => {
                                     ${registration.status === 'confirmed' ? 'bg-green-100 text-green-800' : ''}
                                     ${registration.status === 'completed' ? 'bg-blue-100 text-blue-800' : ''}
                                     ${registration.status === 'cancelled' ? 'bg-red-100 text-red-800' : ''}
+                                    ${!registration.status || (registration.status !== 'assigned' && registration.status !== 'confirmed' && registration.status !== 'completed' && registration.status !== 'cancelled') ? 'bg-gray-100 text-gray-800' : ''}
                                   `}>
-                                    {registration.status === 'assigned' ? 'معين' : ''}
-                                    {registration.status === 'confirmed' ? 'مؤكد' : ''}
-                                    {registration.status === 'completed' ? 'مكتمل' : ''}
-                                    {registration.status === 'cancelled' ? 'ملغى' : ''}
+                                    {registration.status === 'assigned' && 'معين'}
+                                    {registration.status === 'confirmed' && 'مؤكد'} 
+                                    {registration.status === 'completed' && 'مكتمل'}
+                                    {registration.status === 'cancelled' && 'ملغى'}
+                                    {(!registration.status || (registration.status !== 'assigned' && registration.status !== 'confirmed' && registration.status !== 'completed' && registration.status !== 'cancelled')) && 'غير محدد'}
                                   </Badge>
-                                </td>
+                                </td></old_str>
                               </tr>
                             ))}
                           </tbody>
@@ -344,27 +346,31 @@ const ViewCourse: React.FC = () => {
                                   {evaluation.student?.user?.name || "غير محدد"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                                  {evaluation.attendanceGrade || 0}
+                                  {evaluation.attendanceGrade !== null && evaluation.attendanceGrade !== undefined ? evaluation.attendanceGrade : "غير مقيم"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                                  {evaluation.behaviorGrade || 0}
+                                  {evaluation.behaviorGrade !== null && evaluation.behaviorGrade !== undefined ? evaluation.behaviorGrade : "غير مقيم"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                                  {evaluation.finalExamGrade || 0}
+                                  {evaluation.finalExamGrade !== null && evaluation.finalExamGrade !== undefined ? evaluation.finalExamGrade : "غير مقيم"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                                  <Badge className={`
-                                    ${evaluation.calculatedFinalGrade >= 90 ? 'bg-green-100 text-green-800' : ''}
-                                    ${evaluation.calculatedFinalGrade >= 80 && evaluation.calculatedFinalGrade < 90 ? 'bg-blue-100 text-blue-800' : ''}
-                                    ${evaluation.calculatedFinalGrade >= 70 && evaluation.calculatedFinalGrade < 80 ? 'bg-yellow-100 text-yellow-800' : ''}
-                                    ${evaluation.calculatedFinalGrade < 70 ? 'bg-red-100 text-red-800' : ''}
-                                  `}>
-                                    {evaluation.calculatedFinalGrade || 0}
-                                  </Badge>
+                                  {evaluation.calculatedFinalGrade !== null && evaluation.calculatedFinalGrade !== undefined ? (
+                                    <Badge className={`
+                                      ${evaluation.calculatedFinalGrade >= 90 ? 'bg-green-100 text-green-800' : ''}
+                                      ${evaluation.calculatedFinalGrade >= 80 && evaluation.calculatedFinalGrade < 90 ? 'bg-blue-100 text-blue-800' : ''}
+                                      ${evaluation.calculatedFinalGrade >= 70 && evaluation.calculatedFinalGrade < 80 ? 'bg-yellow-100 text-yellow-800' : ''}
+                                      ${evaluation.calculatedFinalGrade < 70 ? 'bg-red-100 text-red-800' : ''}
+                                    `}>
+                                      {evaluation.calculatedFinalGrade.toFixed(1)}
+                                    </Badge>
+                                  ) : (
+                                    <span className="text-gray-500">لم يتم التقييم</span>
+                                  )}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                                  {evaluation.assignedAt ? new Date(evaluation.assignedAt).toLocaleDateString('ar-SA') : "غير محدد"}
-                                </td>
+                                  {evaluation.assignedAt ? new Date(evaluation.assignedAt).toLocaleDateString('ar-EG') : "غير محدد"}
+                                </td></old_str>
                               </tr>
                             ))}
                           </tbody>
