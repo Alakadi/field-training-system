@@ -21,10 +21,8 @@ if (!process.env.DATABASE_URL) {
 let pool: any;
 let db: any;
 
-// طريقة بسيطة للتحقق ما إذا كنا في بيئة VS Code المحلية أم لا
-// إذا كان المنفذ 8080 (المستخدم في VS Code) بدلاً من 5000 (المستخدم في Replit)
-const isLocalEnv = process.env.NODE_ENV !== "production" && 
-                  (!process.env.PORT || process.env.PORT === "8080");
+// تحديد البيئة: استخدام node-postgres دائماً في Replit للاستقرار
+const isLocalEnv = true; // استخدام node-postgres دائماً
 
 // VS Code local environment
 if (isLocalEnv) {
