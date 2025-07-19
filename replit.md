@@ -137,6 +137,13 @@ This is a comprehensive Arabic-supported field training management system built 
 - **المشرفين**: 5 مشرفين مع بيانات كاملة
 
 ## Recent Changes
+- July 19, 2025: إصلاح جميع مشاكل قاعدة البيانات وتحسين أداء النظام
+  - إصلاح خطأ اتصال قاعدة البيانات بتبديل لـ node-postgres للاستقرار
+  - حل مشكلة عدم ظهور أسماء المشرفين وجهات التدريب في صفحة عرض الكورس
+  - إصلاح أخطاء الأعمدة المفقودة في جداول activity_logs و evaluations (timestamp, score, comments)
+  - تحديث API endpoint /api/training-courses/:id/complete ليشمل تفاصيل المشرف والموقع مع كل مجموعة
+  - تطبيق نظام unified endpoint للكورس الكامل بدلاً من 4 استدعاءات منفصلة لتحسين الأداء
+  - ضمان عمل النظام بشكل مستقر مع عرض جميع البيانات التجريبية بشكل صحيح
 - July 18, 2025: إصلاح مشكلة تداخل درجات الطلاب بين المجموعات المختلفة في صفحة إدارة الكورسات
   - تحديث منطق إدارة الدرجات لاستخدام مفتاح مجمع (studentId_groupId) بدلاً من studentId فقط
   - إصلاح دالة getCurrentDetailedGrade لتدعم groupId لمنع التداخل بين المجموعات
