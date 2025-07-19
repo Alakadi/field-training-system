@@ -188,7 +188,7 @@ const ViewCourse: React.FC = () => {
                                 <div>
                                   <p className="text-sm font-medium text-neutral-500">عدد الطلاب</p>
                                   <p className="text-lg">{group.currentEnrollment || 0} / {group.capacity || 0}</p>
-                                </div></old_str>
+                                </div>
                                 <div>
                                   <p className="text-sm font-medium text-neutral-500">تاريخ البداية</p>
                                   <p className="text-lg">
@@ -200,13 +200,13 @@ const ViewCourse: React.FC = () => {
                                   <p className="text-lg">
                                     {group.endDate ? new Date(group.endDate).toLocaleDateString('ar-EG') : "غير محدد"}
                                   </p>
-                                </div></old_str>
+                                </div>
                                 <div>
                                   <p className="text-sm font-medium text-neutral-500">المقاعد المتاحة</p>
                                   <p className="text-lg font-semibold text-green-600">
                                     {(group.capacity || 0) - (group.currentEnrollment || 0)}
                                   </p>
-                                </div></old_str>
+                                </div>
                               </div>
                               
                               <div className="flex justify-end mt-4 pt-4 border-t">
@@ -290,7 +290,7 @@ const ViewCourse: React.FC = () => {
                                     {registration.status === 'cancelled' && 'ملغى'}
                                     {(!registration.status || (registration.status !== 'assigned' && registration.status !== 'confirmed' && registration.status !== 'completed' && registration.status !== 'cancelled')) && 'غير محدد'}
                                   </Badge>
-                                </td></old_str>
+                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -370,7 +370,7 @@ const ViewCourse: React.FC = () => {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
                                   {evaluation.assignedAt ? new Date(evaluation.assignedAt).toLocaleDateString('ar-EG') : "غير محدد"}
-                                </td></old_str>
+                                </td>
                               </tr>
                             ))}
                           </tbody>
