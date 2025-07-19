@@ -1483,8 +1483,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "الدورة التدريبية غير موجودة" });
       }
 
-      // Get all groups for this course with their details
-      const groups = await storage.getTrainingCourseGroupsByCourse(id);
+      // Get all groups for this course with their details including supervisor and site
+      const groupsBasic = await storage.getTrainingCourseGroupsByCourse(id);
+      const groups = await Promise.all(
+        groupsBasic.map(async (group) => {
+          // Get supervisor details
+          const supervisor = await storage.getSupervisor(group.supervisorId);
+          const supervisorUser = supervisor ? await storage.getUser(supervisor.userId) : null;
+          
+          // Get site details
+          const site = await storage.getTrainingSite(group.siteId);
+          
+          return {
+            ...group,
+            supervisor: supervisor && supervisorUser ? {
+              ...supervisor,
+              user: supervisorUser
+            } : null,
+            site: site || null
+          };
+        })
+      );
       
       // Get course students with their group information
       const courseStudents = [];

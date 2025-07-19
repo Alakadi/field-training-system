@@ -179,11 +179,11 @@ const ViewCourse: React.FC = () => {
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 <div>
                                   <p className="text-sm font-medium text-neutral-500">جهة التدريب</p>
-                                  <p className="text-lg">{group.site?.name }</p>
+                                  <p className="text-lg">{group.site?.name || "غير محدد"}</p>
                                 </div>
                                 <div>
                                   <p className="text-sm font-medium text-neutral-500">المشرف الأكاديمي</p>
-                                  <p className="text-lg">{group.supervisorId?.user?.name || "غير محدد"}</p>
+                                  <p className="text-lg">{group.supervisor?.user?.name || "غير محدد"}</p>
                                 </div>
                                 <div>
                                   <p className="text-sm font-medium text-neutral-500">عدد الطلاب</p>
