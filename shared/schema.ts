@@ -133,16 +133,8 @@ export const trainingAssignments = pgTable("training_assignments", {
   uniqueIndex("student_course_unique").on(table.studentId, table.courseId), // منع التسجيل المتكرر في نفس الكورس
 ]);
 
-// Evaluations table
-export const evaluations = pgTable("evaluations", {
-  id: serial("id").primaryKey(),
-  assignmentId: integer("assignment_id").notNull().references(() => trainingAssignments.id),
-  score: integer("score"), // 0-100
-  comments: text("comments"),
-  evaluatorName: text("evaluator_name"),
-  evaluationDate: timestamp("evaluation_date").defaultNow(),
-  createdBy: integer("created_by").references(() => users.id),
-});
+// Note: Evaluations are now handled directly in training_assignments table
+// with attendanceGrade, behaviorGrade, finalExamGrade, and calculatedFinalGrade
 
 // Activity Logs table - نظام موحد للأنشطة والإشعارات
 export const activityLogs = pgTable("activity_logs", {
@@ -176,7 +168,6 @@ export const insertTrainingSiteSchema = createInsertSchema(trainingSites);
 export const insertTrainingCourseSchema = createInsertSchema(trainingCourses);
 export const insertTrainingCourseGroupSchema = createInsertSchema(trainingCourseGroups);
 export const insertTrainingAssignmentSchema = createInsertSchema(trainingAssignments);
-export const insertEvaluationSchema = createInsertSchema(evaluations);
 export const insertActivityLogSchema = createInsertSchema(activityLogs);
 
 // Export types
@@ -215,8 +206,7 @@ export type InsertTrainingCourseGroup = z.infer<typeof insertTrainingCourseGroup
 export type TrainingAssignment = typeof trainingAssignments.$inferSelect;
 export type InsertTrainingAssignment = z.infer<typeof insertTrainingAssignmentSchema>;
 
-export type Evaluation = typeof evaluations.$inferSelect;
-export type InsertEvaluation = z.infer<typeof insertEvaluationSchema>;
+// Removed Evaluation types - using training_assignments for grades instead
 
 export type ActivityLog = typeof activityLogs.$inferSelect;
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;

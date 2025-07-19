@@ -321,19 +321,19 @@ const ViewCourse: React.FC = () => {
                                 الطالب
                               </th>
                               <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                                الحضور والانضباط
+                                درجة الحضور
                               </th>
                               <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                                المهارات المكتسبة
+                                درجة السلوك
                               </th>
                               <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                                التقرير النهائي
+                                الاختبار النهائي
                               </th>
                               <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                                المجموع
+                                المجموع النهائي
                               </th>
                               <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                                تاريخ التقييم
+                                تاريخ التعيين
                               </th>
                             </tr>
                           </thead>
@@ -341,29 +341,29 @@ const ViewCourse: React.FC = () => {
                             {courseEvaluations?.map((evaluation: any) => (
                               <tr key={evaluation.id} className="hover:bg-neutral-50">
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
-                                  {evaluation.student?.user.name}
+                                  {evaluation.student?.user?.name || "غير محدد"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                                  {evaluation.attendanceScore} / 30
+                                  {evaluation.attendanceGrade || 0}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                                  {evaluation.skillsScore} / 40
+                                  {evaluation.behaviorGrade || 0}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                                  {evaluation.reportScore} / 30
+                                  {evaluation.finalExamGrade || 0}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
                                   <Badge className={`
-                                    ${evaluation.totalScore >= 90 ? 'bg-green-100 text-green-800' : ''}
-                                    ${evaluation.totalScore >= 80 && evaluation.totalScore < 90 ? 'bg-blue-100 text-blue-800' : ''}
-                                    ${evaluation.totalScore >= 70 && evaluation.totalScore < 80 ? 'bg-yellow-100 text-yellow-800' : ''}
-                                    ${evaluation.totalScore < 70 ? 'bg-red-100 text-red-800' : ''}
+                                    ${evaluation.calculatedFinalGrade >= 90 ? 'bg-green-100 text-green-800' : ''}
+                                    ${evaluation.calculatedFinalGrade >= 80 && evaluation.calculatedFinalGrade < 90 ? 'bg-blue-100 text-blue-800' : ''}
+                                    ${evaluation.calculatedFinalGrade >= 70 && evaluation.calculatedFinalGrade < 80 ? 'bg-yellow-100 text-yellow-800' : ''}
+                                    ${evaluation.calculatedFinalGrade < 70 ? 'bg-red-100 text-red-800' : ''}
                                   `}>
-                                    {evaluation.totalScore} / 100
+                                    {evaluation.calculatedFinalGrade || 0}
                                   </Badge>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                                  {new Date(evaluation.evaluationDate).toLocaleDateString('en-US')}
+                                  {evaluation.assignedAt ? new Date(evaluation.assignedAt).toLocaleDateString('ar-SA') : "غير محدد"}
                                 </td>
                               </tr>
                             ))}

@@ -1524,13 +1524,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Get course evaluations
+      // Get course evaluations from training assignments (actual grades)
       const courseEvaluations = [];
       for (const group of groups) {
         const assignments = await storage.getTrainingAssignmentsByGroup(group.id);
         for (const assignment of assignments) {
-          const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
-          courseEvaluations.push(...evaluations);
+          // Check if assignment has grades
+          if (assignment.attendanceGrade !== null || assignment.behaviorGrade !== null || assignment.finalExamGrade !== null) {
+            const student = await storage.getStudent(assignment.studentId);
+            const studentUser = student ? await storage.getUser(student.userId) : null;
+            
+            courseEvaluations.push({
+              id: assignment.id,
+              student: student && studentUser ? { ...student, user: studentUser } : null,
+              attendanceGrade: assignment.attendanceGrade || 0,
+              behaviorGrade: assignment.behaviorGrade || 0,
+              finalExamGrade: assignment.finalExamGrade || 0,
+              calculatedFinalGrade: assignment.calculatedFinalGrade || 0,
+              assignedAt: assignment.assignedAt
+            });
+          }
         }
       }
 
@@ -2609,68 +2622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Evaluation Routes
-  app.get("/api/evaluations", authMiddleware, async (req: Request, res: Response) => {
-    try {
-      let evaluations = await storage.getAllEvaluations();
-
-      const assignmentId = req.query.assignmentId ? Number(req.query.assignmentId) : undefined;
-
-      if (assignmentId) {
-        evaluations = evaluations.filter(evaluation => evaluation.assignmentId === assignmentId);
-      }
-
-      res.json(evaluations);
-    } catch (error) {
-      res.status(500).json({ message: "خطأ في استرجاع بيانات التقييمات" });
-    }
-  });
-
-  app.post("/api/evaluations", authMiddleware, requireRole("supervisor"), async (req: Request, res: Response) => {
-    try {
-      const { assignmentId, score, comments, evaluatorName } = req.body;
-
-      const evaluation = await storage.createEvaluation({
-        assignmentId: Number(assignmentId),
-        score: Number(score),
-        comments,
-        evaluatorName,
-        createdBy: req.user?.id || 0
-      });
-
-      // Log activity
-      if (req.user) {
-        // Get assignment details
-        const assignment = await storage.getTrainingAssignment(Number(assignmentId));
-        if (assignment) {
-          const student = assignment.studentId ? await storage.getStudent(assignment.studentId) : null;
-          const studentUser = student ? await storage.getUser(student.userId) : null;
-
-          await logSecurityActivity(
-            req.user.username,
-            "create",
-            "grades",
-            evaluation.id,
-            { 
-              message: `تم إنشاء تقييم للطالب: ${studentUser?.name}`,
-              evaluationData: { 
-                assignmentId,
-                studentId: student?.id,
-                studentName: studentUser?.name,
-                courseId: assignment ? assignment.groupId : null,
-                courseName: "تقييم دورة تدريبية",
-                score
-              }
-            }
-          );
-        }
-      }
-
-      res.status(201).json(evaluation);
-    } catch (error) {
-      res.status(500).json({ message: "خطأ في إنشاء تقييم جديد" });
-    }
-  });
+  // Note: Evaluation endpoints removed - using training_assignments grades directly
 
   // Get course students with complete details
   app.get("/api/training-courses/:id/students", authMiddleware, async (req: Request, res: Response) => {

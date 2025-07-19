@@ -10,7 +10,7 @@ import {
   trainingCourses,
   trainingCourseGroups,
   trainingAssignments,
-  evaluations,
+
   activityLogs,
   type User,
   type InsertUser,
@@ -34,8 +34,7 @@ import {
   type InsertTrainingCourseGroup,
   type TrainingAssignment,
   type InsertTrainingAssignment,
-  type Evaluation,
-  type InsertEvaluation,
+
   type ActivityLog,
   type InsertActivityLog,
   LoginData
@@ -1192,34 +1191,7 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  // Evaluation operations
-  async getAllEvaluations(): Promise<Evaluation[]> {
-    const result = await db.select().from(evaluations);
-    return result;
-  }
-
-  async getEvaluation(id: number): Promise<Evaluation | undefined> {
-    const result = await db.select().from(evaluations).where(eq(evaluations.id, id));
-    return result[0];
-  }
-
-  async createEvaluation(evaluation: InsertEvaluation): Promise<Evaluation> {
-    const result = await db.insert(evaluations).values(evaluation).returning();
-    return result[0];
-  }
-
-  async updateEvaluation(id: number, updateData: Partial<InsertEvaluation>): Promise<Evaluation> {
-    const result = await db.update(evaluations)
-      .set(updateData)
-      .where(eq(evaluations.id, id))
-      .returning();
-    return result[0];
-  }
-
-  async getEvaluationsByAssignment(assignmentId: number): Promise<Evaluation[]> {
-    const result = await db.select().from(evaluations).where(eq(evaluations.assignmentId, assignmentId));
-    return result;
-  }
+  // Note: Evaluation operations removed - using training_assignments grades directly
 
   // Update course status
   async updateCourseStatus(courseId: number, status: string): Promise<TrainingCourse | undefined> {
