@@ -2100,6 +2100,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Get supervisor details
             const supervisor = group.supervisorId ? await storage.getSupervisorWithUser(group.supervisorId) : null;
 
+            // Get evaluation if exists
+            const evaluations = await 
+            
+
             return {
               id: assignment.id,
               studentId: assignment.studentId,
@@ -2118,7 +2122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 site: site || { name: "غير محدد" },
                 supervisor: supervisor || null
               },
-              grades: { attendanceGrade: assignment.attendanceGrade, behaviorGrade: assignment.behaviorGrade, finalExamGrade: assignment.finalExamGrade, calculatedFinalGrade: assignment.calculatedFinalGrade }
+              evaluation: evaluation
             };
           } catch (error){
             console.error(`Failed to fetch details for assignment ${assignment.id}:`, error);
@@ -2172,6 +2176,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Get supervisor details
             const supervisor = group.supervisorId ? await storage.getSupervisorWithUser(group.supervisorId) : null;
 
+            // Get evaluation if exists
+            const evaluations = await 
+            
+
             return {
               id: assignment.id,
               studentId: assignment.studentId,
@@ -2190,7 +2198,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 site: site || { name: "غير محدد" },
                 supervisor: supervisor || null
               },
-              grades: { attendanceGrade: assignment.attendanceGrade, behaviorGrade: assignment.behaviorGrade, finalExamGrade: assignment.finalExamGrade, calculatedFinalGrade: assignment.calculatedFinalGrade }
+              evaluation: evaluation
             };
           } catch (error) {
             console.error(`Failed to fetch details for assignment ${assignment.id}:`, error);
@@ -2916,7 +2924,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
               status: assignment.status,
               assignedAt: assignment.createdAt || new Date().toISOString()
             },
-            grades: { attendanceGrade: assignment.attendanceGrade, behaviorGrade: assignment.behaviorGrade, finalExamGrade: assignment.finalExamGrade, calculatedFinalGrade: assignment.calculatedFinalGrade } || null
+            evaluation: evaluation || null
           });
         }
       }

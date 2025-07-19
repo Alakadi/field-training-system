@@ -121,14 +121,7 @@ export default function ViewGroup() {
       
       const assignments = await assignmentsResponse.json();
       
-      // Get evaluations for each assignment
-      const evaluationsResponse = await fetch("/api/evaluations", {
-        credentials: "include"
-      });
-      
-      const evaluations = evaluationsResponse.ok ? await evaluationsResponse.json() : [];
-      
-      // Build students array with grades
+      // Build students array with grades from training assignments
       const studentsWithGrades = await Promise.all(
         assignments.map(async (assignment: any) => {
           try {
@@ -140,12 +133,9 @@ export default function ViewGroup() {
             
             const student = await studentResponse.json();
             
-            // Find evaluation for this assignment
-            const evaluation = evaluations.find((evalItem: any) => evalItem.assignmentId === assignment.id);
-            
             return {
               ...student,
-              grade: evaluation?.score || null,
+              grade: assignment.calculatedFinalGrade || null,
               assignmentId: assignment.id,
               assignment: assignment
             };
