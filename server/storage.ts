@@ -297,7 +297,7 @@ export class DatabaseStorage implements IStorage {
         entityType: activityLogs.entityType,
         entityId: activityLogs.entityId,
         details: activityLogs.details,
-        timestamp: activityLogs.timestamp,
+        timestamp: activityLogs.createdAt,
         targetUserId: activityLogs.targetUserId,
         notificationTitle: activityLogs.notificationTitle,
         notificationMessage: activityLogs.notificationMessage,
@@ -314,7 +314,7 @@ export class DatabaseStorage implements IStorage {
       .from(activityLogs)
       .leftJoin(users, eq(activityLogs.username, users.username))
       .where(eq(activityLogs.isNotification, false)) // فقط الأنشطة الأمنية وليس الإشعارات
-      .orderBy(desc(activityLogs.timestamp));
+      .orderBy(desc(activityLogs.createdAt));
 
       console.log("Query completed, found", result.length, "security logs");
 
@@ -1500,7 +1500,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select()
       .from(activityLogs)
       .where(eq(activityLogs.isNotification, true))
-      .orderBy(desc(activityLogs.timestamp));
+      .orderBy(desc(activityLogs.createdAt));
   }
 
   async getNotificationsByUserId(userId: number): Promise<ActivityLog[]> {
@@ -1510,7 +1510,7 @@ export class DatabaseStorage implements IStorage {
         eq(activityLogs.targetUserId, userId),
         eq(activityLogs.isNotification, true)
       ))
-      .orderBy(desc(activityLogs.timestamp));
+      .orderBy(desc(activityLogs.createdAt));
   }
 
   async createNotification(userId: number, title: string, message: string, type: string = 'info', performedBy?: string): Promise<ActivityLog> {
