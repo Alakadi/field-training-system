@@ -152,7 +152,7 @@ export const activityLogs = pgTable("activity_logs", {
   entityType: text("entity_type").notNull(), // e.g. "student", "course", "assignment", "notification"
   entityId: integer("entity_id"), // ID of the affected entity
   details: jsonb("details"), // JSON details about the activity
-  timestamp: timestamp("timestamp").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
   
   // حقول الإشعارات
   targetUserId: integer("target_user_id").references(() => users.id), // المستخدم المستهدف للإشعار
