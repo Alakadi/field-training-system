@@ -388,9 +388,9 @@ const SupervisorCourses: React.FC = () => {
       finalExam !== undefined
     ) {
       // التحقق من أن القيم ضمن الحدود المسموحة للدورة المحددة
-      const attendanceMax = course?.attendancePercentage || 20;
-      const behaviorMax = course?.behaviorPercentage || 30;
-      const finalExamMax = course?.finalExamPercentage || 50;
+      const attendanceMax =  targetGroup.course?.attendancePercentage;
+      const behaviorMax = course?.behaviorPercentage;
+      const finalExamMax = course?.finalExamPercentage;
 
       if (
         attendance >= 0 && attendance <= attendanceMax &&
