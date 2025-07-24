@@ -1,5 +1,5 @@
 import { db } from '../server/db.js';
-import { users, supervisors, students, levels, trainingSites, trainingCourses, trainingCourseGroups, trainingAssignments, evaluations } from '../shared/schema.js';
+import { users, supervisors, students, levels, trainingSites, trainingCourses, trainingCourseGroups, trainingAssignments } from '../shared/schema.js';
 import { eq } from 'drizzle-orm';
 
 async function seedSampleData() {
@@ -209,17 +209,16 @@ async function seedSampleData() {
         .onConflictDoNothing()
         .returning();
 
-      // Create sample evaluations
+      // Add sample grades to assignments
       if (i < 2) { // Only for first 2 students
-        await db.insert(evaluations)
-          .values({
-            assignmentId: assignment.id,
-            supervisorId: supervisor.id,
-            grade: 85 + (i * 5), // 85, 90
-            feedback: `أداء ممتاز في التدريب. الطالب أظهر فهماً عميقاً للمواضيع المطروحة.`,
-            evaluatedAt: new Date().toISOString()
+        await db.update(trainingAssignments)
+          .set({
+            attendanceGrade: 18 + i, // 18, 19
+            behaviorGrade: 25 + i * 2, // 25, 27
+            finalExamGrade: 40 + i * 3, // 40, 43
+            status: 'completed'
           })
-          .onConflictDoNothing();
+          .where(eq(trainingAssignments.id, assignment.id));
       }
     }
 
