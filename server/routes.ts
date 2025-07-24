@@ -225,14 +225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If changing password, verify current password
       if (newPassword && currentPassword) {
         const user = await storage.getUser(userId);
-        if (!user) {
-          return res.status(400).json({ message: "المستخدم غير موجود" });
-        }
-        
-        // استخدام bcrypt للتحقق من كلمة المرور الحالية
-        const bcrypt = require('bcrypt');
-        const passwordMatch = await bcrypt.compare(currentPassword, user.password);
-        if (!passwordMatch) {
+        if (!user || user.password !== currentPassword) {
           return res.status(400).json({ message: "كلمة المرور الحالية غير صحيحة" });
         }
       }
@@ -1479,99 +1472,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // New unified endpoint for course details with all related data
-  app.get("/api/training-courses/:id/complete", authMiddleware, async (req: Request, res: Response) => {
-    try {
-      const id = Number(req.params.id);
-      
-      // Get main course details
-      const course = await storage.getTrainingCourseWithDetails(id);
-      if (!course) {
-        return res.status(404).json({ message: "الدورة التدريبية غير موجودة" });
-      }
-
-      // Get all groups for this course with their details including supervisor and site
-      const groupsBasic = await storage.getTrainingCourseGroupsByCourse(id);
-      const groups = await Promise.all(
-        groupsBasic.map(async (group) => {
-          // Get supervisor details
-          const supervisor = await storage.getSupervisor(group.supervisorId);
-          const supervisorUser = supervisor ? await storage.getUser(supervisor.userId) : null;
-          
-          // Get site details
-          const site = await storage.getTrainingSite(group.siteId);
-          
-          return {
-            ...group,
-            supervisor: supervisor && supervisorUser ? {
-              ...supervisor,
-              user: supervisorUser
-            } : null,
-            site: site || null
-          };
-        })
-      );
-      
-      // Get course students with their group information
-      const courseStudents = [];
-      for (const group of groups) {
-        const groupWithStudents = await storage.getTrainingCourseGroupWithStudents(group.id);
-        if (groupWithStudents) {
-          groupWithStudents.students.forEach(student => {
-            courseStudents.push({
-              id: Math.random(), // Temporary ID for frontend mapping
-              student: student,
-              group: {
-                id: group.id,
-                name: group.groupName
-              },
-              status: 'assigned' // Default status for now
-            });
-          });
-        }
-      }
-
-      // Get course evaluations from training assignments (actual grades)
-      const courseEvaluations = [];
-      for (const group of groups) {
-        const assignments = await storage.getTrainingAssignmentsByGroup(group.id);
-        for (const assignment of assignments) {
-          // Check if assignment has grades
-          if (assignment.attendanceGrade !== null || assignment.behaviorGrade !== null || assignment.finalExamGrade !== null) {
-            const student = await storage.getStudent(assignment.studentId);
-            const studentUser = student ? await storage.getUser(student.userId) : null;
-            
-            courseEvaluations.push({
-              id: assignment.id,
-              student: student && studentUser ? { ...student, user: studentUser } : null,
-              attendanceGrade: assignment.attendanceGrade || 0,
-              behaviorGrade: assignment.behaviorGrade || 0,
-              finalExamGrade: assignment.finalExamGrade || 0,
-              calculatedFinalGrade: assignment.calculatedFinalGrade || 0,
-              assignedAt: assignment.assignedAt
-            });
-          }
-        }
-      }
-
-      const totalEnrolled = groups.reduce((sum, group) => sum + (group.currentEnrollment || 0), 0);
-
-      // Return all data in one response
-      res.json({
-        course: {
-          ...course,
-          totalStudents: totalEnrolled
-        },
-        groups: groups,
-        students: courseStudents,
-        evaluations: courseEvaluations
-      });
-    } catch (error) {
-      console.error("Error fetching complete course details:", error);
-      res.status(500).json({ message: "خطأ في استرجاع تفاصيل الدورة التدريبية الكاملة" });
-    }
-  });
-
   app.post("/api/training-courses", authMiddleware, requireRole(["admin", "supervisor"]), async (req: Request, res: Response) => {
     try {
       const { 
@@ -1731,10 +1631,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const students = await Promise.all(
                 assignments.map(async (assignment) => {
                   const student = await storage.getStudentWithDetails(assignment.studentId);
-                  // Use grades directly from training assignment
+                  const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
+                  const evaluation = evaluations.length > 0 ? evaluations[0] : null;
+
                   return {
                     ...student,
-                    grade: assignment.calculatedFinalGrade || null,
+                    grade: evaluation?.score || null,
                     assignment: {
                       id: assignment.id,
                       attendanceGrade: assignment.attendanceGrade,
@@ -2107,6 +2009,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Get supervisor details
             const supervisor = group.supervisorId ? await storage.getSupervisorWithUser(group.supervisorId) : null;
 
+            // Get evaluation if exists
+            const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
+            const evaluation = evaluations.length > 0 ? evaluations[0] : null;
+
             return {
               id: assignment.id,
               studentId: assignment.studentId,
@@ -2125,7 +2031,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 site: site || { name: "غير محدد" },
                 supervisor: supervisor || null
               },
-              grades: { attendanceGrade: assignment.attendanceGrade, behaviorGrade: assignment.behaviorGrade, finalExamGrade: assignment.finalExamGrade, calculatedFinalGrade: assignment.calculatedFinalGrade }
+              evaluation: evaluation
             };
           } catch (error){
             console.error(`Failed to fetch details for assignment ${assignment.id}:`, error);
@@ -2179,6 +2085,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Get supervisor details
             const supervisor = group.supervisorId ? await storage.getSupervisorWithUser(group.supervisorId) : null;
 
+            // Get evaluation if exists
+            const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
+            const evaluation = evaluations.length > 0 ? evaluations[0] : null;
+
             return {
               id: assignment.id,
               studentId: assignment.studentId,
@@ -2186,6 +2096,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               status: assignment.status,
               confirmed: assignment.confirmed,
               assignedDate: assignment.assignedDate,
+              calculatedFinalGrade:assignment.calculatedFinalGrade,
               course: {
                 id: course.id,
                 name: course.name,
@@ -2197,7 +2108,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 site: site || { name: "غير محدد" },
                 supervisor: supervisor || null
               },
-              grades: { attendanceGrade: assignment.attendanceGrade, behaviorGrade: assignment.behaviorGrade, finalExamGrade: assignment.finalExamGrade, calculatedFinalGrade: assignment.calculatedFinalGrade }
+              evaluation: evaluation
             };
           } catch (error) {
             console.error(`Failed to fetch details for assignment ${assignment.id}:`, error);
@@ -2619,7 +2530,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Note: Evaluation endpoints removed - using training_assignments grades directly
+  // Evaluation Routes
+  app.get("/api/evaluations", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      let evaluations = await storage.getAllEvaluations();
+
+      const assignmentId = req.query.assignmentId ? Number(req.query.assignmentId) : undefined;
+
+      if (assignmentId) {
+        evaluations = evaluations.filter(evaluation => evaluation.assignmentId === assignmentId);
+      }
+
+      res.json(evaluations);
+    } catch (error) {
+      res.status(500).json({ message: "خطأ في استرجاع بيانات التقييمات" });
+    }
+  });
+
+  app.post("/api/evaluations", authMiddleware, requireRole("supervisor"), async (req: Request, res: Response) => {
+    try {
+      const { assignmentId, score, comments, evaluatorName } = req.body;
+
+      const evaluation = await storage.createEvaluation({
+        assignmentId: Number(assignmentId),
+        score: Number(score),
+        comments,
+        evaluatorName,
+        createdBy: req.user?.id || 0
+      });
+
+      // Log activity
+      if (req.user) {
+        // Get assignment details
+        const assignment = await storage.getTrainingAssignment(Number(assignmentId));
+        if (assignment) {
+          const student = assignment.studentId ? await storage.getStudent(assignment.studentId) : null;
+          const studentUser = student ? await storage.getUser(student.userId) : null;
+
+          await logSecurityActivity(
+            req.user.username,
+            "create",
+            "grades",
+            evaluation.id,
+            { 
+              message: `تم إنشاء تقييم للطالب: ${studentUser?.name}`,
+              evaluationData: { 
+                assignmentId,
+                studentId: student?.id,
+                studentName: studentUser?.name,
+                courseId: assignment ? assignment.groupId : null,
+                courseName: "تقييم دورة تدريبية",
+                score
+              }
+            }
+          );
+        }
+      }
+
+      res.status(201).json(evaluation);
+    } catch (error) {
+      res.status(500).json({ message: "خطأ في إنشاء تقييم جديد" });
+    }
+  });
 
   // Get course students with complete details
   app.get("/api/training-courses/:id/students", authMiddleware, async (req: Request, res: Response) => {
@@ -2651,6 +2623,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "خطأ في استرجاع بيانات طلاب الدورة" });
     }
   });
+  app.get("/api/training-courses/:id/assignments", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const courseId = Number(req.params.id);
+
+      // Get all groups for this course
+      const groups = await storage.getTrainingCourseGroupsByCourse(courseId);
+      const courseEvaluations = [];
+
+      for (const group of groups) {
+        const assignments = await storage.getTrainingAssignmentsByGroup(group.id);
+        for (const assignment of assignments) {
+          const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
+          courseEvaluations.push(...evaluations);
+        }
+      }
+
+      res.json(courseEvaluations);
+    } catch (error) {
+      console.error("Error fetching course evaluations:", error);
+      res.status(500).json({ message: "خطأ في استرجاع بيانات تقييمات الدورة" });
+    }
+  });
 
   // Get course evaluations
   app.get("/api/training-courses/:id/evaluations", authMiddleware, async (req: Request, res: Response) => {
@@ -2664,7 +2658,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const group of groups) {
         const assignments = await storage.getTrainingAssignmentsByGroup(group.id);
         for (const assignment of assignments) {
-          // Skip - using training_assignments grades directly now
+          const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
+          courseEvaluations.push(...evaluations);
         }
       }
 
@@ -2691,11 +2686,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const assignments = await storage.getTrainingAssignmentsByStudent(student.id);
 
         for (const assignment of assignments) {
-          // Check if this assignment has detailed grades
-          const hasDetailedGrades = !!(assignment.attendanceGrade || assignment.behaviorGrade || assignment.finalExamGrade || assignment.calculatedFinalGrade);
+          // Check if this assignment has detailed grades or evaluations
+          const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
 
-          // Only show courses with actual grades
-          if (!hasDetailedGrades) {
+          // Only include courses that have either detailed grades OR evaluations (actual graded courses)
+          const hasDetailedGrades = !!(assignment.attendanceGrade || assignment.behaviorGrade || assignment.finalExamGrade || assignment.calculatedFinalGrade);
+          const hasEvaluations = evaluations.length > 0;
+
+          // Only show courses with actual grades or evaluations
+          if (!hasDetailedGrades && !hasEvaluations) {
             continue;
           }
 
@@ -2787,16 +2786,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let gradeCount = 0;
 
           for (const assignment of assignments) {
-            // Check for detailed grades only
+            const evaluations = await storage.getEvaluationsByAssignment(assignment.id);
+            // Also check for detailed grades
             const hasDetailedGrades = !!(assignment.attendanceGrade || assignment.behaviorGrade || assignment.finalExamGrade || assignment.calculatedFinalGrade);
 
-            if (hasDetailedGrades) {
+            if (evaluations.length > 0 || hasDetailedGrades) {
               completedEvaluations++;
               hasEvaluations = true;
 
-              // Use calculated final grade
+              // Use calculated final grade if available, otherwise use evaluation score
+              let finalGrade = null;
               if (assignment.calculatedFinalGrade) {
-                const finalGrade = parseFloat(assignment.calculatedFinalGrade);
+                finalGrade = parseFloat(assignment.calculatedFinalGrade);
+              } else if (evaluations.length > 0 && evaluations[0].score) {
+                finalGrade = evaluations[0].score;
+              }
+
+              if (finalGrade) {
                 totalGrades += finalGrade;
                 gradeCount++;
               }
@@ -2918,12 +2924,14 @@ const allGroups = await storage.getAllTrainingCourseGroups();
           studentsWithDetails.push({
             id: assignment.id,
             student: studentDetails,
+             calculatedFinal: student.calculatedFinal || 0,
             assignment: {
               id: assignment.id,
               status: assignment.status,
               assignedAt: assignment.createdAt || new Date().toISOString()
+             
             },
-            grades: { attendanceGrade: assignment.attendanceGrade, behaviorGrade: assignment.behaviorGrade, finalExamGrade: assignment.finalExamGrade, calculatedFinalGrade: assignment.calculatedFinalGrade } || null
+            evaluation: evaluation || null
           });
         }
       }
@@ -3255,7 +3263,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         // Log activity
         await logSecurityActivity(
           req.user!.username,
-          "bulk_update",
+          "ادخال الدرجات",
           "grades",
           groupId,
           {
@@ -3485,7 +3493,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
       if (req.user) {
         await logSecurityActivity(
           req.user.username,
-          "bulk_update",
+          "ادخال الدرجات",
           "grades",
           null,
           { 
@@ -3540,7 +3548,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         // Log activity for detailed grading
         await logSecurityActivity(
           req.user!.username,
-          "bulk_update",
+          "ادخال الدرجات",
           "grades",
           null,
           {

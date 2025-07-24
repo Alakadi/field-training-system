@@ -10,23 +10,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface GroupStudent {
   id: number;
+  userId: number;
   universityId: string;
-  faculty?: {
-    name: string;
-  };
-  major?: {
-    name: string;
-  };
-  level?: {
-    name: string;
-  };
-  assignment?: {
-    id: number;
-    attendanceGrade?: number;
-    behaviorGrade?: number;
-    finalExamGrade?: number;
-    calculatedFinalGrade?: number;
-  };
+  facultyId: number;
+  majorId: number;
+  levelId: number;
+  grade?: number;
+  calculatedFinal?: number;
   user: {
     id: number;
     username: string;
@@ -34,6 +24,19 @@ interface GroupStudent {
     email: string;
     phone?: string;
   };
+  faculty: {
+        id: number;
+        name: string;
+    };
+    major: {
+        id: number;
+        name: string;
+        facultyId: number;
+    };
+    level: {
+        id: number;
+        name: string;
+    };
 }
 
 interface GroupDetails {
@@ -80,13 +83,6 @@ interface GroupDetails {
       email: string;
       phone?: string;
     };
-  assignment?: {
-    id: number;
-    attendanceGrade?: number;
-    behaviorGrade?: number;
-    finalExamGrade?: number;
-    calculatedFinalGrade?: number;
-  };
   };
   students: GroupStudent[];
 }
@@ -98,46 +94,55 @@ export default function ViewGroup() {
     queryKey: [`/api/training-course-groups/${groupId}/details`],
     queryFn: async () => {
       if (!groupId) return null;
-      
+
       // First get the group details
       const groupResponse = await fetch(`/api/training-course-groups/${groupId}`, {
         credentials: "include"
       });
-      
+
       if (!groupResponse.ok) {
         throw new Error("Failed to fetch group details");
       }
-      
+
       const group = await groupResponse.json();
-      
+
       // Then get assignments for this group to fetch students with grades
       const assignmentsResponse = await fetch(`/api/training-assignments?groupId=${groupId}`, {
         credentials: "include"
       });
-      
+
       if (!assignmentsResponse.ok) {
         throw new Error("Failed to fetch assignments");
       }
-      
+
       const assignments = await assignmentsResponse.json();
-      
-      // Build students array with grades from training assignments
+
+      // Get evaluations for each assignment
+      const evaluationsResponse = await fetch("/api/evaluations", {
+        credentials: "include"
+      });
+
+      const evaluations = evaluationsResponse.ok ? await evaluationsResponse.json() : [];
+
+      // Build students array with grades
       const studentsWithGrades = await Promise.all(
         assignments.map(async (assignment: any) => {
           try {
             const studentResponse = await fetch(`/api/students/${assignment.studentId}`, {
               credentials: "include"
             });
-            
+
             if (!studentResponse.ok) return null;
-            
+
             const student = await studentResponse.json();
-            
+
+            // Find evaluation for this assignment
+            const evaluation = evaluations.find((evalItem: any) => evalItem.assignmentId === assignment.id);
+
             return {
               ...student,
-              grade: assignment.calculatedFinalGrade || null,
-              assignmentId: assignment.id,
-              assignment: assignment
+              grade: assignment?.calculatedFinalGrade || null,
+              assignmentId: assignment.id
             };
           } catch (error) {
             console.error("Error fetching student details:", error);
@@ -145,7 +150,7 @@ export default function ViewGroup() {
           }
         })
       );
-      
+
       return {
         ...group,
         students: studentsWithGrades.filter(student => student !== null)
@@ -153,7 +158,7 @@ export default function ViewGroup() {
     },
     enabled: !!groupId
   });
-
+  console.log(groupDetails)
   if (isLoading) {
     return (
       <div className="container mx-auto p-6 space-y-6">
@@ -318,9 +323,7 @@ export default function ViewGroup() {
                         <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
                           التخصص
                         </th>
-                        <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
-                          المعدل
-                        </th>
+
                         <th className="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">
                           حالة التسجيل
                         </th>
@@ -347,20 +350,18 @@ export default function ViewGroup() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div>
-                              <div className="text-sm text-neutral-900">تخصص {student.majorId}</div>
-                              <div className="text-sm text-neutral-500">مستوى {student.levelId}</div>
+                              <div className="text-sm text-neutral-900">تخصص {student.major?.name}</div>
+                              <div className="text-sm text-neutral-500"> {student.level?.name}</div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
-                            غير محدد
-                          </td>
+
                           <td className="px-6 py-4 whitespace-nowrap">
                             <Badge className="bg-green-100 text-green-800">مسجل</Badge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {student.assignment?.calculatedFinalGrade ? (
-                              <Badge variant={student.assignment.calculatedFinalGrade >= 75 ? "default" : student.assignment.calculatedFinalGrade >= 60 ? "secondary" : "destructive"}>
-                                {student.assignment.calculatedFinalGrade}/100
+                            {student.grade? (
+                              <Badge variant={student.grade >= 75 ? "default" : student.grade >= 60 ? "secondary" : "destructive"}>
+                                {student.grade}/100
                               </Badge>
                             ) : (
                               <Badge variant="outline">لم يتم التقييم</Badge>
