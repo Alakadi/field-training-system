@@ -39,7 +39,7 @@ async function logSecurityActivity(
 ): Promise<void> {
   try {
     // تحقق من أن النشاط أمني مهم
-    const allowedActions = SECURITY_ACTIVITIES[entityType];
+    const allowedActions = SECURITY_ACTIVITIES[entityType as keyof typeof SECURITY_ACTIVITIES];
     if (!allowedActions || !allowedActions.includes(action)) {
       return; // لا تسجل النشاط إذا لم يكن أمنياً مهماً
     }
@@ -456,7 +456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "اسم المستوى مطلوب" });
       }
 
-      const level = await storage.createLevel({ name: name.trim(), description: description || null });
+      const level = await storage.createLevel({ name: name.trim() });
       
       // Log activity
       if (req.user) {
@@ -1513,9 +1513,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Log activity with academic year information
       if (req.user) {
-        const logMessage = result.academicYearMessage 
-          ? `تم إنشاء دورة تدريبية مع ${result.groups.length} مجموعة: ${name}. ${result.academicYearMessage}`
-          : `تم إنشاء دورة تدريبية مع ${result.groups.length} مجموعة: ${name}`;
+        const logMessage = `تم إنشاء دورة تدريبية مع ${result.groups.length} مجموعة: ${name}`;
 
         await logSecurityActivity(
           req.user.username,
@@ -1531,8 +1529,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               levelId, 
               description, 
               groupsCount: result.groups.length,
-              academicYearId: result.course.academicYearId,
-              academicYearMessage: result.academicYearMessage
+              academicYearId: result.course.academicYearId
             }
           }
         );
@@ -1541,9 +1538,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Return result with success message
       const responseData = {
         ...result,
-        message: result.academicYearMessage 
-          ? `تم إنشاء الدورة بنجاح. ${result.academicYearMessage}`
-          : "تم إنشاء الدورة بنجاح"
+        message: "تم إنشاء الدورة بنجاح"
       };
 
       res.status(201).json(responseData);
