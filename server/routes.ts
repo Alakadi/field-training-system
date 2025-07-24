@@ -2019,7 +2019,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               groupId: assignment.groupId,
               status: assignment.status,
               confirmed: assignment.confirmed,
-              assignedDate: assignment.assignedDate,
+              assignedDate: assignment.assignedAt,
               course: {
                 id: course.id,
                 name: course.name,
@@ -2095,7 +2095,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               groupId: assignment.groupId,
               status: assignment.status,
               confirmed: assignment.confirmed,
-              assignedDate: assignment.assignedDate,
+              assignedDate: assignment.assignedAt,
               calculatedFinalGrade:assignment.calculatedFinalGrade,
               course: {
                 id: course.id,
@@ -2921,12 +2921,11 @@ const allGroups = await storage.getAllTrainingCourseGroups();
           studentsWithDetails.push({
             id: assignment.id,
             student: studentDetails,
-             calculatedFinal: student.calculatedFinal || 0,
+            calculatedFinal: assignment.calculatedFinalGrade || 0,
             assignment: {
               id: assignment.id,
               status: assignment.status,
-              assignedAt: assignment.createdAt || new Date().toISOString()
-             
+              assignedAt: assignment.assignedAt || new Date().toISOString()
             },
             evaluation: evaluation || null
           });
@@ -2954,7 +2953,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         supervisor: supervisorDetails ? {
           id: supervisorDetails.id,
           user: supervisorDetails.user,
-          specialization: supervisorDetails.specialization || "غير محدد"
+          department: supervisorDetails.department || "غير محدد"
         } : null,
         students: studentsWithDetails
       };
