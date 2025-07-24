@@ -303,6 +303,8 @@ export class DatabaseStorage implements IStorage {
         return undefined;
       }
 
+      console.log(`User found: ${user.username}, checking password...`);
+
       // Check if password matches using bcrypt
       const passwordMatch = await bcrypt.compare(credentials.password, user.password);
       if (!passwordMatch) {
@@ -805,7 +807,7 @@ export class DatabaseStorage implements IStorage {
 
       let finalCourseStatus = 'upcoming';
       if (courseStatuses.includes('active')) {
-        finalCourseStatus = 'active';
+        finalCourseStatus ='active';
       } else if (courseStatuses.every(s => s === 'completed')) {
         finalCourseStatus = 'completed';
       }
@@ -1699,7 +1701,7 @@ export class DatabaseStorage implements IStorage {
     if (!assignment || !assignment.calculatedFinalGrade) {
       return [];
     }
-    
+
     return [{
       id: assignment.id,
       assignmentId: assignment.id,
@@ -1715,8 +1717,8 @@ export class DatabaseStorage implements IStorage {
   async getAllEvaluations(): Promise<any[]> {
     // Return all assignments that have detailed grades as evaluations
     const assignments = await db.select().from(trainingAssignments)
-      .where(isNotNull(trainingAssignments.calculatedFinalGrade));
-    
+      .where(isNull(trainingAssignments.calculatedFinalGrade));
+
     return assignments.map(assignment => ({
       id: assignment.id,
       assignmentId: assignment.id,
@@ -1735,11 +1737,11 @@ export class DatabaseStorage implements IStorage {
     if (!assignment) {
       throw new Error("التعيين غير موجود");
     }
-    
+
     await this.updateTrainingAssignment(evalData.assignmentId, {
       calculatedFinalGrade: evalData.score.toString()
     });
-    
+
     return {
       id: evalData.assignmentId,
       assignmentId: evalData.assignmentId,
@@ -1754,7 +1756,7 @@ export class DatabaseStorage implements IStorage {
     await this.updateTrainingAssignment(id, {
       calculatedFinalGrade: evalData.score.toString()
     });
-    
+
     return {
       id: id,
       assignmentId: id,
