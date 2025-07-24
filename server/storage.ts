@@ -804,7 +804,8 @@ export class DatabaseStorage implements IStorage {
       }
 
       // 3. تحديث حالة الدورة بناءً على المجموعات
-      const courseStatuses = createdGroups.map(g.startDate && g.endDate) {
+      const courseStatuses = createdGroups.map(g => {
+        if (g.startDate && g.endDate) {
           const currentDate = new Date().toISOString().split('T')[0];
           if (currentDate >= g.startDate && currentDate <= g.endDate) {
             return 'active';
