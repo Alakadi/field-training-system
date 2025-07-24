@@ -164,11 +164,7 @@ export interface IStorage {
   }) | undefined>;
   confirmTrainingAssignment(id: number): Promise<TrainingAssignment | undefined>;
 
-  // Evaluation operations
-  getAllEvaluations(): Promise<Evaluation[]>;
-  getEvaluation(id: number): Promise<Evaluation | undefined>;
-  createEvaluation(evaluation: InsertEvaluation): Promise<Evaluation>;
-  getEvaluationsByAssignment(assignmentId: number): Promise<Evaluation[]>;
+  // Evaluation operations are now handled through training assignments table
 
   // Update course status
   updateCourseStatus(courseId: number, status: string): Promise<TrainingCourse | undefined>;
@@ -200,8 +196,7 @@ export interface IStorage {
     calculatedFinalGrade?: number;
   }): Promise<TrainingAssignment | undefined>;
 
-  // Update Evaluation operations
-  updateEvaluation(id: number, evaluation: Partial<Evaluation>): Promise<Evaluation | undefined>;
+  // Update Evaluation operations are now handled through training assignments table
 
   // Import/Export operations
   importStudents(students: {
@@ -356,7 +351,7 @@ export class DatabaseStorage implements IStorage {
       console.log("Query completed, found", result.length, "security logs");
 
       // إضافة description مناسب لكل نشاط
-      const resultWithDescription = result.map(log => ({
+      const resultWithDescription = result.map((log: any) => ({
         ...log,
         description: this.generateActivityDescription(log)
       }));
@@ -567,15 +562,7 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-   async createUser(user: InsertUser): Promise<User> {
-    const hashedPassword = await bcrypt.hash(user.password, 10);
-    const userWithHashedPassword = {
-      ...user,
-      password: hashedPassword
-    };
-    const result = await db.insert(users).values(userWithHashedPassword).returning();
-    return result[0];
-  }
+
 
   async createStudent(student: InsertStudent): Promise<Student> {
     const result = await db.insert(students).values(student).returning();
@@ -1582,14 +1569,7 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  // Update Evaluation operations
-  async updateEvaluation(id: number, evaluation: Partial<Evaluation>): Promise<Evaluation | undefined> {
-    const result = await db.update(evaluations)
-      .set(evaluation)
-      .where(eq(evaluations.id, id))
-      .returning();
-    return result[0];
-  }
+  // Evaluation operations are now handled through training assignments table
 
   // Update Student Detailed Grades operations
   async updateStudentDetailedGrades(assignmentId: number, grades: {
@@ -1647,7 +1627,7 @@ export class DatabaseStorage implements IStorage {
       endDate: trainingCourseGroups.endDate,
       course: {
         id: trainingCourses.id,
-        title: trainingCourses.title
+        name: trainingCourses.name
       }
     })
     .from(trainingCourseGroups)
@@ -1692,7 +1672,7 @@ export class DatabaseStorage implements IStorage {
       supervisorId: trainingCourseGroups.supervisorId,
       course: {
         id: trainingCourses.id,
-        title: trainingCourses.title
+        name: trainingCourses.name
       }
     })
     .from(trainingCourseGroups)
@@ -1735,7 +1715,6 @@ export class DatabaseStorage implements IStorage {
     try {
       // Delete related records first (foreign key constraints)
       await db.delete(trainingAssignments).where(eq(trainingAssignments.studentId, id));
-      await db.delete(evaluations).where(eq(evaluations.studentId, id));
 
       // Delete student record
       await db.delete(students).where(eq(students.id, id));
@@ -1752,7 +1731,6 @@ export class DatabaseStorage implements IStorage {
     try {
       // Delete related records first (foreign key constraints)
       await db.delete(trainingAssignments).where(eq(trainingAssignments.courseId, id));
-      await db.delete(evaluations).where(eq(evaluations.courseId, id));
 
       // Delete course groups
       await db.delete(trainingCourseGroups).where(eq(trainingCourseGroups.courseId, id));
