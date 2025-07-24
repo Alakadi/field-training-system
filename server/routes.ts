@@ -2159,7 +2159,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const assignment = await storage.createTrainingAssignment({
         studentId: Number(studentId),
-        courseId: group.courseId, // ربط مباشر بالكورس
         groupId: Number(groupId),
         assignedBy: req.user?.id,
         status: "pending"
@@ -2392,10 +2391,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Create assignment with direct course and group relationship
+      // Create assignment with group relationship only
       const assignment = await storage.createTrainingAssignment({
         studentId: student.id,
-        courseId: updatedCourse.id, // Direct course relationship
         groupId: Number(groupId),
         assignedBy: req.user?.id,
         status: "active",
@@ -2727,7 +2725,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               major: studentDetails.major?.name || 'غير محدد',
               level: studentDetails.level?.name || 'غير محدد',
               // Single course details for this record
-              courseId: group.course.id,
               courseName: group.course.name,
               grade: latestEvaluation?.score || null,
               // Prioritize calculated final grade from detailed grades
@@ -3341,8 +3338,13 @@ const allGroups = await storage.getAllTrainingCourseGroups();
           return res.status(400).json({ message: "التعيين غير موجود" });
         }
 
-        // الحصول على تفاصيل الدورة للنسب المخصصة
-        const course = await storage.getTrainingCourse(assignment.courseId);
+        // الحصول على تفاصيل الدورة من خلال المجموعة
+        const group = await storage.getTrainingCourseGroup(assignment.groupId);
+        if (!group) {
+          return res.status(400).json({ message: "المجموعة غير موجودة" });
+        }
+        
+        const course = await storage.getTrainingCourse(group.courseId);
         if (!course) {
           return res.status(400).json({ message: "الدورة غير موجودة" });
         }

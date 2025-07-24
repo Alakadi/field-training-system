@@ -114,12 +114,11 @@ export const trainingCourseGroups = pgTable("training_course_groups", {
   uniqueIndex("course_group_unique").on(table.courseId, table.groupName),
 ]);
 
-// Training Assignments table - ربط الطلاب بالكورسات والمجموعات
+// Training Assignments table - ربط الطلاب بالمجموعات التدريبية
 export const trainingAssignments = pgTable("training_assignments", {
   id: serial("id").primaryKey(),
   studentId: integer("student_id").notNull().references(() => students.id),
-  courseId: integer("course_id").notNull().references(() => trainingCourses.id), // ربط مباشر بالكورس
-  groupId: integer("group_id").references(() => trainingCourseGroups.id), // ربط بالمجموعة (اختياري للمرونة)
+  groupId: integer("group_id").notNull().references(() => trainingCourseGroups.id), // ربط بالمجموعة فقط
   assignedBy: integer("assigned_by").references(() => users.id),
   status: text("status").default("pending"), // "pending", "active", "completed"
   confirmed: boolean("confirmed").default(false), // Student confirmation
@@ -130,7 +129,7 @@ export const trainingAssignments = pgTable("training_assignments", {
   finalExamGrade: numeric("final_exam_grade", { precision: 5, scale: 2 }), // درجة الاختبار النهائي (50%)
   calculatedFinalGrade: numeric("calculated_final_grade", { precision: 5, scale: 2 }), // الدرجة النهائية المحسوبة
 }, (table) => [
-  uniqueIndex("student_course_unique").on(table.studentId, table.courseId), // منع التسجيل المتكرر في نفس الكورس
+  uniqueIndex("student_group_unique").on(table.studentId, table.groupId), // منع التسجيل المتكرر في نفس المجموعة
 ]);
 
 // Note: Evaluations are now handled directly in training_assignments table

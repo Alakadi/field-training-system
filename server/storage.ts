@@ -1124,14 +1124,24 @@ export class DatabaseStorage implements IStorage {
 
   // جديد: استرجاع تعيينات الطلاب حسب الكورس مباشرة
   async getTrainingAssignmentsByCourse(courseId: number): Promise<TrainingAssignment[]> {
-    const result = await db.select().from(trainingAssignments).where(eq(trainingAssignments.courseId, courseId));
-    return result;
+    const result = await db.select({
+      assignment: trainingAssignments
+    }).from(trainingAssignments)
+      .leftJoin(trainingCourseGroups, eq(trainingAssignments.groupId, trainingCourseGroups.id))
+      .where(eq(trainingCourseGroups.courseId, courseId));
+    return result.map(row => row.assignment);
   }
 
   // جديد: التحقق من تسجيل الطالب في كورس معين
   async isStudentEnrolledInCourse(studentId: number, courseId: number): Promise<boolean> {
-    const result = await db.select().from(trainingAssignments)
-      .where(and(eq(trainingAssignments.studentId, studentId), eq(trainingAssignments.courseId, courseId)));
+    const result = await db.select({
+      assignment: trainingAssignments
+    }).from(trainingAssignments)
+      .leftJoin(trainingCourseGroups, eq(trainingAssignments.groupId, trainingCourseGroups.id))
+      .where(and(
+        eq(trainingAssignments.studentId, studentId), 
+        eq(trainingCourseGroups.courseId, courseId)
+      ));
     return result.length > 0;
   }
 
@@ -1682,6 +1692,78 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  // Evaluation operations (handled through training assignments)
+  async getEvaluationsByAssignment(assignmentId: number): Promise<any[]> {
+    // Since evaluations are now part of training assignments, return assignment with grades
+    const assignment = await this.getTrainingAssignmentById(assignmentId);
+    if (!assignment || !assignment.calculatedFinalGrade) {
+      return [];
+    }
+    
+    return [{
+      id: assignment.id,
+      assignmentId: assignment.id,
+      score: Number(assignment.calculatedFinalGrade),
+      comments: 'تقييم مفصل',
+      evaluatedAt: assignment.assignedAt,
+      attendanceGrade: assignment.attendanceGrade,
+      behaviorGrade: assignment.behaviorGrade,
+      finalExamGrade: assignment.finalExamGrade
+    }];
+  }
+
+  async getAllEvaluations(): Promise<any[]> {
+    // Return all assignments that have detailed grades as evaluations
+    const assignments = await db.select().from(trainingAssignments)
+      .where(isNotNull(trainingAssignments.calculatedFinalGrade));
+    
+    return assignments.map(assignment => ({
+      id: assignment.id,
+      assignmentId: assignment.id,
+      score: Number(assignment.calculatedFinalGrade || 0),
+      comments: 'تقييم مفصل',
+      evaluatedAt: assignment.assignedAt,
+      attendanceGrade: assignment.attendanceGrade,
+      behaviorGrade: assignment.behaviorGrade,
+      finalExamGrade: assignment.finalExamGrade
+    }));
+  }
+
+  async createEvaluation(evalData: any): Promise<any> {
+    // Create evaluation by updating training assignment with calculated grade
+    const assignment = await this.getTrainingAssignmentById(evalData.assignmentId);
+    if (!assignment) {
+      throw new Error("التعيين غير موجود");
+    }
+    
+    await this.updateTrainingAssignment(evalData.assignmentId, {
+      calculatedFinalGrade: evalData.score.toString()
+    });
+    
+    return {
+      id: evalData.assignmentId,
+      assignmentId: evalData.assignmentId,
+      score: evalData.score,
+      comments: evalData.comments,
+      evaluatedAt: new Date()
+    };
+  }
+
+  async updateEvaluation(id: number, evalData: any): Promise<any> {
+    // Update evaluation by updating training assignment
+    await this.updateTrainingAssignment(id, {
+      calculatedFinalGrade: evalData.score.toString()
+    });
+    
+    return {
+      id: id,
+      assignmentId: id,
+      score: evalData.score,
+      comments: evalData.comments,
+      evaluatedAt: new Date()
+    };
+  }
+
   // Delete operations
   async deleteSupervisor(id: number): Promise<void> {
     const supervisor = await this.getSupervisor(id);
@@ -1730,7 +1812,11 @@ export class DatabaseStorage implements IStorage {
   async deleteTrainingCourse(id: number): Promise<void> {
     try {
       // Delete related records first (foreign key constraints)
-      await db.delete(trainingAssignments).where(eq(trainingAssignments.courseId, id));
+      // Get all groups for this course first
+      const courseGroups = await this.getTrainingCourseGroupsByCourse(id);
+      for (const group of courseGroups) {
+        await db.delete(trainingAssignments).where(eq(trainingAssignments.groupId, group.id));
+      }
 
       // Delete course groups
       await db.delete(trainingCourseGroups).where(eq(trainingCourseGroups.courseId, id));
