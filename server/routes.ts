@@ -225,7 +225,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If changing password, verify current password
       if (newPassword && currentPassword) {
         const user = await storage.getUser(userId);
-        if (!user || user.password !== currentPassword) {
+        if (!user) {
+          return res.status(400).json({ message: "المستخدم غير موجود" });
+        }
+        
+        // استخدام bcrypt للتحقق من كلمة المرور الحالية
+        const bcrypt = require('bcrypt');
+        const passwordMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!passwordMatch) {
           return res.status(400).json({ message: "كلمة المرور الحالية غير صحيحة" });
         }
       }

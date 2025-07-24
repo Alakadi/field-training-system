@@ -41,6 +41,7 @@ import {
 } from "@shared/schema";
 import { eq, and, desc, sql, or, isNull, gte, lte, count } from "drizzle-orm";
 import { db } from "./db";
+import bcrypt from "bcrypt";
 
 export interface IStorage {
   // User operations
@@ -259,30 +260,67 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async createUser(user: InsertUser): Promise<User> {
-    const result = await db.insert(users).values(user).returning();
-    return result[0];
-  }
+  async createUser(userData: InsertUser): Promise<User> {
+    // تشفير كلمة المرور قبل الحفظ
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    const userDataWithHashedPassword = {
+      ...userData,
+      password: hashedPassword
+    };
 
-  async updateUser(id: number, user: Partial<User>): Promise<User | undefined> {
-    const result = await db.update(users).set(user).where(eq(users.id, id)).returning();
-    return result[0];
-  }
-
-  async login(loginData: LoginData): Promise<User | undefined> {
-    const result = await db.select().from(users).where(eq(users.username, loginData.username));
-    const user = result[0];
-
-    if (!user) {
-      return undefined;
-    }
-
-    // Check password - simple comparison for now (in production, use hashing)
-    if (user.password !== loginData.password) {
-      return undefined;
-    }
-
+    const [user] = await db.insert(users).values(userDataWithHashedPassword).returning();
     return user;
+  }
+
+  async updateUser(id: number, updates: Partial<InsertUser>): Promise<User | undefined> {
+    // إذا كانت كلمة المرور موجودة في التحديثات، قم بتشفيرها
+    const updatesWithHashedPassword = { ...updates };
+    if (updates.password) {
+      updatesWithHashedPassword.password = await bcrypt.hash(updates.password, 10);
+    }
+
+    const [user] = await db.update(users)
+      .set(updatesWithHashedPassword)
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async login(credentials: LoginData): Promise<User | undefined> {
+    try {
+      console.log(`Login attempt for username: ${credentials.username}`);
+
+      // Try to find user by username first
+      let user = await this.getUserByUsername(credentials.username);
+
+      // If not found by username, try by university ID (for students)
+      if (!user) {
+        console.log(`User not found by username, trying university ID...`);
+        const student = await this.getStudentByUniversityId(credentials.username);
+        if (student) {
+          user = await this.getUser(student.userId);
+          console.log(`User found by university ID: ${user?.username}`);
+        }
+      }
+
+      if (!user) {
+        console.log(`User not found: ${credentials.username}`);
+        return undefined;
+      }
+
+      // Check if password matches using bcrypt
+      const passwordMatch = await bcrypt.compare(credentials.password, user.password);
+      if (!passwordMatch) {
+        console.log(`Password mismatch for user: ${credentials.username}`);
+        return undefined;
+      }
+
+      console.log(`Login successful for: ${user.username}`);
+      return user;
+    } catch (error) {
+      console.error("Login error:", error);
+      return undefined;
+    }
   }
 
   // Activity log operations - عرض الأنشطة الأمنية فقط
@@ -530,7 +568,12 @@ export class DatabaseStorage implements IStorage {
   }
 
    async createUser(user: InsertUser): Promise<User> {
-    const result = await db.insert(users).values(user).returning();
+    const hashedPassword = await bcrypt.hash(user.password, 10);
+    const userWithHashedPassword = {
+      ...user,
+      password: hashedPassword
+    };
+    const result = await db.insert(users).values(userWithHashedPassword).returning();
     return result[0];
   }
 
@@ -761,8 +804,7 @@ export class DatabaseStorage implements IStorage {
       }
 
       // 3. تحديث حالة الدورة بناءً على المجموعات
-      const courseStatuses = createdGroups.map(g => {
-        if (g.startDate && g.endDate) {
+      const courseStatuses = createdGroups.map(g.startDate && g.endDate) {
           const currentDate = new Date().toISOString().split('T')[0];
           if (currentDate >= g.startDate && currentDate <= g.endDate) {
             return 'active';
