@@ -2,8 +2,21 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
+    try {
+      // Try to parse as JSON first
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || `خطأ ${res.status}`);
+      } else {
+        // If not JSON, get text
+        const text = await res.text();
+        throw new Error(text || res.statusText || `خطأ ${res.status}`);
+      }
+    } catch (parseError) {
+      // If parsing fails, use status text
+      throw new Error(`خطأ في الشبكة ${res.status}`);
+    }
   }
 }
 
@@ -39,7 +52,16 @@ export const getQueryFn: <T>(options: {
     }
 
     await throwIfResNotOk(res);
-    return await res.json();
+    
+    // Check if response is JSON
+    const contentType = res.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      return await res.json();
+    } else {
+      // If not JSON, return null or handle accordingly
+      console.warn("Received non-JSON response:", await res.text());
+      return null;
+    }
   };
 
 export const queryClient = new QueryClient({

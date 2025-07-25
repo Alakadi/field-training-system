@@ -46,8 +46,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
 
         if (res.ok) {
-          const userData = await res.json();
-          setUser(userData);
+          const contentType = res.headers.get("content-type");
+          if (contentType && contentType.includes("application/json")) {
+            const userData = await res.json();
+            setUser(userData);
+          } else {
+            console.warn("Received non-JSON response from auth check");
+          }
         }
       } catch (error) {
         console.error("Auth check failed:", error);
