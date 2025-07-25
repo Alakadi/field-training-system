@@ -42,28 +42,28 @@ const editStudentSchema = z.object({
     .or(z.literal(""))
     .refine((phone) => {
       if (!phone || phone.trim() === "") return true; // Optional field
-      
+
       let cleanPhone = phone.trim();
-      
+
       // Remove country code if present
       if (cleanPhone.startsWith("+967")) {
         cleanPhone = cleanPhone.substring(4);
       } else if (cleanPhone.startsWith("967")) {
         cleanPhone = cleanPhone.substring(3);
       }
-      
+
       // Remove any spaces or dashes
       cleanPhone = cleanPhone.replace(/[\s-]/g, "");
-      
+
       // Check if it's exactly 9 digits
       if (!/^\d{9}$/.test(cleanPhone)) {
         return false;
       }
-      
+
       // Check if it starts with valid prefixes
       const validPrefixes = ["73", "77", "78", "71", "70"];
       const prefix = cleanPhone.substring(0, 2);
-      
+
       return validPrefixes.includes(prefix);
     }, { 
       message: "رقم الهاتف يجب أن يكون 9 أرقام ويبدأ بـ 73 أو 77 أو 78 أو 71 أو 70 (يمكن إضافة رمز البلد +967)" 
@@ -244,17 +244,17 @@ const EditStudent: React.FC = () => {
       let cleanedPhone = "";
       if (data.phone && data.phone.trim() !== "") {
         let phone = data.phone.trim();
-        
+
         // Remove country code if present
         if (phone.startsWith("+967")) {
           phone = phone.substring(4);
         } else if (phone.startsWith("967")) {
           phone = phone.substring(3);
         }
-        
+
         // Remove any spaces or dashes
         phone = phone.replace(/[\s-]/g, "");
-        
+
         cleanedPhone = phone;
       }
 
@@ -344,6 +344,24 @@ const EditStudent: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Handle faculty change to filter majors
+  const handleFacultyChange = (value: string) => {
+    setSelectedFacultyId(value);
+    setSelectedMajor("");
+    setSelectedLevel("");
+    form.setValue("majorId", "");
+    form.setValue("levelId", "");
+    form.setValue("assignedCourseGroups", []);
+  };
+
+  // Handle major change to filter courses
+  const handleMajorChange = (value: string) => {
+    setSelectedMajor(value);
+    setSelectedLevel("");
+    form.setValue("levelId", "");
+    form.setValue("assignedCourseGroups", []);
   };
 
   if (isLoadingStudent) {
