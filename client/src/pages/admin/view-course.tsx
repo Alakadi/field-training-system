@@ -282,33 +282,23 @@ const ViewCourse: React.FC = () => {
                             </tr>
                           </thead>
                           <tbody className="bg-white divide-y divide-neutral-200">
-                            {courseStudents?.map((registration: any) => (
-                              <tr key={registration.id} className="hover:bg-neutral-50">
+                            {courseStudents?.map((student: any) => (
+                              <tr key={student.id} className="hover:bg-neutral-50">
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
-                                  {registration.student?.user?.name || "غير محدد"}
+                                  {student.user?.name || "غير محدد"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                                  {registration.student?.universityId || "غير محدد"}
+                                  {student.universityId || "غير محدد"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                                  {registration.student?.major?.name || "غير محدد"}
+                                  {course?.major?.name || "غير محدد"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
-                                  {registration.student?.gpa ? registration.student.gpa.toFixed(2) : "غير محدد"}
+                                  {student.gpa ? student.gpa.toFixed(2) : "غير محدد"}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                  <Badge className={`
-                                    ${registration.status === 'assigned' ? 'bg-yellow-100 text-yellow-800' : ''}
-                                    ${registration.status === 'confirmed' ? 'bg-green-100 text-green-800' : ''}
-                                    ${registration.status === 'completed' ? 'bg-blue-100 text-blue-800' : ''}
-                                    ${registration.status === 'cancelled' ? 'bg-red-100 text-red-800' : ''}
-                                    ${!registration.status || (registration.status !== 'assigned' && registration.status !== 'confirmed' && registration.status !== 'completed' && registration.status !== 'cancelled') ? 'bg-gray-100 text-gray-800' : ''}
-                                  `}>
-                                    {registration.status === 'assigned' && 'معين'}
-                                    {registration.status === 'confirmed' && 'مؤكد'} 
-                                    {registration.status === 'completed' && 'مكتمل'}
-                                    {registration.status === 'cancelled' && 'ملغى'}
-                                    {(!registration.status || (registration.status !== 'assigned' && registration.status !== 'confirmed' && registration.status !== 'completed' && registration.status !== 'cancelled')) && 'غير محدد'}
+                                  <Badge className="bg-green-100 text-green-800">
+                                    مسجل في {student.groupName || "مجموعة غير محددة"}
                                   </Badge>
                                 </td>
                               </tr>
