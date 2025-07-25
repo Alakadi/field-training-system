@@ -890,7 +890,8 @@ export class DatabaseStorage implements IStorage {
       createdBy: trainingCourses.createdBy
     })
     .from(trainingCourses)
-    .innerJoin(trainingAssignments, eq(trainingCourses.id, trainingAssignments.courseId))
+    .innerJoin(trainingCourseGroups, eq(trainingCourses.id, trainingCourseGroups.courseId))
+    .innerJoin(trainingAssignments, eq(trainingCourseGroups.id, trainingAssignments.groupId))
     .where(eq(trainingAssignments.studentId, studentId));
 
     return result;
@@ -1835,7 +1836,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db.select()
       .from(trainingAssignments)
       .leftJoin(trainingCourseGroups, eq(trainingAssignments.groupId, trainingCourseGroups.id))
-      .leftJoin(trainingCourses, eq(trainingAssignments.courseId, trainingCourses.id))
+      .leftJoin(trainingCourses, eq(trainingCourseGroups.courseId, trainingCourses.id))
       .where(and(
         eq(trainingCourseGroups.supervisorId, supervisorId),
         or(
@@ -1850,7 +1851,8 @@ export class DatabaseStorage implements IStorage {
   async getActiveAssignmentsByStudent(studentId: number): Promise<TrainingAssignment[]> {
     const result = await db.select()
       .from(trainingAssignments)
-      .leftJoin(trainingCourses, eq(trainingAssignments.courseId, trainingCourses.id))
+      .leftJoin(trainingCourseGroups, eq(trainingAssignments.groupId, trainingCourseGroups.id))
+      .leftJoin(trainingCourses, eq(trainingCourseGroups.courseId, trainingCourses.id))
       .where(and(
         eq(trainingAssignments.studentId, studentId),
         or(

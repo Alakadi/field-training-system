@@ -137,7 +137,7 @@ This is a comprehensive Arabic-supported field training management system built 
 - **المشرفين**: 5 مشرفين مع بيانات كاملة
 
 ## Recent Changes
-- July 25, 2025: إنشاء قاعدة البيانات وإعداد تشفير كلمات المرور الآمن
+- July 25, 2025: إنشاء قاعدة البيانات وإعداد تشفير كلمات المرور الآمن + تحديث الاستعلامات للمنطق الجديد
   - إنشاء قاعدة البيانات PostgreSQL بنجاح مع جميع الجداول المطلوبة
   - تطبيق تشفير كلمات المرور باستخدام bcrypt مع salt rounds = 10
   - إنشاء حساب مدير النظام الأساسي (admin/admin123) مع كلمة مرور مشفرة
@@ -145,7 +145,10 @@ This is a comprehensive Arabic-supported field training management system built 
   - إصلاح معالجة أخطاء JSON في الواجهة الأمامية لتجنب "Unexpected token '<'"
   - تحسين نظام معالجة الاستجابات للتأكد من صحة تنسيق JSON
   - اختبار نظام المصادقة والتحقق من عمل تسجيل الدخول بكلمة المرور المشفرة
-  - تأكيد عمل جميع API endpoints بشكل صحيح (status 200)
+  - تحديث جميع الاستعلامات للتوافق مع المنطق الجديد حيث تم حذف courseId من trainingAssignments
+  - إصلاح getEnrolledCoursesForStudent للاعتماد على groupId → courseId عبر trainingCourseGroups
+  - إصلاح getActiveAssignmentsBySupervisor و getActiveAssignmentsByStudent للاستعلام الصحيح
+  - تأكيد عمل جميع API endpoints بشكل صحيح (status 200) مع البيانات المحدثة
 - July 19, 2025: إصلاح جميع مشاكل قاعدة البيانات وتحسين أداء النظام
   - إصلاح خطأ اتصال قاعدة البيانات بتبديل لـ node-postgres للاستقرار
   - حل مشكلة عدم ظهور أسماء المشرفين وجهات التدريب في صفحة عرض الكورس
