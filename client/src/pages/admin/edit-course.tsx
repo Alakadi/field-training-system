@@ -86,14 +86,24 @@ const EditCourse: React.FC = () => {
     queryKey: ["/api/majors"],
   });
 
+  const { data: levels = [], isLoading: isLoadingLevels } = useQuery({
+    queryKey: ["/api/levels"],
+  });
+
   const form = useForm<EditCourseFormValues>({
     resolver: zodResolver(editCourseSchema),
     defaultValues: {
       name: "",
-      facultyId: "",
-      location: "",
       description: "",
-      status: "upcoming",
+      facultyId: "",
+      majorId: "",
+      levelId: "",
+      attendancePercentage: 0,
+      behaviorPercentage: 0,
+      finalExamPercentage: 0,
+      attendanceGradeLabel: "درجة الحضور",
+      behaviorGradeLabel: "درجة السلوك",
+      finalExamGradeLabel: "درجة الاختبار النهائي",
     },
   });
 
@@ -408,37 +418,29 @@ const EditCourse: React.FC = () => {
 
                     <FormField
                       control={form.control}
-                      name="location"
+                      name="levelId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>الموقع</FormLabel>
-                          <FormControl>
-                            <Input placeholder="أدخل موقع التدريب" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="status"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>حالة الدورة</FormLabel>
+                          <FormLabel>المستوى الدراسي</FormLabel>
                           <Select 
-                            onValueChange={field.onChange}
+                            onValueChange={field.onChange} 
                             value={field.value}
+                            disabled={isLoadingLevels}
                           >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder="اختر حالة الدورة" />
+                                <SelectValue placeholder={
+                                  isLoadingLevels ? "جاري التحميل..." : 
+                                  "اختر المستوى الدراسي"
+                                } />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="upcoming">قادمة</SelectItem>
-                              <SelectItem value="active">نشطة</SelectItem>
-                              <SelectItem value="completed">مكتملة</SelectItem>
+                              {levels && Array.isArray(levels) && levels.map((level: any) => (
+                                <SelectItem key={level.id} value={level.id.toString()}>
+                                  {level.name}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -464,6 +466,119 @@ const EditCourse: React.FC = () => {
                       </FormItem>
                     )}
                   />
+
+                  {/* Grade Configuration */}
+                  <div className="space-y-4">
+                    <h4 className="text-md font-semibold border-b pb-2">تكوين الدرجات</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="attendancePercentage"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>نسبة درجة الحضور (%)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min="0" 
+                                max="100" 
+                                placeholder="0"
+                                {...field}
+                                onChange={(e) => field.onChange(Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="behaviorPercentage"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>نسبة درجة السلوك (%)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min="0" 
+                                max="100" 
+                                placeholder="0"
+                                {...field}
+                                onChange={(e) => field.onChange(Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="finalExamPercentage"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>نسبة درجة الاختبار النهائي (%)</FormLabel>
+                            <FormControl>
+                              <Input 
+                                type="number" 
+                                min="0" 
+                                max="100" 
+                                placeholder="0"
+                                {...field}
+                                onChange={(e) => field.onChange(Number(e.target.value))}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="attendanceGradeLabel"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>تسمية درجة الحضور</FormLabel>
+                            <FormControl>
+                              <Input placeholder="درجة الحضور" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="behaviorGradeLabel"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>تسمية درجة السلوك</FormLabel>
+                            <FormControl>
+                              <Input placeholder="درجة السلوك" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="finalExamGradeLabel"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>تسمية درجة الاختبار النهائي</FormLabel>
+                            <FormControl>
+                              <Input placeholder="درجة الاختبار النهائي" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Course Groups */}
