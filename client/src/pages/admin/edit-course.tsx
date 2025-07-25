@@ -254,7 +254,7 @@ const EditCourse: React.FC = () => {
         finalExamGradeLabel: data.finalExamGradeLabel,
       };
 
-      await apiRequest("PUT", `/api/courses/${id}`, courseData);
+      await apiRequest("PUT", `/api/training-courses/${id}`, courseData);
 
       toast({
         title: "تم تحديث الدورة بنجاح",
@@ -262,9 +262,10 @@ const EditCourse: React.FC = () => {
       });
 
       // Invalidate queries
-      queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/training-courses"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/training-courses/${id}`] });
 
-      // Navigate back to courses list
+      // Navigate back to courses list  
       setLocation("/admin/courses");
 
     } catch (error) {

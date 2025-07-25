@@ -114,6 +114,7 @@ export interface IStorage {
   getTrainingCoursesByFaculty(facultyId: number): Promise<TrainingCourse[]>;
   getTrainingCoursesByMajor(majorId: number): Promise<TrainingCourse[]>;
   deleteTrainingCourse(id: number): Promise<void>;
+  updateTrainingCourse(id: number, data: Partial<InsertTrainingCourse>): Promise<TrainingCourse | undefined>;
 
   // Training Course Group operations
   getAllTrainingCourseGroups(): Promise<TrainingCourseGroup[]>;
@@ -614,7 +615,7 @@ export class DatabaseStorage implements IStorage {
     }).from(students)
       .leftJoin(majors, eq(students.majorId, majors.id))
       .where(eq(majors.facultyId, facultyId));
-    
+
     return result.map((row: any) => row.student);
   }
 
@@ -803,7 +804,8 @@ export class DatabaseStorage implements IStorage {
       // 3. تحديث حالة الدورة بناءً على المجموعات
       const courseStatuses = createdGroups.map(g => {
         if (g.startDate && g.endDate) {
-          const currentDate = new Date().toISOString().split('T')[0];
+          const currentDate = new Date().toISOString```python
+().split('T')[0];
           if (currentDate >= g.startDate && currentDate <= g.endDate) {
             return 'active';
           } else if (currentDate > g.endDate) {
@@ -864,7 +866,7 @@ export class DatabaseStorage implements IStorage {
     }).from(trainingCourses)
       .leftJoin(majors, eq(trainingCourses.majorId, majors.id))
       .where(eq(majors.facultyId, facultyId));
-    
+
     return result.map((row: any) => row.course);
   }
 
@@ -916,7 +918,20 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
+  async updateTrainingCourse(id: number, data: Partial<InsertTrainingCourse>) {
+    try {
+      const [updatedCourse] = await db
+        .update(trainingCourses)
+        .set(data)
+        .where(eq(trainingCourses.id, id))
+        .returning();
 
+      return updatedCourse;
+    } catch (error) {
+      console.error("Error updating training course:", error);
+      throw error;
+    }
+  }
 
   // Training Course Group operations
   async getAllTrainingCourseGroups(): Promise<TrainingCourseGroup[]> {
@@ -1472,7 +1487,7 @@ export class DatabaseStorage implements IStorage {
           course.levelId ? this.getLevel(course.levelId) : undefined,
           course.academicYearId ? this.getAcademicYear(course.academicYearId) : undefined
         ]);
-        
+
         // Get faculty through major if major exists
         const faculty = major?.facultyId ? await this.getFaculty(major.facultyId) : undefined;
 
@@ -1686,7 +1701,7 @@ export class DatabaseStorage implements IStorage {
       or(
         isNull(trainingAssignments.attendanceGrade),
         isNull(trainingAssignments.behaviorGrade),
-        isNull(trainingAssignments.finalExamGrade)
+        isNull(trainingAssignment.finalExamGrade)
       )
     ));
   }

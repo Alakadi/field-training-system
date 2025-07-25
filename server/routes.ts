@@ -1608,6 +1608,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update training course
+  app.put("/api/training-courses/:id", authMiddleware, requireRole(["admin", "supervisor"]), async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      const { 
+        name, 
+        majorId, 
+        levelId, 
+        description,
+        attendancePercentage,
+        behaviorPercentage,
+        finalExamPercentage,
+        attendanceGradeLabel,
+        behaviorGradeLabel,
+        finalExamGradeLabel
+      } = req.body;
+
+      // Check if course exists
+      const existingCourse = await storage.getTrainingCourse(id);
+      if (!existingCourse) {
+        return res.status(404).json({ message: "الدورة التدريبية غير موجودة" });
+      }
+
+      // Validate percentages add up to 100
+      const totalPercentage = (attendancePercentage || 0) + (behaviorPercentage || 0) + (finalExamPercentage || 0);
+      if (totalPercentage !== 100) {
+        return res.status(400).json({ 
+          message: `يجب أن يكون مجموع النسب المئوية 100%. المجموع الحالي: ${totalPercentage}%` 
+        });
+      }
+
+      const courseData = {
+        name,
+        majorId: majorId ? Number(majorId) : existingCourse.majorId,
+        levelId: levelId ? Number(levelId) : existingCourse.levelId,
+        description: description || existingCourse.description,
+        attendancePercentage: attendancePercentage || existingCourse.attendancePercentage,
+        behaviorPercentage: behaviorPercentage || existingCourse.behaviorPercentage,
+        finalExamPercentage: finalExamPercentage || existingCourse.finalExamPercentage,
+        attendanceGradeLabel: attendanceGradeLabel || existingCourse.attendanceGradeLabel,
+        behaviorGradeLabel: behaviorGradeLabel || existingCourse.behaviorGradeLabel,
+        finalExamGradeLabel: finalExamGradeLabel || existingCourse.finalExamGradeLabel,
+      };
+
+      const updatedCourse = await storage.updateTrainingCourse(id, courseData);
+
+      if (!updatedCourse) {
+        return res.status(404).json({ message: "فشل في تحديث الدورة التدريبية" });
+      }
+
+      // Log activity
+      await logSecurityActivity(
+        req.user!.username,
+        "update",
+        "training_courses",
+        id,
+        { 
+          message: `تم تحديث الدورة التدريبية: ${name}`,
+          courseData: { name, majorId, levelId, description }
+        }
+      );
+
+      res.json({
+        message: "تم تحديث الدورة التدريبية بنجاح",
+        course: updatedCourse
+      });
+
+    } catch (error) {
+      console.error("Error updating training course:", error);
+      res.status(500).json({ message: "خطأ في تحديث الدورة التدريبية" });
+    }
+  });
+
   // Delete training course
   app.delete("/api/training-courses/:id", authMiddleware, requireRole(["admin", "supervisor"]), async (req: Request, res: Response) => {
     try {
