@@ -68,7 +68,6 @@ const editStudentSchema = z.object({
     }, { 
       message: "رقم الهاتف يجب أن يكون 9 أرقام ويبدأ بـ 73 أو 77 أو 78 أو 71 أو 70 (يمكن إضافة رمز البلد +967)" 
     }),
-  facultyId: z.string().min(1, { message: "يرجى اختيار الكلية" }),
   majorId: z.string().min(1, { message: "يرجى اختيار التخصص" }),
   levelId: z.string().min(1, { message: "يرجى اختيار المستوى" }),
   active: z.boolean().default(true),
@@ -83,7 +82,6 @@ const EditStudent: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedFaculty, setSelectedFaculty] = useState<string>("");
   const [selectedMajor, setSelectedMajor] = useState<string>("");
   const [selectedLevel, setSelectedLevel] = useState<string>("");
 
@@ -92,7 +90,6 @@ const EditStudent: React.FC = () => {
     id: number;
     userId: number;
     universityId: string;
-    facultyId: number | null;
     majorId: number | null;
     levelId: number | null;
     user: {
@@ -110,7 +107,6 @@ const EditStudent: React.FC = () => {
   type SupervisorType = { 
     id: number; 
     userId: number; 
-    facultyId: number | null; 
     department: string | null;
     user: {
       id: number;
@@ -129,19 +125,9 @@ const EditStudent: React.FC = () => {
     queryKey: ["/api/faculties"],
   });
 
-  // الحصول على التخصصات بناءً على الكلية المختارة
+  // الحصول على جميع التخصصات
   const { data: majors } = useQuery<MajorType[]>({
-    queryKey: ["/api/majors", selectedFaculty],
-    queryFn: async () => {
-      if (!selectedFaculty) return [];
-      const params = new URLSearchParams({ facultyId: selectedFaculty });
-      const res = await fetch(`/api/majors?${params}`, {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to fetch majors");
-      return res.json();
-    },
-    enabled: !!selectedFaculty,
+    queryKey: ["/api/majors"],
   });
 
   // الحصول على المستويات
@@ -154,13 +140,12 @@ const EditStudent: React.FC = () => {
     queryKey: ["/api/supervisors"],
   });
 
-  // جلب الدورات المتاحة بناءً على بيانات الطالب
+  // جلب الدورات المتاحة بناءً على التخصص والمستوى
   const { data: availableCourseGroups = [], isLoading: isLoadingCourseGroups } = useQuery({
-    queryKey: ["/api/training-course-groups", selectedFaculty, selectedMajor, selectedLevel],
+    queryKey: ["/api/training-course-groups", selectedMajor, selectedLevel],
     queryFn: async () => {
-      if (!selectedFaculty || !selectedMajor || !selectedLevel) return [];
+      if (!selectedMajor || !selectedLevel) return [];
       const params = new URLSearchParams({
-        facultyId: selectedFaculty,
         majorId: selectedMajor,
         levelId: selectedLevel,
         available: "true"
@@ -171,7 +156,7 @@ const EditStudent: React.FC = () => {
       if (!res.ok) throw new Error("Failed to fetch course groups");
       return res.json();
     },
-    enabled: !!(selectedFaculty && selectedMajor && selectedLevel),
+    enabled: !!(selectedMajor && selectedLevel),
   });
 
   // جلب تعيينات الطالب الحالية
@@ -194,7 +179,7 @@ const EditStudent: React.FC = () => {
       name: "",
       email: "",
       phone: "",
-      facultyId: "",
+
       majorId: "",
       levelId: "",
       active: true,
@@ -205,11 +190,7 @@ const EditStudent: React.FC = () => {
   // ضبط الكلية والتخصص والمستوى المختارة عند تغييرها في النموذج
   useEffect(() => {
     const subscription = form.watch((value, { name }) => {
-      if (name === "facultyId" && value.facultyId) {
-        setSelectedFaculty(value.facultyId as string);
-        setSelectedMajor("");
-        setSelectedLevel("");
-      }
+      // Removed faculty handling as it's now handled through major
       if (name === "majorId" && value.majorId) {
         setSelectedMajor(value.majorId as string);
         setSelectedLevel("");
@@ -224,7 +205,7 @@ const EditStudent: React.FC = () => {
   // تحديث قيم النموذج عند الحصول على بيانات الطالب
   useEffect(() => {
     if (student) {
-      setSelectedFaculty(String(student.facultyId));
+      // Removed faculty selection as it's now handled through major
       setSelectedMajor(String(student.majorId));
       setSelectedLevel(String(student.levelId));
 
@@ -232,7 +213,7 @@ const EditStudent: React.FC = () => {
         name: student.user.name,
         email: student.user.email || "",
         phone: student.user.phone || "",
-        facultyId: String(student.facultyId),
+
         majorId: String(student.majorId),
         levelId: String(student.levelId),
         active: student.user.active,
@@ -295,7 +276,7 @@ const EditStudent: React.FC = () => {
         name: data.name,
         email: data.email,
         phone: cleanedPhone || null,
-        facultyId: parseInt(data.facultyId),
+
         majorId: parseInt(data.majorId),
         levelId: parseInt(data.levelId),
         active: data.active,
@@ -459,34 +440,7 @@ const EditStudent: React.FC = () => {
                     )}
                   />
 
-                  <FormField
-                    control={form.control}
-                    name="facultyId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>الكلية *</FormLabel>
-                        <Select
-                          value={field.value}
-                          onValueChange={field.onChange}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="اختر الكلية" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="default" disabled>اختر الكلية</SelectItem>
-                            {faculties?.map((faculty: any) => (
-                              <SelectItem key={faculty.id} value={String(faculty.id)}>
-                                {faculty.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+
 
                   <FormField
                     control={form.control}

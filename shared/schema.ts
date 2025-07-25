@@ -59,7 +59,6 @@ export const students = pgTable("students", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => users.id).unique(),
   universityId: text("university_id").notNull().unique(), // University ID number
-  facultyId: integer("faculty_id").references(() => faculties.id),
   majorId: integer("major_id").references(() => majors.id),
   levelId: integer("level_id").references(() => levels.id),
 });
@@ -78,7 +77,6 @@ export const trainingSites = pgTable("training_sites", {
 export const trainingCourses = pgTable("training_courses", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
-  facultyId: integer("faculty_id").references(() => faculties.id),
   majorId: integer("major_id").references(() => majors.id), // ربط الدورة بتخصص معين
   levelId: integer("level_id").references(() => levels.id), // ربط الدورة بمستوى دراسي معين
   academicYearId: integer("academic_year_id").references(() => academicYears.id), // ربط بالسنة الدراسية

@@ -20,7 +20,6 @@ const addStudentSchema = z.object({
   universityId: z.string().min(4, { message: "يجب أن يحتوي الرقم الجامعي على الأقل على 4 أرقام" }),
   email: z.string().email({ message: "يرجى إدخال بريد إلكتروني صالح" }).optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
-  facultyId: z.string().min(1, { message: "يرجى اختيار الكلية" }),
   majorId: z.string().min(1, { message: "يرجى اختيار التخصص" }),
   levelId: z.string().min(1, { message: "يرجى اختيار المستوى الدراسي" }),
   supervisorId: z.string().min(1, { message: "يرجى اختيار المشرف الأكاديمي" }).optional().or(z.literal("")),
@@ -51,30 +50,19 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
     queryKey: ["/api/supervisors"],
   });
 
-  const [selectedFacultyId, setSelectedFacultyId] = useState<string>("");
   const [selectedMajorId, setSelectedMajorId] = useState<string>("");
   const [selectedLevelId, setSelectedLevelId] = useState<string>("");
 
   const { data: majors = [], isLoading: isLoadingMajors } = useQuery({
-    queryKey: ["/api/majors", selectedFacultyId],
-    queryFn: async () => {
-      if (!selectedFacultyId) return [];
-      const res = await fetch(`/api/majors?facultyId=${selectedFacultyId}`, {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to fetch majors");
-      return res.json();
-    },
-    enabled: !!selectedFacultyId,
+    queryKey: ["/api/majors"],
   });
 
-  // Fetch available course groups based on student's faculty, major, and level
+  // Fetch available course groups based on student's major and level
   const { data: availableCourseGroups = [], isLoading: isLoadingCourseGroups } = useQuery({
-    queryKey: ["/api/training-course-groups", selectedFacultyId, selectedMajorId, selectedLevelId],
+    queryKey: ["/api/training-course-groups", selectedMajorId, selectedLevelId],
     queryFn: async () => {
-      if (!selectedFacultyId || !selectedMajorId || !selectedLevelId) return [];
+      if (!selectedMajorId || !selectedLevelId) return [];
       const params = new URLSearchParams({
-        facultyId: selectedFacultyId,
         majorId: selectedMajorId,
         levelId: selectedLevelId,
         available: "true"
@@ -85,7 +73,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
       if (!res.ok) throw new Error("Failed to fetch course groups");
       return res.json();
     },
-    enabled: !!(selectedFacultyId && selectedMajorId && selectedLevelId),
+    enabled: !!(selectedMajorId && selectedLevelId),
   });
 
   const form = useForm<AddStudentFormValues>({
@@ -95,7 +83,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
       universityId: "",
       email: "",
       phone: "",
-      facultyId: "",
+
       majorId: "",
       levelId: "",
       supervisorId: "",
@@ -113,7 +101,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
         universityId: data.universityId,
         email: data.email,
         phone: data.phone,
-        facultyId: data.facultyId,
+
         majorId: data.majorId,
         levelId: data.levelId,
         supervisorId: data.supervisorId,
@@ -160,12 +148,10 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
   };
 
   // Handle changes to filter available courses
-  const handleFacultyChange = (value: string) => {
-    setSelectedFacultyId(value);
-    setSelectedMajorId("");
+  const handleMajorChange = (value: string) => {
+    setSelectedMajorId(value);
     setSelectedLevelId("");
-    form.setValue("facultyId", value);
-    form.setValue("majorId", "");
+
     form.setValue("levelId", "");
     form.setValue("assignedCourseGroups", []);
   };
@@ -256,23 +242,23 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
 
                 <FormField
                   control={form.control}
-                  name="facultyId"
+                  name="majorId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>الكلية</FormLabel>
+                      <FormLabel>التخصص</FormLabel>
                       <Select 
-                        onValueChange={handleFacultyChange}
+                        onValueChange={handleMajorChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="اختر الكلية" />
+                            <SelectValue placeholder="اختر التخصص" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {faculties.map((faculty: any) => (
-                            <SelectItem key={faculty.id} value={String(faculty.id)}>
-                              {faculty.name}
+                          {majors?.map((major: any) => (
+                            <SelectItem key={major.id} value={String(major.id)}>
+                              {major.name} ({major.faculty?.name || 'غير محدد'})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -291,7 +277,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
                       <Select 
                         onValueChange={field.onChange}
                         defaultValue={field.value}
-                        disabled={!selectedFacultyId || isLoadingMajors}
+                        disabled={isLoadingMajors}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -299,11 +285,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {majors?.map((major: any) => (
-                            <SelectItem key={major.id} value={String(major.id)}>
-                              {major.name}
-                            </SelectItem>
-                          ))}
+
                         </SelectContent>
                       </Select>
                       <FormMessage />

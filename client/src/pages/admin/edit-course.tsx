@@ -32,7 +32,6 @@ const courseGroupSchema = z.object({
 
 const editCourseSchema = z.object({
   name: z.string().min(3, { message: "يجب أن يحتوي اسم الدورة على الأقل على 3 أحرف" }),
-  facultyId: z.string().optional(),
   location: z.string().optional(),
   description: z.string().optional(),
   status: z.string().min(1, { message: "يرجى اختيار حالة الدورة" }),

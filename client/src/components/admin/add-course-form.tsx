@@ -13,10 +13,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, AlertTriangle, Calendar } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
-// import { queryClient } from "@/lib/queryClient";
 const addCourseSchema = z.object({
   name: z.string().min(1, "اسم الدورة مطلوب"),
-  facultyId: z.string().min(1, "الكلية مطلوبة"),
   majorId: z.string().min(1, "التخصص مطلوب"),
   levelId: z.string().min(1, "المستوى مطلوب"),
   description: z.string().optional(),
@@ -64,7 +62,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
       endDate: "" 
     }
   ]);
-  const [selectedFacultyId, setSelectedFacultyId] = useState<string>("");
+  const [selectedMajorId, setSelectedMajorId] = useState<string>("");
   
   // حالة حوار تأكيد السنة الدراسية
   const [showAcademicYearDialog, setShowAcademicYearDialog] = useState(false);
@@ -99,18 +97,15 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
 
 
 
-  // Fetch majors based on selected faculty
+  // Fetch all majors
   const { data: majors, isLoading: isLoadingMajors } = useQuery({
-    queryKey: ["/api/majors", selectedFacultyId],
-    queryFn: () => fetch(`/api/majors?facultyId=${selectedFacultyId}`).then(res => res.json()),
-    enabled: !!selectedFacultyId && selectedFacultyId !== "none",
+    queryKey: ["/api/majors"],
   });
 
   const form = useForm<AddCourseFormValues>({
     resolver: zodResolver(addCourseSchema),
     defaultValues: {
       name: "",
-      facultyId: "",
       majorId: "",
       levelId: "",
       description: "",
@@ -314,50 +309,20 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
               </div>
 
               {/* Academic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <FormField
-                  control={form.control}
-                  name="facultyId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>الكلية</FormLabel>
-                      <Select 
-                        onValueChange={(value) => {
-                          field.onChange(value);
-                          setSelectedFacultyId(value);
-                          form.setValue("majorId", "");
-                        }} 
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="اختر الكلية" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {Array.isArray(faculties) ? faculties.map((faculty: any) => (
-                            <SelectItem key={faculty.id} value={faculty.id.toString()}>
-                              {faculty.name}
-                            </SelectItem>
-                          )) : null}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="majorId"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>التخصص</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select onValueChange={(value) => {
+                        field.onChange(value);
+                        setSelectedMajorId(value);
+                      }} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder={
-                              !selectedFacultyId ? "اختر الكلية أولاً" : 
                               isLoadingMajors ? "جاري التحميل..." : 
                               "اختر التخصص"
                             } />
@@ -366,7 +331,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                         <SelectContent>
                           {majors && Array.isArray(majors) && majors.map((major: any) => (
                             <SelectItem key={major.id} value={major.id.toString()}>
-                              {major.name}
+                              {major.name} ({major.faculty?.name || 'غير محدد'})
                             </SelectItem>
                           ))}
                         </SelectContent>

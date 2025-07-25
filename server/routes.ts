@@ -878,10 +878,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const majorId = req.query.majorId ? Number(req.query.majorId) : undefined;
       const levelId = req.query.levelId ? Number(req.query.levelId) : undefined;
 
-      if (facultyId) {
-        students = students.filter(student => student.facultyId === facultyId);
-      }
-
       if (majorId) {
         students = students.filter(student => student.majorId === majorId);
       }
@@ -898,7 +894,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       // Filter out any null results
-      const validResults = result.filter(student => student !== undefined);
+      let validResults = result.filter(student => student !== undefined);
+
+      // Filter by faculty if specified (through major)
+      if (facultyId) {
+        validResults = validResults.filter(student => student.major?.facultyId === facultyId);
+      }
 
       // Apply field access control based on user role
       const filteredResults = validResults.map(student => 
@@ -987,7 +988,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedStudent = await storage.updateStudent(
         id,
         {
-          facultyId: facultyId ? Number(facultyId) : student.facultyId,
           majorId: majorId ? Number(majorId) : student.majorId,
           levelId: levelId ? Number(levelId) : student.levelId
         },
@@ -1148,7 +1148,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const student = await storage.createStudent({
         userId: user.id,
         universityId,
-        facultyId: facultyId ? Number(facultyId) : undefined,
         majorId: majorId ? Number(majorId) : undefined,
         levelId: levelId ? Number(levelId) : undefined
       });
@@ -1401,8 +1400,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         courses = await storage.getAllTrainingCourses();
       }
 
+      // Filter by faculty through major (need to fetch course details first)
       if (facultyId) {
-        courses = courses.filter(course => course.facultyId === facultyId);
+        const filteredCourses = [];
+        for (const course of courses) {
+          const courseDetails = await storage.getTrainingCourseWithDetails(course.id);
+          if (courseDetails?.major?.facultyId === facultyId) {
+            filteredCourses.push(course);
+          }
+        }
+        courses = filteredCourses;
       }
 
       if (academicYearId) {
@@ -1549,7 +1556,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // إنشاء الدورة والمجموعات في عملية واحدة
       const result = await storage.createTrainingCourseWithGroups({
         name,
-        facultyId: facultyId ? Number(facultyId) : undefined,
         majorId: majorId ? Number(majorId) : undefined,
         levelId: levelId ? Number(levelId) : undefined,
         description,
@@ -1875,8 +1881,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         capacity: numericCapacity,
         currentEnrollment: 0,
         location,
-        status: groupStatus,
-        createdBy: req.user?.id
+        status: groupStatus
       });
 
       console.log("Training course group created successfully:", group);
@@ -2201,6 +2206,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // استخدام الربط المباشر للتحقق من التسجيل في نفس الكورس
       const isAlreadyEnrolledInCourse = await storage.isStudentEnrolledInCourse(Number(studentId), group.courseId);
       if (isAlreadyEnrolledInCourse) {
+        const course = await storage.getTrainingCourse(group.courseId);
         return res.status(400).json({ 
           message: `الطالب مسجل بالفعل في كورس "${course?.name || 'غير محدد'}". يمكن التسجيل في كورسات أخرى.` 
         });
@@ -2503,7 +2509,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Log activity
       await logSecurityActivity(
-        req.user.username,
+        req.user!.username,
         "delete",
         "training_assignments",
         assignment.id,
@@ -2511,7 +2517,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: `قام الطالب بإلغاء التسجيل من مجموعة التدريب`,
           assignmentData: { 
             studentId: student.id,
-            studentName: req.user.name,
+            studentName: req.user!.name,
             groupName: group?.groupName || 'غير محدد',
             courseName: course?.name || 'غير محدد'
           }
@@ -2787,7 +2793,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               supervisor: supervisorDetails?.user?.name || 'غير محدد',
               hasDetailedGrades: hasDetailedGrades,
               hasEvaluations: hasEvaluations,
-              academicYear: group.course.academicYear?.name || 'غير محدد',
+              academicYear: 'غير محدد', // TODO: Add academicYear relationship if needed
               assignmentId: assignment.id
             });
           }
@@ -2994,7 +3000,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
           id: courseDetails.id,
           name: courseDetails.name,
           description: courseDetails.description || "لا يوجد وصف",
-          faculty: courseDetails.faculty,
+          faculty: courseDetails.major?.faculty,
           major: courseDetails.major,
           level: courseDetails.level
         } : null,
@@ -3034,8 +3040,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         if (!studentDetails) continue;
 
         // Check if student matches course criteria
-        if (studentDetails.faculty?.id === course.facultyId && 
-            studentDetails.major?.id === course.majorId &&
+        if (studentDetails.major?.id === course.majorId &&
             studentDetails.level?.id === course.levelId) {
 
           // Check if student is already enrolled in this course
@@ -3187,7 +3192,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
             grade: grade,
             previousGrade: previousGrade,
             gradeChange: previousGrade ? `${previousGrade} ← ${grade}` : `جديد: ${grade}`,
-            faculty: student.faculty?.name || 'غير محدد',
+            faculty: student.major?.facultyId ? (await storage.getFaculty(student.major.facultyId))?.name || 'غير محدد' : 'غير محدد',
             major: student.major?.name || 'غير محدد',
             level: student.level?.name || 'غير محدد',
             actionType: existingEvaluation ? 'update' : 'create'
@@ -3876,7 +3881,7 @@ const allGroups = await storage.getAllTrainingCourseGroups();
         message: notification.notificationMessage || 'رسالة إشعار',
         type: notification.notificationType || 'info',
         isRead: notification.isRead || false,
-        createdAt: notification.timestamp,
+        createdAt: notification.createdAt,
         performer: notification.username || 'النظام'
       }));
 
@@ -3889,8 +3894,8 @@ const allGroups = await storage.getAllTrainingCourseGroups();
 
   app.post("/api/notifications", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
-      const notificationData = schema.insertNotificationSchema.parse(req.body);
-      const notification = await storage.createNotification(notificationData);
+      // Create notification using storage method directly
+      const notification = await storage.createNotification(req.body);
       res.json(notification);
     } catch (error) {
       if (error instanceof ZodError) {
