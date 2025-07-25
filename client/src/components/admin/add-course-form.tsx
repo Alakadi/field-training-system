@@ -15,6 +15,7 @@ import { Plus, Trash2, AlertTriangle, Calendar } from "lucide-react";
 import { queryClient } from "@/lib/queryClient";
 const addCourseSchema = z.object({
   name: z.string().min(1, "اسم الدورة مطلوب"),
+  facultyId: z.string().min(1, "الكلية مطلوبة"),
   majorId: z.string().min(1, "التخصص مطلوب"),
   levelId: z.string().min(1, "المستوى مطلوب"),
   description: z.string().optional(),
@@ -62,6 +63,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
       endDate: "" 
     }
   ]);
+  const [selectedFacultyId, setSelectedFacultyId] = useState<string>("");
   const [selectedMajorId, setSelectedMajorId] = useState<string>("");
   
   // حالة حوار تأكيد السنة الدراسية
@@ -106,6 +108,7 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
     resolver: zodResolver(addCourseSchema),
     defaultValues: {
       name: "",
+      facultyId: "",
       majorId: "",
       levelId: "",
       description: "",
@@ -139,6 +142,19 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
     updatedGroups[index] = { ...updatedGroups[index], [field]: value };
     setGroups(updatedGroups);
   };
+
+  // Handle faculty change to filter majors
+  const handleFacultyChange = (value: string) => {
+    setSelectedFacultyId(value);
+    setSelectedMajorId("");
+    form.setValue("facultyId", value);
+    form.setValue("majorId", "");
+  };
+
+  // Filter majors by selected faculty
+  const filteredMajors = selectedFacultyId 
+    ? majors?.filter((major: any) => String(major.facultyId) === selectedFacultyId) || []
+    : majors || [];
 
   // دالة للتحقق من السنوات الدراسية واقتراح الأقرب
   const checkAcademicYears = (courseData: any, validatedGroups: any[]) => {
@@ -245,6 +261,8 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
 
       // Reset form
       form.reset();
+      setSelectedFacultyId("");
+      setSelectedMajorId("");
       setGroups([{ 
         siteId: "", 
         supervisorId: "", 
@@ -309,29 +327,66 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
               </div>
 
               {/* Academic Information */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="facultyId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>الكلية</FormLabel>
+                      <Select 
+                        onValueChange={handleFacultyChange}
+                        value={field.value}
+                        disabled={isLoadingFaculties}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={
+                              isLoadingFaculties ? "جاري التحميل..." : 
+                              "اختر الكلية"
+                            } />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {faculties && Array.isArray(faculties) && faculties.map((faculty: any) => (
+                            <SelectItem key={faculty.id} value={faculty.id.toString()}>
+                              {faculty.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="majorId"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>التخصص</FormLabel>
-                      <Select onValueChange={(value) => {
-                        field.onChange(value);
-                        setSelectedMajorId(value);
-                      }} value={field.value}>
+                      <Select 
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          setSelectedMajorId(value);
+                        }} 
+                        value={field.value}
+                        disabled={!selectedFacultyId || isLoadingMajors}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder={
+                              !selectedFacultyId ? "اختر الكلية أولاً" :
                               isLoadingMajors ? "جاري التحميل..." : 
                               "اختر التخصص"
                             } />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {majors && Array.isArray(majors) && majors.map((major: any) => (
+                          {filteredMajors.map((major: any) => (
                             <SelectItem key={major.id} value={major.id.toString()}>
-                              {major.name} ({major.faculty?.name || 'غير محدد'})
+                              {major.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -638,6 +693,8 @@ const AddCourseForm: React.FC<AddCourseFormProps> = ({ onSuccess }) => {
                   variant="outline"
                   onClick={() => {
                     form.reset();
+                    setSelectedFacultyId("");
+                    setSelectedMajorId("");
                     setGroups([{ 
                       siteId: "", 
                       supervisorId: "", 
