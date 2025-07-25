@@ -82,6 +82,7 @@ const EditStudent: React.FC = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFacultyId, setSelectedFacultyId] = useState<string>("");
   const [selectedMajor, setSelectedMajor] = useState<string>("");
   const [selectedLevel, setSelectedLevel] = useState<string>("");
 
@@ -125,9 +126,21 @@ const EditStudent: React.FC = () => {
     queryKey: ["/api/faculties"],
   });
 
-  // الحصول على جميع التخصصات
+  // الحصول على التخصصات بناءً على الكلية المحددة
   const { data: majors } = useQuery<MajorType[]>({
-    queryKey: ["/api/majors"],
+    queryKey: ["/api/majors", selectedFacultyId],
+    queryFn: async () => {
+      if (!selectedFacultyId) {
+        // Return all majors if no faculty selected
+        const res = await fetch("/api/majors", { credentials: "include" });
+        if (!res.ok) throw new Error("Failed to fetch majors");
+        return res.json();
+      }
+      const params = new URLSearchParams({ facultyId: selectedFacultyId });
+      const res = await fetch(`/api/majors?${params}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch majors");
+      return res.json();
+    },
   });
 
   // الحصول على المستويات
@@ -442,6 +455,26 @@ const EditStudent: React.FC = () => {
 
 
 
+                  {/* Faculty Selection for UI filtering only */}
+                  <div className="col-span-full">
+                    <label className="text-sm font-medium">الكلية (لتصفية التخصصات)</label>
+                    <Select
+                      value={selectedFacultyId}
+                      onValueChange={handleFacultyChange}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر الكلية لعرض التخصصات" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {faculties?.map((faculty) => (
+                          <SelectItem key={faculty.id} value={String(faculty.id)}>
+                            {faculty.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <FormField
                     control={form.control}
                     name="majorId"
@@ -450,16 +483,17 @@ const EditStudent: React.FC = () => {
                         <FormLabel>التخصص *</FormLabel>
                         <Select
                           value={field.value}
-                          onValueChange={field.onChange}
-                          disabled={!selectedFaculty}
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            handleMajorChange(value);
+                          }}
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder={selectedFaculty ? "اختر التخصص" : "اختر الكلية أولاً"} />
+                              <SelectValue placeholder="اختر التخصص" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="default" disabled>اختر التخصص</SelectItem>
                             {majors?.map((major: any) => (
                               <SelectItem key={major.id} value={String(major.id)}>
                                 {major.name}

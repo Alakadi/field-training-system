@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -16,34 +16,14 @@ import { useToast } from "@/hooks/use-toast";
 
 // Define schema
 const addStudentSchema = z.object({
-  name: z.string()
-    .min(3, { message: "يجب أن يحتوي الاسم على الأقل على 3 أحرف" })
-    .refine((name) => {
-      const nameParts = name.trim().split(/\s+/);
-      return nameParts.length >= 4;
-    }, { message: "يجب إدخال الاسم الرباعي (أربعة أسماء على الأقل)" }),
-  universityId: z
-  .string()
-  // .regex(/^\d+$/, { message: "يجب أن يحتوي الرقم الجامعي على أرقام فقط" })
-  .min(4, { message: "يجب أن يحتوي الرقم الجامعي على الأقل على 4 أرقام" }),
-  email: z.string()
-    .email({ message: "يرجى إدخال بريد إلكتروني صالح" })
-    .optional().or(z.literal("")),
-  phone: z.string()
-    .optional()
-    .or(z.literal(""))
-    .refine((phone) => {
-      if (!phone || phone === "") return true;
-      // Remove +967 if present and any spaces or dashes
-      const cleanPhone = phone.replace(/^\+967/, "").replace(/[\s-]/g, "");
-      // Check if it's exactly 9 digits and starts with valid prefixes
-      const phoneRegex = /^(73|77|78|71|70)\d{7}$/;
-      return phoneRegex.test(cleanPhone);
-    }, { message: "رقم الهاتف يجب أن يكون 9 أرقام ويبدأ بـ 73، 77، 78، 71، أو 70" }),
-  facultyId: z.string().min(1, { message: "يرجى اختيار الكلية" }),
+  name: z.string().min(3, { message: "يجب أن يحتوي الاسم على الأقل على 3 أحرف" }),
+  universityId: z.string().min(4, { message: "يجب أن يحتوي الرقم الجامعي على الأقل على 4 أرقام" }),
+  email: z.string().email({ message: "يرجى إدخال بريد إلكتروني صالح" }).optional().or(z.literal("")),
+  phone: z.string().optional().or(z.literal("")),
   majorId: z.string().min(1, { message: "يرجى اختيار التخصص" }),
   levelId: z.string().min(1, { message: "يرجى اختيار المستوى الدراسي" }),
-  assignedCourseGroups: z.array(z.string()).optional().default([]),
+  supervisorId: z.string().min(1, { message: "يرجى اختيار المشرف الأكاديمي" }).optional().or(z.literal("")),
+  assignedCourseGroups: z.array(z.string()).optional(),
 });
 
 type AddStudentFormValues = z.infer<typeof addStudentSchema>;
@@ -53,30 +33,25 @@ interface AddStudentFormProps {
 }
 
 const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const queryClient = useQueryClient();
   const { toast } = useToast();
-
-  // State for selected values to filter data
+  const queryClient = useQueryClient();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedFacultyId, setSelectedFacultyId] = useState<string>("");
   const [selectedMajorId, setSelectedMajorId] = useState<string>("");
   const [selectedLevelId, setSelectedLevelId] = useState<string>("");
 
-  // Fetch data
-  const { data: faculties = [], isLoading: isLoadingFaculties } = useQuery<any[]>({
+  // Fetch required data
+  const { data: faculties = [], isLoading: isLoadingFaculties } = useQuery({
     queryKey: ["/api/faculties"],
   });
 
-  const { data: levels = [], isLoading: isLoadingLevels } = useQuery<any[]>({
-    queryKey: ["/api/levels"],
-  });
-
-  // Fetch majors based on selected faculty
-  const { data: majors = [], isLoading: isLoadingMajors } = useQuery({
+  // Fetch majors filtered by selected faculty
+  const { data: majors = [] } = useQuery({
     queryKey: ["/api/majors", selectedFacultyId],
     queryFn: async () => {
       if (!selectedFacultyId) return [];
-      const res = await fetch(`/api/majors?facultyId=${selectedFacultyId}`, {
+      const params = new URLSearchParams({ facultyId: selectedFacultyId });
+      const res = await fetch(`/api/majors?${params}`, {
         credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to fetch majors");
@@ -85,13 +60,20 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
     enabled: !!selectedFacultyId,
   });
 
-  // Fetch available course groups based on student's faculty, major, and level
+  const { data: levels = [], isLoading: isLoadingLevels } = useQuery({
+    queryKey: ["/api/levels"],
+  });
+
+  const { data: supervisors = [], isLoading: isLoadingSupervisors } = useQuery({
+    queryKey: ["/api/supervisors"],
+  });
+
+  // Fetch available course groups based on student's major and level
   const { data: availableCourseGroups = [], isLoading: isLoadingCourseGroups } = useQuery({
-    queryKey: ["/api/training-course-groups", selectedFacultyId, selectedMajorId, selectedLevelId],
+    queryKey: ["/api/training-course-groups", selectedMajorId, selectedLevelId],
     queryFn: async () => {
-      if (!selectedFacultyId || !selectedMajorId || !selectedLevelId) return [];
+      if (!selectedMajorId || !selectedLevelId) return [];
       const params = new URLSearchParams({
-        facultyId: selectedFacultyId,
         majorId: selectedMajorId,
         levelId: selectedLevelId,
         available: "true"
@@ -102,20 +84,19 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
       if (!res.ok) throw new Error("Failed to fetch course groups");
       return res.json();
     },
-    enabled: !!(selectedFacultyId && selectedMajorId && selectedLevelId),
+    enabled: !!(selectedMajorId && selectedLevelId),
   });
 
   const form = useForm<AddStudentFormValues>({
     resolver: zodResolver(addStudentSchema),
-    mode: "onBlur",
     defaultValues: {
       name: "",
       universityId: "",
       email: "",
       phone: "",
-      facultyId: "",
       majorId: "",
       levelId: "",
+      supervisorId: "",
       assignedCourseGroups: [],
     },
   });
@@ -123,74 +104,23 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
   const onSubmit = async (data: AddStudentFormValues) => {
     try {
       setIsSubmitting(true);
-      
-      // Check for email uniqueness if email is provided
-      if (data.email && data.email.trim() !== "") {
-        const emailCheckResponse = await fetch(`/api/validate/email?email=${encodeURIComponent(data.email)}`);
-        if (!emailCheckResponse.ok) {
-          const emailError = await emailCheckResponse.json();
-          throw new Error(emailError.message || "خطأ في التحقق من البريد الإلكتروني");
-        }
-        const emailExists = await emailCheckResponse.json();
-        if (emailExists.exists) {
-          throw new Error("البريد الإلكتروني مستخدم بالفعل من قبل طالب آخر");
-        }
-      }
 
-      // Check for phone uniqueness if phone is provided
-      if (data.phone && data.phone.trim() !== "") {
-        const phoneCheckResponse = await fetch(`/api/validate/phone?phone=${encodeURIComponent(data.phone)}`);
-        if (!phoneCheckResponse.ok) {
-          const phoneError = await phoneCheckResponse.json();
-          throw new Error(phoneError.message || "خطأ في التحقق من رقم الهاتف");
-        }
-        const phoneExists = await phoneCheckResponse.json();
-        if (phoneExists.exists) {
-          throw new Error("رقم الهاتف مستخدم بالفعل من قبل مستخدم آخر");
-        }
-      }
-
-      // Check for university ID uniqueness
-      const universityIdCheckResponse = await fetch(`/api/validate/university-id?universityId=${encodeURIComponent(data.universityId)}`);
-      if (!universityIdCheckResponse.ok) {
-        const universityIdError = await universityIdCheckResponse.json();
-        throw new Error(universityIdError.message || "خطأ في التحقق من الرقم الجامعي");
-      }
-      const universityIdExists = await universityIdCheckResponse.json();
-      if (universityIdExists.exists) {
-        throw new Error("الرقم الجامعي مستخدم بالفعل من قبل طالب آخر");
-      }
-      
       // Create student first
-      const studentResponse = await fetch("/api/students", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          name: data.name,
-          universityId: data.universityId,
-          email: data.email,
-          phone: data.phone,
-          facultyId: data.facultyId,
-          majorId: data.majorId,
-          levelId: data.levelId,
-        }),
+      const response: any = await apiRequest("POST", "/api/students", {
+        name: data.name,
+        universityId: data.universityId,
+        email: data.email,
+        phone: data.phone,
+        majorId: data.majorId,
+        levelId: data.levelId,
+        supervisorId: data.supervisorId,
       });
-
-      if (!studentResponse.ok) {
-        const errorData = await studentResponse.json();
-        throw new Error(errorData.message || "خطأ في إنشاء الطالب");
-      }
-
-      const student = await studentResponse.json();
 
       // If there are assigned course groups, register student to them
       if (data.assignedCourseGroups && data.assignedCourseGroups.length > 0) {
         for (const groupId of data.assignedCourseGroups) {
           await apiRequest("POST", "/api/training-assignments", {
-            studentId: student.id,
+            studentId: response.id,
             groupId: parseInt(groupId),
           });
         }
@@ -226,21 +156,20 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
     }
   };
 
-  // Handle changes to filter available courses
+  // Handle faculty change to filter majors
   const handleFacultyChange = (value: string) => {
     setSelectedFacultyId(value);
     setSelectedMajorId("");
     setSelectedLevelId("");
-    form.setValue("facultyId", value);
     form.setValue("majorId", "");
     form.setValue("levelId", "");
     form.setValue("assignedCourseGroups", []);
   };
 
+  // Handle major change to filter courses
   const handleMajorChange = (value: string) => {
     setSelectedMajorId(value);
     setSelectedLevelId("");
-    form.setValue("majorId", value);
     form.setValue("levelId", "");
     form.setValue("assignedCourseGroups", []);
   };
@@ -251,7 +180,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
     form.setValue("assignedCourseGroups", []);
   };
 
-  const isLoading = isLoadingFaculties || isLoadingLevels;
+  const isLoading = isLoadingFaculties || isLoadingLevels || isLoadingSupervisors;
 
   return (
     <Card>
@@ -263,294 +192,273 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
           <div className="text-center p-4">جاري تحميل البيانات...</div>
         ) : (
           <Form {...form}>
-            <form className="space-y-6">
-              {/* Basic Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">المعلومات الأساسية</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="universityId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>الرقم الجامعي</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="أدخل الرقم الجامعي" 
-                            value={field.value}
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/[^0-9]/g, '');
-                              field.onChange(value);
-                            }}
-                            onBlur={field.onBlur}
-                          />
-                        </FormControl>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="universityId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>الرقم الجامعي</FormLabel>
+                      <FormControl>
+                        <Input placeholder="أدخل الرقم الجامعي" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                        {form.formState.errors.universityId && (
-                          <p className="text-sm text-red-600 mt-1">
-                            🔴 {form.formState.errors.universityId.message}
-                          </p>
-                        )}
-                      </FormItem>
-                    )}
-                  />
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>الاسم</FormLabel>
+                      <FormControl>
+                        <Input placeholder="أدخل اسم الطالب" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>اسم الطالب</FormLabel>
-                        <FormControl>
-                          <Input placeholder="أدخل اسم الطالب" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>البريد الإلكتروني (اختياري)</FormLabel>
+                      <FormControl>
+                        <Input type="email" placeholder="أدخل البريد الإلكتروني" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  <FormField
-                    control={form.control}
-                    name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>البريد الإلكتروني</FormLabel>
-                        <FormControl>
-                          <Input placeholder="أدخل البريد الإلكتروني" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>رقم الهاتف (اختياري)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="أدخل رقم الهاتف" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  <FormField
-                    control={form.control}
-                    name="phone"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>رقم الهاتف</FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="مثال: +967731234567 أو 731234567" 
-                            {...field}
-                            onChange={(e) => {
-                              // Allow only numbers, + symbol, and spaces/dashes
-                              const value = e.target.value.replace(/[^\d+\s-]/g, '');
-                              field.onChange(value);
-                            }}
-                          />
-                        </FormControl>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          يجب أن يبدأ بـ 73، 77، 78، 71، أو 70 (يمكن إضافة +967)
-                        </p>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                {/* Faculty Selection for UI filtering only */}
+                <div className="col-span-full">
+                  <label className="text-sm font-medium">الكلية (لتصفية التخصصات)</label>
+                  <Select
+                    value={selectedFacultyId}
+                    onValueChange={handleFacultyChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="اختر الكلية لعرض التخصصات" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.isArray(faculties) && faculties.map((faculty: any) => (
+                        <SelectItem key={faculty.id} value={String(faculty.id)}>
+                          {faculty.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
 
-              <Separator />
-
-              {/* Academic Information */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">المعلومات الأكاديمية</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="facultyId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>الكلية</FormLabel>
-                        <Select 
-                          onValueChange={handleFacultyChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="اختر الكلية" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {Array.isArray(faculties) && faculties.map((faculty: any) => (
-                              <SelectItem key={faculty.id} value={String(faculty.id)}>
-                                {faculty.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="majorId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>التخصص</FormLabel>
-                        <Select 
-                          onValueChange={handleMajorChange}
-                          value={field.value}
-                          disabled={!selectedFacultyId || isLoadingMajors}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="اختر التخصص" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {Array.isArray(majors) && majors.map((major: any) => (
-                              <SelectItem key={major.id} value={String(major.id)}>
-                                {major.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="levelId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>المستوى الدراسي</FormLabel>
-                        <Select 
-                          onValueChange={handleLevelChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="اختر المستوى" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {Array.isArray(levels) && levels.map((level: any) => (
-                              <SelectItem key={level.id} value={String(level.id)}>
-                                {level.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Training Course Assignment */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">إسناد الدورات التدريبية</h3>
-                {!selectedFacultyId || !selectedMajorId || !selectedLevelId ? (
-                  <p className="text-sm text-muted-foreground">
-                    يرجى اختيار الكلية والتخصص والمستوى الدراسي أولاً لعرض الدورات المتاحة
-                  </p>
-                ) : isLoadingCourseGroups ? (
-                  <p className="text-sm">جاري تحميل الدورات المتاحة...</p>
-                ) : availableCourseGroups.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    لا توجد دورات تدريبية متاحة لهذا التخصص والمستوى حالياً
-                  </p>
-                ) : (
-                  <FormField
-                    control={form.control}
-                    name="assignedCourseGroups"
-                    render={() => (
-                      <FormItem>
-                        <div className="mb-4">
-                          <FormLabel className="text-base">الدورات التدريبية المتاحة</FormLabel>
-                          <p className="text-sm text-muted-foreground">
-                            اختر الدورات التدريبية التي تريد تسجيل الطالب فيها
-                          </p>
-                        </div>
-                        <div className="grid grid-cols-1 gap-4">
-                          {availableCourseGroups.map((group: any) => (
-                            <FormField
-                              key={group.id}
-                              control={form.control}
-                              name="assignedCourseGroups"
-                              render={({ field }) => {
-                                return (
-                                  <FormItem
-                                    key={group.id}
-                                    className="flex flex-row items-start space-x-3 space-y-0"
-                                  >
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value?.includes(String(group.id))}
-                                        onCheckedChange={(checked) => {
-                                          return checked
-                                            ? field.onChange([...field.value, String(group.id)])
-                                            : field.onChange(
-                                                field.value?.filter(
-                                                  (value) => value !== String(group.id)
-                                                )
-                                              )
-                                        }}
-                                      />
-                                    </FormControl>
-                                    <div className="space-y-1 leading-none flex-1">
-                                      <FormLabel className="text-sm font-medium">
-                                        {group.course?.name} - {group.groupName}
-                                      </FormLabel>
-                                      <div className="flex flex-wrap gap-2 text-xs">
-                                        <Badge variant="outline">{group.site?.name}</Badge>
-                                        <Badge variant="outline">
-                                          المشرف: {group.supervisor?.user?.name}
-                                        </Badge>
-                                        <Badge variant="outline">
-                                          {group.availableSpots || (group.capacity - group.currentEnrollment)} أماكن متاحة
-                                        </Badge>
-                                        <Badge variant="outline">
-                                          {group.startDate} - {group.endDate}
-                                        </Badge>
-                                      </div>
-                                    </div>
-                                  </FormItem>
-                                )
-                              }}
-                            />
+                <FormField
+                  control={form.control}
+                  name="majorId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>التخصص</FormLabel>
+                      <Select
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          handleMajorChange(value);
+                        }}
+                        value={field.value}
+                        disabled={!selectedFacultyId}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={selectedFacultyId ? "اختر التخصص" : "اختر الكلية أولاً"} />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Array.isArray(majors) && majors.map((major: any) => (
+                            <SelectItem key={major.id} value={String(major.id)}>
+                              {major.name}
+                            </SelectItem>
                           ))}
-                        </div>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="levelId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>المستوى الدراسي</FormLabel>
+                      <Select
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          handleLevelChange(value);
+                        }}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="اختر المستوى" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Array.isArray(levels) && levels.map((level: any) => (
+                            <SelectItem key={level.id} value={String(level.id)}>
+                              {level.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="supervisorId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>المشرف الأكاديمي (اختياري)</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="اختر المشرف" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Array.isArray(supervisors) && supervisors.map((supervisor: any) => (
+                            <SelectItem key={supervisor.id} value={String(supervisor.id)}>
+                              {supervisor.user.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
+
+              {/* Course Groups Assignment */}
+              {selectedMajorId && selectedLevelId && (
+                <>
+                  <Separator className="my-6" />
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">تسجيل في مجموعات تدريبية</h3>
+                    <FormField
+                      control={form.control}
+                      name="assignedCourseGroups"
+                      render={() => (
+                        <FormItem>
+                          <div className="mb-4">
+                            <FormLabel className="text-base">المجموعات المتاحة:</FormLabel>
+                          </div>
+                          {isLoadingCourseGroups ? (
+                            <div className="text-center p-4">جاري تحميل المجموعات...</div>
+                          ) : availableCourseGroups.length === 0 ? (
+                            <div className="text-center p-4 text-muted-foreground">
+                              لا توجد مجموعات تدريبية متاحة لهذا التخصص والمستوى
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-1 gap-4">
+                              {availableCourseGroups.map((group: any) => (
+                                <FormField
+                                  key={group.id}
+                                  control={form.control}
+                                  name="assignedCourseGroups"
+                                  render={({ field }) => {
+                                    return (
+                                      <FormItem
+                                        key={group.id}
+                                        className="flex flex-row items-start space-x-3 space-y-0 border rounded-lg p-4"
+                                      >
+                                        <FormControl>
+                                          <Checkbox
+                                            checked={field.value?.includes(String(group.id))}
+                                            onCheckedChange={(checked) => {
+                                              return checked
+                                                ? field.onChange([...field.value, String(group.id)])
+                                                : field.onChange(
+                                                    field.value?.filter(
+                                                      (value) => value !== String(group.id)
+                                                    )
+                                                  );
+                                            }}
+                                          />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                          <FormLabel className="font-medium">
+                                            {group.course?.name || 'دورة غير محددة'}
+                                          </FormLabel>
+                                          <div className="flex gap-2 flex-wrap">
+                                            <Badge variant="outline">
+                                              {group.site?.name || 'موقع غير محدد'}
+                                            </Badge>
+                                            <Badge variant="outline">
+                                              السعة: {group.capacity}
+                                            </Badge>
+                                            <Badge variant="outline">
+                                              المسجلين: {group._count?.students || 0}
+                                            </Badge>
+                                          </div>
+                                        </div>
+                                      </FormItem>
+                                    );
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </>
+              )}
+
+              <CardFooter className="flex justify-end gap-2 p-0 pt-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    form.reset();
+                    setSelectedFacultyId("");
+                    setSelectedMajorId("");
+                    setSelectedLevelId("");
+                  }}
+                  disabled={isSubmitting}
+                >
+                  إلغاء
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "جاري الإضافة..." : "إضافة الطالب"}
+                </Button>
+              </CardFooter>
             </form>
           </Form>
         )}
       </CardContent>
-      <CardFooter className="flex justify-end space-x-2 space-x-reverse">
-        <Button
-          onClick={form.handleSubmit(onSubmit)}
-          disabled={isSubmitting || isLoading}
-        >
-          {isSubmitting ? "جاري الحفظ..." : "حفظ"}
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => {
-            form.reset();
-            setSelectedFacultyId("");
-            setSelectedMajorId("");
-            setSelectedLevelId("");
-            if (onSuccess) onSuccess();
-          }}
-        >
-          إلغاء
-        </Button>
-      </CardFooter>
     </Card>
   );
 };
