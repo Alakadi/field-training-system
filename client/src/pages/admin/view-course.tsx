@@ -22,10 +22,10 @@ const ViewCourse: React.FC = () => {
   });
 
   // استخراج البيانات من الاستجابة الموحدة
-  const course = courseData?.course || {};
-  const courseGroups = courseData?.groups || [];
-  const courseStudents = courseData?.students || [];
-  const courseEvaluations = courseData?.evaluations || [];
+  const course = (courseData as any)?.course || null;
+  const courseGroups = (courseData as any)?.groups || [];
+  const courseStudents = (courseData as any)?.students || [];
+  const courseEvaluations = (courseData as any)?.evaluations || [];
 
   if (isLoadingCourse) {
     return (
@@ -77,7 +77,7 @@ const ViewCourse: React.FC = () => {
     }
   };
 
-  if (!course) {
+  if (!course || !course.id) {
     return (
       <AdminLayout>
         <div className="space-y-6">
@@ -377,12 +377,12 @@ const ViewCourse: React.FC = () => {
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
                                   {evaluation.calculatedFinalGrade !== null && evaluation.calculatedFinalGrade !== undefined ? (
                                     <Badge className={`
-                                      ${evaluation.calculatedFinalGrade >= 90 ? 'bg-green-100 text-green-800' : ''}
-                                      ${evaluation.calculatedFinalGrade >= 80 && evaluation.calculatedFinalGrade < 90 ? 'bg-blue-100 text-blue-800' : ''}
-                                      ${evaluation.calculatedFinalGrade >= 70 && evaluation.calculatedFinalGrade < 80 ? 'bg-yellow-100 text-yellow-800' : ''}
-                                      ${evaluation.calculatedFinalGrade < 70 ? 'bg-red-100 text-red-800' : ''}
+                                      ${Number(evaluation.calculatedFinalGrade) >= 90 ? 'bg-green-100 text-green-800' : ''}
+                                      ${Number(evaluation.calculatedFinalGrade) >= 80 && Number(evaluation.calculatedFinalGrade) < 90 ? 'bg-blue-100 text-blue-800' : ''}
+                                      ${Number(evaluation.calculatedFinalGrade) >= 70 && Number(evaluation.calculatedFinalGrade) < 80 ? 'bg-yellow-100 text-yellow-800' : ''}
+                                      ${Number(evaluation.calculatedFinalGrade) < 70 ? 'bg-red-100 text-red-800' : ''}
                                     `}>
-                                      {evaluation.calculatedFinalGrade.toFixed(1)}
+                                      {Number(evaluation.calculatedFinalGrade).toFixed(1)}
                                     </Badge>
                                   ) : (
                                     <span className="text-gray-500">لم يتم التقييم</span>
