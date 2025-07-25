@@ -480,8 +480,7 @@ export class DatabaseStorage implements IStorage {
 
   // Level operations
   async getAllLevels(): Promise<Level[]> {
-    const result = await db.select().from(levels);
-    return result;
+    return await db.select().from(levels).orderBy(desc(levels.id));
   }
 
   async getLevel(id: number): Promise<Level | undefined> {
@@ -492,6 +491,10 @@ export class DatabaseStorage implements IStorage {
   async createLevel(level: InsertLevel): Promise<Level> {
     const result = await db.insert(levels).values(level).returning();
     return result[0];
+  }
+
+  async deleteLevel(id: number): Promise<void> {
+    await db.delete(levels).where(eq(levels.id, id));
   }
 
   // Supervisor operations
@@ -1132,7 +1135,7 @@ export class DatabaseStorage implements IStorage {
     }).from(trainingAssignments)
       .leftJoin(trainingCourseGroups, eq(trainingAssignments.groupId, trainingCourseGroups.id))
       .where(eq(trainingCourseGroups.courseId, courseId));
-    return result.map(row => row.assignment);
+    return result.map((row: any) => row.assignment);
   }
 
   // جديد: التحقق من تسجيل الطالب في كورس معين
@@ -1486,10 +1489,13 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  // Academic Years operations
-  async getAllAcademicYears(): Promise<AcademicYear[]> {
-    return await db.select().from(academicYears).orderBy(desc(academicYears.isCurrent), desc(academicYears.startDate));
+  // إضافة دالة تحديث الدرجات للتعيينات التدريبية
+  async updateTrainingAssignmentGrades(id: number, gradeData: Partial<TrainingAssignment>): Promise<TrainingAssignment | undefined> {
+    const result = await db.update(trainingAssignments).set(gradeData).where(eq(trainingAssignments.id, id)).returning();
+    return result[0];
   }
+
+  // Academic Years operations
 
   async getAcademicYear(id: number): Promise<AcademicYear | undefined> {
     const result = await db.select().from(academicYears).where(eq(academicYears.id, id));
@@ -1720,7 +1726,7 @@ export class DatabaseStorage implements IStorage {
     const assignments = await db.select().from(trainingAssignments)
       .where(isNull(trainingAssignments.calculatedFinalGrade));
 
-    return assignments.map(assignment => ({
+    return assignments.map((assignment: any) => ({
       id: assignment.id,
       assignmentId: assignment.id,
       score: Number(assignment.calculatedFinalGrade || 0),
@@ -1739,7 +1745,7 @@ export class DatabaseStorage implements IStorage {
       throw new Error("التعيين غير موجود");
     }
 
-    await this.updateTrainingAssignment(evalData.assignmentId, {
+    await this.updateTrainingAssignmentGrades(evalData.assignmentId, {
       calculatedFinalGrade: evalData.score.toString()
     });
 
@@ -1754,7 +1760,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateEvaluation(id: number, evalData: any): Promise<any> {
     // Update evaluation by updating training assignment
-    await this.updateTrainingAssignment(id, {
+    await this.updateTrainingAssignmentGrades(id, {
       calculatedFinalGrade: evalData.score.toString()
     });
 
@@ -1845,7 +1851,7 @@ export class DatabaseStorage implements IStorage {
         )
       ));
 
-    return result.map(row => row.training_assignments);
+    return result.map((row: any) => row.training_assignments);
   }
 
   async getActiveAssignmentsByStudent(studentId: number): Promise<TrainingAssignment[]> {
@@ -1861,24 +1867,11 @@ export class DatabaseStorage implements IStorage {
         )
       ));
 
-    return result.map(row => row.training_assignments);
+    return result.map((row: any) => row.training_assignments);
   }
 
   async getAllAcademicYears(): Promise<AcademicYear[]> {
     return await db.select().from(academicYears).orderBy(desc(academicYears.isCurrent), desc(academicYears.startDate));
-  }
-
-  async getAllLevels(): Promise<Level[]> {
-    return await db.select().from(levels).orderBy(desc(levels.id));
-  }
-
-  async createLevel(level: InsertLevel): Promise<Level> {
-      const result = await db.insert(levels).values(level).returning();
-      return result[0];
-  }
-
-  async deleteLevel(id: number): Promise<void> {
-      await db.delete(levels).where(eq(levels.id, id));
   }
 
   async getStudentsByLevel(levelId: number): Promise<Student[]> {

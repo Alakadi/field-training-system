@@ -137,6 +137,19 @@ This is a comprehensive Arabic-supported field training management system built 
 - **المشرفين**: 5 مشرفين مع بيانات كاملة
 
 ## Recent Changes
+- July 25, 2025: إصلاح نظام عرض الكورسات وتحديث جميع الدوال للمنطق الجديد
+  - إنشاء endpoint مفقود /api/training-courses/:id/complete لعرض بيانات الكورس الكاملة
+  - إصلاح مشكلة إرجاع HTML بدلاً من JSON في responses
+  - إصلاح خطأ .toFixed() للدرجات النهائية المخزنة كـ strings في قاعدة البيانات
+  - إصلاح جميع أخطاء TypeScript في صفحة عرض الكورس
+  - تحديث جميع الدوال للعمل مع المنطق الجديد القائم على groupId:
+    * getTrainingAssignmentsByCourse - للحصول على تعيينات الطلاب حسب الكورس
+    * isStudentEnrolledInCourse - للتحقق من تسجيل الطالب في كورس معين
+    * getActiveAssignmentsBySupervisor/ByStudent - للحصول على التعيينات النشطة
+    * updateTrainingAssignmentGrades - لتحديث درجات التعيينات التدريبية
+  - إزالة الدوال المكررة وإصلاح أخطاء TypeScript في storage.ts
+  - تحسين أداء النظام باستخدام joins صحيحة بين trainingAssignments → trainingCourseGroups → trainingCourses
+  - اختبار API والتأكد من إرجاع البيانات الكاملة بتنسيق JSON صحيح
 - July 25, 2025: إنشاء قاعدة البيانات وإعداد تشفير كلمات المرور الآمن + تحديث الاستعلامات للمنطق الجديد
   - إنشاء قاعدة البيانات PostgreSQL بنجاح مع جميع الجداول المطلوبة
   - تطبيق تشفير كلمات المرور باستخدام bcrypt مع salt rounds = 10
