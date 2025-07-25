@@ -31,10 +31,17 @@ const courseGroupSchema = z.object({
 });
 
 const editCourseSchema = z.object({
-  name: z.string().min(3, { message: "يجب أن يحتوي اسم الدورة على الأقل على 3 أحرف" }),
-  location: z.string().optional(),
+  name: z.string().min(1, { message: "اسم الدورة مطلوب" }),
   description: z.string().optional(),
-  status: z.string().min(1, { message: "يرجى اختيار حالة الدورة" }),
+  facultyId: z.string().min(1, { message: "الكلية مطلوبة" }),
+  majorId: z.string().min(1, { message: "التخصص مطلوب" }),
+  levelId: z.string().min(1, { message: "المستوى الدراسي مطلوب" }),
+  attendancePercentage: z.number().min(0).max(100),
+  behaviorPercentage: z.number().min(0).max(100),
+  finalExamPercentage: z.number().min(0).max(100),
+  attendanceGradeLabel: z.string().min(1, { message: "تسمية درجة الحضور مطلوبة" }),
+  behaviorGradeLabel: z.string().min(1, { message: "تسمية درجة السلوك مطلوبة" }),
+  finalExamGradeLabel: z.string().min(1, { message: "تسمية درجة الاختبار النهائي مطلوبة" }),
 });
 
 type EditCourseFormValues = z.infer<typeof editCourseSchema>;
@@ -48,6 +55,7 @@ const EditCourse: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [groups, setGroups] = useState<CourseGroup[]>([]);
   const [deletedGroups, setDeletedGroups] = useState<number[]>([]);
+  const [selectedFacultyId, setSelectedFacultyId] = useState<string>("");
 
   // Fetch course data
   const { data: course, isLoading: isLoadingCourse, error } = useQuery({
@@ -66,12 +74,16 @@ const EditCourse: React.FC = () => {
     queryKey: ["/api/training-sites"],
   });
 
-  const { data: faculties } = useQuery({
+  const { data: faculties = [], isLoading: isLoadingFaculties } = useQuery({
     queryKey: ["/api/faculties"],
   });
 
   const { data: supervisors } = useQuery({
     queryKey: ["/api/supervisors"],
+  });
+
+  const { data: majors = [], isLoading: isLoadingMajors } = useQuery({
+    queryKey: ["/api/majors"],
   });
 
   const form = useForm<EditCourseFormValues>({
@@ -87,16 +99,32 @@ const EditCourse: React.FC = () => {
 
   // Initialize form when course data is loaded
   useEffect(() => {
-    if (course) {
+    if (course && majors) {
+      // Find the faculty for this course's major
+      const courseMajor = majors.find((major: any) => major.id === course.majorId);
+      if (courseMajor) {
+        setSelectedFacultyId(String(courseMajor.facultyId));
+      }
+
       form.reset({
-        name: (course as any).name || "",
-        facultyId: (course as any).facultyId ? String((course as any).facultyId) : "",
-        location: (course as any).location || "",
-        description: (course as any).description || "",
-        status: (course as any).status || "upcoming",
+        name: course.name || "",
+        description: course.description || "",
+        facultyId: courseMajor ? String(courseMajor.facultyId) : "",
+        majorId: course.majorId ? String(course.majorId) : "",
+        levelId: course.levelId ? String(course.levelId) : "",
+        attendancePercentage: course.attendancePercentage || 0,
+        behaviorPercentage: course.behaviorPercentage || 0,
+        finalExamPercentage: course.finalExamPercentage || 0,
+        attendanceGradeLabel: course.attendanceGradeLabel || "درجة الحضور",
+        behaviorGradeLabel: course.behaviorGradeLabel || "درجة السلوك",
+        finalExamGradeLabel: course.finalExamGradeLabel || "درجة الاختبار النهائي",
       });
+
+      if (course.groups) {
+        setGroups(course.groups);
+      }
     }
-  }, [course, form]);
+  }, [course, majors, form]);
 
   // Initialize groups when course groups data is loaded
   useEffect(() => {
@@ -170,64 +198,61 @@ const EditCourse: React.FC = () => {
     }
   };
 
-  const onSubmit = async (data: EditCourseFormValues) => {
-    if (!validateGroups()) {
-      return;
-    }
+  const updateGroupField = (index: number, field: string, value: string) => {
+    const updatedGroups = [...groups];
+    updatedGroups[index] = { ...updatedGroups[index], [field]: value };
+    setGroups(updatedGroups);
+  };
 
+  // Handle faculty change to filter majors
+  const handleFacultyChange = (value: string) => {
+    setSelectedFacultyId(value);
+    form.setValue("facultyId", value);
+    form.setValue("majorId", "");
+  };
+
+  // Filter majors by selected faculty
+  const filteredMajors = selectedFacultyId 
+    ? majors?.filter((major: any) => String(major.facultyId) === selectedFacultyId) || []
+    : majors || [];
+
+  const onSubmit = async (data: EditCourseFormValues) => {
     try {
       setIsSubmitting(true);
 
-      // Update the course
-      const courseData = {
-        ...data,
-        facultyId: data.facultyId === "none" || !data.facultyId ? undefined : Number(data.facultyId),
-      };
-
-      await apiRequest("PUT", `/api/training-courses/${id}`, courseData);
-
-      // Delete removed groups
-      for (const groupId of deletedGroups) {
-        await apiRequest("DELETE", `/api/training-course-groups/${groupId}`);
+      // Validate percentages add up to 100
+      const totalPercentage = data.attendancePercentage + data.behaviorPercentage + data.finalExamPercentage;
+      if (totalPercentage !== 100) {
+        toast({
+          title: "خطأ في النسب المئوية",
+          description: `يجب أن يكون مجموع النسب المئوية 100%. المجموع الحالي: ${totalPercentage}%`,
+          variant: "destructive",
+        });
+        return;
       }
 
-      // Update or create groups
-      const groupPromises = groups.map(async (group, index) => {
-        const groupData = {
-          courseId: Number(id),
-          groupName: group.groupName || `المجموعة ${index + 1}`,
-          siteId: Number(group.siteId),
-          supervisorId: Number(group.supervisorId),
-          capacity: Number(group.capacity),
-          location: group.location,
-          startDate: group.startDate,
-          endDate: group.endDate
-        };
+      const courseData = {
+        name: data.name,
+        description: data.description,
+        majorId: parseInt(data.majorId),
+        levelId: parseInt(data.levelId),
+        attendancePercentage: data.attendancePercentage,
+        behaviorPercentage: data.behaviorPercentage,
+        finalExamPercentage: data.finalExamPercentage,
+        attendanceGradeLabel: data.attendanceGradeLabel,
+        behaviorGradeLabel: data.behaviorGradeLabel,
+        finalExamGradeLabel: data.finalExamGradeLabel,
+      };
 
-        console.log("Processing group:", { id: group.id, groupData });
-
-        if (group.id) {
-          // Update existing group
-          return await apiRequest("PUT", `/api/training-course-groups/${group.id}`, groupData);
-        } else {
-          // Create new group
-          return await apiRequest("POST", "/api/training-course-groups", groupData);
-        }
-      });
-
-      await Promise.all(groupPromises);
+      await apiRequest("PUT", `/api/courses/${id}`, courseData);
 
       toast({
-        title: "تم تحديث الدورة التدريبية بنجاح",
-        description: `تم تحديث دورة "${data.name}" مع ${groups.length} مجموعة بنجاح`,
+        title: "تم تحديث الدورة بنجاح",
+        description: `تم تحديث دورة "${data.name}" بنجاح`,
       });
 
-      // Reset deleted groups
-      setDeletedGroups([]);
-
       // Invalidate queries
-      queryClient.invalidateQueries({ queryKey: ["/api/training-courses"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/training-course-groups"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/courses"] });
 
       // Navigate back to courses list
       setLocation("/admin/courses");
@@ -300,6 +325,73 @@ const EditCourse: React.FC = () => {
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold border-b pb-2">معلومات الدورة الأساسية</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                  control={form.control}
+                  name="facultyId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>الكلية</FormLabel>
+                      <Select 
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          handleFacultyChange(value);
+                        }} 
+                        value={field.value}
+                        disabled={isLoadingFaculties}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={
+                              isLoadingFaculties ? "جاري التحميل..." : 
+                              "اختر الكلية"
+                            } />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {faculties && Array.isArray(faculties) && faculties.map((faculty: any) => (
+                            <SelectItem key={faculty.id} value={faculty.id.toString()}>
+                              {faculty.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="majorId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>التخصص</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        value={field.value}
+                        disabled={!selectedFacultyId || isLoadingMajors}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder={
+                              !selectedFacultyId ? "اختر الكلية أولاً" :
+                              isLoadingMajors ? "جاري التحميل..." : 
+                              "اختر التخصص"
+                            } />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {filteredMajors.map((major: any) => (
+                            <SelectItem key={major.id} value={major.id.toString()}>
+                              {major.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                     <FormField
                       control={form.control}
                       name="name"
@@ -309,35 +401,6 @@ const EditCourse: React.FC = () => {
                           <FormControl>
                             <Input placeholder="أدخل اسم الدورة التدريبية" {...field} />
                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="facultyId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>الكلية</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange}
-                            value={field.value}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="اختر الكلية" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="none">لا تختر</SelectItem>
-                              {(faculties as any[])?.map((faculty: any) => (
-                                <SelectItem key={faculty.id} value={String(faculty.id)}>
-                                  {faculty.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
