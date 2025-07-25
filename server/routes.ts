@@ -1609,7 +1609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update training course
-  app.put("/api/training-courses/:id", authMiddleware, requireRole(["admin", "supervisor"]), async (req: Request, res: Response) => {
+  app.put("/api/training-courses/:id", authMiddleware, requireRole(["admin"]), async (req: Request, res: Response) => {
     try {
       const id = Number(req.params.id);
       const { 

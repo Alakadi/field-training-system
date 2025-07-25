@@ -1585,6 +1585,18 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+
+
+
+  // // Get Training Assignment by ID
+  // async getTrainingAssignmentById(id: number): Promise<TrainingAssignment | undefined> {
+  //   const result = await db.select()
+  //     .from(trainingAssignments)
+  //     .where(eq(trainingAssignments.id, id));
+  //   return result[0];
+  // }
+
+
   async markNotificationAsRead(id: number, userId: number): Promise<ActivityLog | undefined> {
     const result = await db.update(activityLogs)
       .set({ isRead: true })
@@ -1624,7 +1636,19 @@ export class DatabaseStorage implements IStorage {
 
   // Evaluation operations are now handled through training assignments table
 
-
+  // Update Student Detailed Grades operations
+  async updateStudentDetailedGrades(assignmentId: number, grades: {
+    attendanceGrade?: number;
+    behaviorGrade?: number;
+    finalExamGrade?: number;
+    calculatedFinalGrade?: number;
+  }): Promise<TrainingAssignment | undefined> {
+    const result = await db.update(trainingAssignments)
+      .set(grades)
+      .where(eq(trainingAssignments.id, assignmentId))
+      .returning();
+    return result[0];
+  }
 
   // Get Training Assignment by ID
   async getTrainingAssignmentById(id: number): Promise<TrainingAssignment | undefined> {
