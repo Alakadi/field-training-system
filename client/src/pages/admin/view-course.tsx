@@ -22,10 +22,10 @@ const ViewCourse: React.FC = () => {
   });
 
   // استخراج البيانات من الاستجابة الموحدة
-  const course = courseData?.course;
-  const courseGroups = courseData?.groups;
-  const courseStudents = courseData?.students;
-  const courseEvaluations = courseData?.evaluations;
+  const course = courseData?.course || {};
+  const courseGroups = courseData?.groups || [];
+  const courseStudents = courseData?.students || [];
+  const courseEvaluations = courseData?.evaluations || [];
 
   if (isLoadingCourse) {
     return (
@@ -53,7 +53,8 @@ const ViewCourse: React.FC = () => {
   }
 
   // حساب نسبة امتلاء الدورة
-  const occupancyRate = course?.capacity ? (course.studentCount / course.capacity) * 100 : 0;
+  const totalCapacity = courseGroups.reduce((sum: number, group: any) => sum + (group.capacity || 0), 0);
+  const occupancyRate = totalCapacity ? (courseStudents.length / totalCapacity) * 100 : 0;
 
   // تحويل حالة الدورة إلى عربي
   const getStatusText = (status: string) => {
@@ -75,6 +76,25 @@ const ViewCourse: React.FC = () => {
       default: return 'bg-neutral-100 text-neutral-800';
     }
   };
+
+  if (!course) {
+    return (
+      <AdminLayout>
+        <div className="space-y-6">
+          <div className="text-center py-8">
+            <p className="text-lg text-neutral-500">لم يتم العثور على الدورة التدريبية</p>
+            <Button
+              variant="outline"
+              onClick={() => setLocation("/admin/courses")}
+              className="mt-4"
+            >
+              العودة إلى القائمة
+            </Button>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>

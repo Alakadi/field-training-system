@@ -1472,6 +1472,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get complete course details with all related data
+  app.get("/api/training-courses/:id/complete", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const id = Number(req.params.id);
+      
+      // Get basic course info
+      const course = await storage.getTrainingCourseWithDetails(id);
+      if (!course) {
+        return res.status(404).json({ message: "الدورة التدريبية غير موجودة" });
+      }
+
+      // Get groups for this course
+      const groups = await storage.getTrainingCourseGroupsByCourse(id);
+      
+      // Get students enrolled in this course
+      const courseStudents = [];
+      for (const group of groups) {
+        const groupWithStudents = await storage.getTrainingCourseGroupWithStudents(group.id);
+        if (groupWithStudents && groupWithStudents.students) {
+          courseStudents.push(...groupWithStudents.students.map(student => ({
+            ...student,
+            groupId: group.id,
+            groupName: group.groupName
+          })));
+        }
+      }
+
+      // Get evaluations for this course
+      const courseEvaluations = [];
+      for (const group of groups) {
+        const assignments = await storage.getTrainingAssignmentsByGroup(group.id);
+        for (const assignment of assignments) {
+          const assignmentWithDetails = await storage.getTrainingAssignmentWithDetails(assignment.id);
+          if (assignmentWithDetails) {
+            courseEvaluations.push(assignmentWithDetails);
+          }
+        }
+      }
+
+      const response = {
+        course,
+        groups,
+        students: courseStudents,
+        evaluations: courseEvaluations,
+        totalStudents: courseStudents.length
+      };
+
+      res.json(response);
+    } catch (error) {
+      console.error("Error fetching complete course details:", error);
+      res.status(500).json({ message: "خطأ في استرجاع بيانات الدورة الكاملة" });
+    }
+  });
+
   app.post("/api/training-courses", authMiddleware, requireRole(["admin", "supervisor"]), async (req: Request, res: Response) => {
     try {
       const { 
