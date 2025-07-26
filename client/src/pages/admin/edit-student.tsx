@@ -70,7 +70,7 @@ const editStudentSchema = z.object({
     }),
   majorId: z.string().min(1, { message: "يرجى اختيار التخصص" }),
   levelId: z.string().min(1, { message: "يرجى اختيار المستوى" }),
-  active: z.boolean().default(true),
+  active: z.boolean(),
   assignedCourseGroups: z.array(z.string()).optional(),
 });
 
@@ -557,9 +557,9 @@ const EditStudent: React.FC = () => {
                 {/* Training Course Assignment Section */}
                 <div className="border-t pt-6">
                   <h3 className="text-lg font-medium mb-4">إسناد الدورات التدريبية</h3>
-                  {!selectedFaculty || !selectedMajor || !selectedLevel ? (
+                  {!selectedMajor || !selectedLevel ? (
                     <p className="text-sm text-muted-foreground">
-                      يرجى اختيار الكلية والتخصص والمستوى الدراسي أولاً لعرض الدورات المتاحة
+                      يرجى اختيار التخصص والمستوى الدراسي أولاً لعرض الدورات المتاحة
                     </p>
                   ) : isLoadingCourseGroups ? (
                     <p className="text-sm">جاري تحميل الدورات المتاحة...</p>
