@@ -16,14 +16,34 @@ import { useToast } from "@/hooks/use-toast";
 
 // Define schema
 const addStudentSchema = z.object({
-  name: z.string().min(3, { message: "يجب أن يحتوي الاسم على الأقل على 3 أحرف" }),
-  universityId: z.string().min(4, { message: "يجب أن يحتوي الرقم الجامعي على الأقل على 4 أرقام" }),
-  email: z.string().email({ message: "يرجى إدخال بريد إلكتروني صالح" }).optional().or(z.literal("")),
-  phone: z.string().optional().or(z.literal("")),
+  name: z.string()
+    .min(3, { message: "يجب أن يحتوي الاسم على الأقل على 3 أحرف" })
+    .refine((name) => {
+      const nameParts = name.trim().split(/\s+/);
+      return nameParts.length >= 4;
+    }, { message: "يجب إدخال الاسم الرباعي (أربعة أسماء على الأقل)" }),
+  universityId: z
+  .string()
+  // .regex(/^\d+$/, { message: "يجب أن يحتوي الرقم الجامعي على أرقام فقط" })
+  .min(4, { message: "يجب أن يحتوي الرقم الجامعي على الأقل على 4 أرقام" }),
+  email: z.string()
+    .email({ message: "يرجى إدخال بريد إلكتروني صالح" })
+    .optional().or(z.literal("")),
+  phone: z.string()
+    .optional()
+    .or(z.literal(""))
+    .refine((phone) => {
+      if (!phone || phone === "") return true;
+      // Remove +967 if present and any spaces or dashes
+      const cleanPhone = phone.replace(/^\+967/, "").replace(/[\s-]/g, "");
+      // Check if it's exactly 9 digits and starts with valid prefixes
+      const phoneRegex = /^(73|77|78|71|70)\d{7}$/;
+      return phoneRegex.test(cleanPhone);
+    }, { message: "رقم الهاتف يجب أن يكون 9 أرقام ويبدأ بـ 73، 77، 78، 71، أو 70" }),
+  // facultyId: z.string().min(1, { message: "يرجى اختيار الكلية" }),
   majorId: z.string().min(1, { message: "يرجى اختيار التخصص" }),
   levelId: z.string().min(1, { message: "يرجى اختيار المستوى الدراسي" }),
-  supervisorId: z.string().min(1, { message: "يرجى اختيار المشرف الأكاديمي" }).optional().or(z.literal("")),
-  assignedCourseGroups: z.array(z.string()).optional(),
+  assignedCourseGroups: z.array(z.string()).optional().default([]),
 });
 
 type AddStudentFormValues = z.infer<typeof addStudentSchema>;
@@ -101,26 +121,79 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
     },
   });
 
+
+
   const onSubmit = async (data: AddStudentFormValues) => {
     try {
       setIsSubmitting(true);
 
+      // Check for email uniqueness if email is provided
+      if (data.email && data.email.trim() !== "") {
+        const emailCheckResponse = await fetch(`/api/validate/email?email=${encodeURIComponent(data.email)}`);
+        if (!emailCheckResponse.ok) {
+          const emailError = await emailCheckResponse.json();
+          throw new Error(emailError.message || "خطأ في التحقق من البريد الإلكتروني");
+        }
+        const emailExists = await emailCheckResponse.json();
+        if (emailExists.exists) {
+          throw new Error("البريد الإلكتروني مستخدم بالفعل من قبل طالب آخر");
+        }
+      }
+
+      // Check for phone uniqueness if phone is provided
+      if (data.phone && data.phone.trim() !== "") {
+        const phoneCheckResponse = await fetch(`/api/validate/phone?phone=${encodeURIComponent(data.phone)}`);
+        if (!phoneCheckResponse.ok) {
+          const phoneError = await phoneCheckResponse.json();
+          throw new Error(phoneError.message || "خطأ في التحقق من رقم الهاتف");
+        }
+        const phoneExists = await phoneCheckResponse.json();
+        if (phoneExists.exists) {
+          throw new Error("رقم الهاتف مستخدم بالفعل من قبل مستخدم آخر");
+        }
+      }
+
+      // Check for university ID uniqueness
+      const universityIdCheckResponse = await fetch(`/api/validate/university-id?universityId=${encodeURIComponent(data.universityId)}`);
+      if (!universityIdCheckResponse.ok) {
+        const universityIdError = await universityIdCheckResponse.json();
+        throw new Error(universityIdError.message || "خطأ في التحقق من الرقم الجامعي");
+      }
+      const universityIdExists = await universityIdCheckResponse.json();
+      if (universityIdExists.exists) {
+        throw new Error("الرقم الجامعي مستخدم بالفعل من قبل طالب آخر");
+      }
+
       // Create student first
-      const response: any = await apiRequest("POST", "/api/students", {
-        name: data.name,
-        universityId: data.universityId,
-        email: data.email,
-        phone: data.phone,
-        majorId: data.majorId,
-        levelId: data.levelId,
-        supervisorId: data.supervisorId,
+      const studentResponse = await fetch("/api/students", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          name: data.name,
+          universityId: data.universityId,
+          email: data.email,
+          phone: data.phone,
+          // facultyId: data.facultyId,
+          majorId: data.majorId,
+          levelId: data.levelId,
+        }),
       });
+
+      if (!studentResponse.ok) {
+        const errorData = await studentResponse.json();
+        throw new Error(errorData.message || "خطأ في إنشاء الطالب");
+      }
+
+      const student = await studentResponse.json();
 
       // If there are assigned course groups, register student to them
       if (data.assignedCourseGroups && data.assignedCourseGroups.length > 0) {
         for (const groupId of data.assignedCourseGroups) {
           await apiRequest("POST", "/api/training-assignments", {
-            studentId: response.id,
+            studentId: student.id,
             groupId: parseInt(groupId),
           });
         }
@@ -155,6 +228,62 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
       setIsSubmitting(false);
     }
   };
+
+
+  // const onSubmit = async (data: AddStudentFormValues) => {
+  //   try {
+  //     setIsSubmitting(true);
+
+  //     // Create student first
+  //     const response: any = await apiRequest("POST", "/api/students", {
+  //       name: data.name,
+  //       universityId: data.universityId,
+  //       email: data.email,
+  //       phone: data.phone,
+  //       majorId: data.majorId,
+  //       levelId: data.levelId,
+  //       supervisorId: data.supervisorId,
+  //     });
+
+  //     // If there are assigned course groups, register student to them
+  //     if (data.assignedCourseGroups && data.assignedCourseGroups.length > 0) {
+  //       for (const groupId of data.assignedCourseGroups) {
+  //         await apiRequest("POST", "/api/training-assignments", {
+  //           studentId: response.id,
+  //           groupId: parseInt(groupId),
+  //         });
+  //       }
+  //     }
+
+  //     toast({
+  //       title: "تم إضافة الطالب بنجاح",
+  //       description: `تم إضافة الطالب ${data.name} بنجاح${data.assignedCourseGroups?.length ? ` وتسجيله في ${data.assignedCourseGroups.length} مجموعة تدريبية` : ''}`,
+  //     });
+
+  //     // Reset form
+  //     form.reset();
+  //     setSelectedFacultyId("");
+  //     setSelectedMajorId("");
+  //     setSelectedLevelId("");
+
+  //     // Invalidate queries to refresh the data
+  //     queryClient.invalidateQueries({ queryKey: ["/api/students"] });
+  //     queryClient.invalidateQueries({ queryKey: ["/api/training-assignments"] });
+
+  //     // Call onSuccess callback if provided
+  //     if (onSuccess) {
+  //       onSuccess();
+  //     }
+  //   } catch (error) {
+  //     toast({
+  //       title: "فشل إضافة الطالب",
+  //       description: error instanceof Error ? error.message : "حدث خطأ أثناء إضافة الطالب",
+  //       variant: "destructive",
+  //     });
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
 
   // Handle faculty change to filter majors
   const handleFacultyChange = (value: string) => {

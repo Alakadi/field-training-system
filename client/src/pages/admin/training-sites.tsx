@@ -26,12 +26,12 @@ const AdminTrainingSites: React.FC = () => {
   const itemsPerPage = 10;
 
   // Fetch training sites
-  const { data: trainingSites, isLoading: isLoadingSites } = useQuery({
+  const { data: trainingSites, isLoading: isLoadingSites } = useQuery<any[]>({
     queryKey: ["/api/training-sites"]
   });
 
   // Filter sites by search query
-  const filteredSites = trainingSites?.filter((site: any) => {
+  const filteredSites = (trainingSites || []).filter((site: any) => {
     if (!searchQuery) return true;
     
     const query = searchQuery.toLowerCase();
@@ -177,10 +177,22 @@ const AdminTrainingSites: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-800">
                         <div className="flex items-center space-x-2 space-x-reverse">
-                          <Button variant="ghost" size="sm" className="text-primary hover:text-primary-dark">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-primary hover:text-primary-dark"
+                            onClick={() => setLocation(`/admin/training-sites/${site.id}/edit`)}
+                            title="تعديل"
+                          >
                             <Icon name="edit" size={16} />
                           </Button>
-                          <Button variant="ghost" size="sm" className="text-neutral-600 hover:text-neutral-900">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-neutral-600 hover:text-neutral-900"
+                            onClick={() => setLocation(`/admin/training-sites/${site.id}`)}
+                            title="عرض التفاصيل"
+                          >
                             <Icon name="eye" size={16} />
                           </Button>
                           <Button
@@ -188,6 +200,7 @@ const AdminTrainingSites: React.FC = () => {
                             size="sm"
                             className="text-error hover:text-red-700"
                             onClick={() => handleDeleteSite(site.id)}
+                            title="حذف"
                           >
                             <Icon name="trash" size={16} />
                           </Button>

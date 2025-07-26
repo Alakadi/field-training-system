@@ -33,6 +33,8 @@ import EditSupervisor from "@/pages/admin/edit-supervisor";
 import ViewSupervisor from "@/pages/admin/view-supervisor";
 import EditStudent from "@/pages/admin/edit-student";
 import ViewStudent from "@/pages/admin/view-student";
+import EditTrainingSite from "@/pages/admin/edit-training-site";
+import ViewTrainingSite from "@/pages/admin/view-training-site";
 import ViewGroup from "@/pages/admin/view-group";
 import StudentGroupAssignments from "@/pages/admin/student-group-assignments";
 import AdminProfile from "@/pages/admin/profile";
@@ -167,6 +169,16 @@ function Router() {
       <Route path="/admin/training-sites">
         <AdminOnly>
           <AdminTrainingSites />
+        </AdminOnly>
+      </Route>
+      <Route path="/admin/training-sites/:id/edit">
+        <AdminOnly>
+          <EditTrainingSite />
+        </AdminOnly>
+      </Route>
+      <Route path="/admin/training-sites/:id">
+        <AdminOnly>
+          <ViewTrainingSite />
         </AdminOnly>
       </Route>
       <Route path="/admin/faculties">

@@ -103,7 +103,11 @@ export interface IStorage {
   // Training Site operations
   getAllTrainingSites(): Promise<TrainingSite[]>;
   getTrainingSite(id: number): Promise<TrainingSite | undefined>;
+  getTrainingSiteById(id: number): Promise<TrainingSite | undefined>;
   createTrainingSite(site: InsertTrainingSite): Promise<TrainingSite>;
+  updateTrainingSite(id: number, site: Partial<InsertTrainingSite>): Promise<TrainingSite | undefined>;
+  deleteTrainingSite(id: number): Promise<void>;
+  getTrainingGroupsBySite(siteId: number): Promise<any[]>;
 
   // Training Course operations
   getAllTrainingCourses(): Promise<TrainingCourse[]>;
@@ -656,9 +660,62 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
+  async getTrainingSiteById(id: number): Promise<TrainingSite | undefined> {
+    const result = await db.select().from(trainingSites).where(eq(trainingSites.id, id));
+    return result[0];
+  }
+
   async createTrainingSite(site: InsertTrainingSite): Promise<TrainingSite> {
     const result = await db.insert(trainingSites).values(site).returning();
     return result[0]; 
+  }
+
+  async updateTrainingSite(id: number, site: Partial<InsertTrainingSite>): Promise<TrainingSite | undefined> {
+    const result = await db.update(trainingSites)
+      .set(site)
+      .where(eq(trainingSites.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteTrainingSite(id: number): Promise<void> {
+    await db.delete(trainingSites).where(eq(trainingSites.id, id));
+  }
+
+  async getTrainingGroupsBySite(siteId: number): Promise<any[]> {
+    const groups = await db
+      .select({
+        id: trainingCourseGroups.id,
+        groupName: trainingCourseGroups.groupName,
+        startDate: trainingCourseGroups.startDate,
+        endDate: trainingCourseGroups.endDate,
+        capacity: trainingCourseGroups.capacity,
+        currentEnrollment: trainingCourseGroups.currentEnrollment,
+        status: trainingCourseGroups.status,
+        location: trainingCourseGroups.location,
+        course: {
+          id: trainingCourses.id,
+          name: trainingCourses.name,
+          description: trainingCourses.description,
+          status: trainingCourses.status,
+          academicYear: sql`json_build_object('id', ${academicYears.id}, 'name', ${academicYears.name})`,
+          major: sql`json_build_object('id', ${majors.id}, 'name', ${majors.name}, 'faculty', json_build_object('id', ${faculties.id}, 'name', ${faculties.name}))`,
+          level: sql`json_build_object('id', ${levels.id}, 'name', ${levels.name})`
+        },
+        supervisor: sql`json_build_object('id', ${supervisors.id}, 'user', json_build_object('id', ${users.id}, 'name', ${users.name}), 'department', ${supervisors.department})`
+      })
+      .from(trainingCourseGroups)
+      .leftJoin(trainingCourses, eq(trainingCourseGroups.courseId, trainingCourses.id))
+      .leftJoin(academicYears, eq(trainingCourses.academicYearId, academicYears.id))
+      .leftJoin(majors, eq(trainingCourses.majorId, majors.id))
+      .leftJoin(faculties, eq(majors.facultyId, faculties.id))
+      .leftJoin(levels, eq(trainingCourses.levelId, levels.id))
+      .leftJoin(supervisors, eq(trainingCourseGroups.supervisorId, supervisors.id))
+      .leftJoin(users, eq(supervisors.userId, users.id))
+      .where(eq(trainingCourseGroups.siteId, siteId))
+      .orderBy(desc(trainingCourseGroups.startDate));
+
+    return groups;
   }
 
   // Training Course operations
@@ -804,8 +861,7 @@ export class DatabaseStorage implements IStorage {
       // 3. تحديث حالة الدورة بناءً على المجموعات
       const courseStatuses = createdGroups.map(g => {
         if (g.startDate && g.endDate) {
-          const currentDate = new Date().toISOStringpython
-().split('T')[0];
+          const currentDate = new Date().toISOString().split('T')[0];
           if (currentDate >= g.startDate && currentDate <= g.endDate) {
             return 'active';
           } else if (currentDate > g.endDate) {
@@ -1725,7 +1781,7 @@ export class DatabaseStorage implements IStorage {
       or(
         isNull(trainingAssignments.attendanceGrade),
         isNull(trainingAssignments.behaviorGrade),
-        isNull(trainingAssignment.finalExamGrade)
+        isNull(trainingAssignments.finalExamGrade)
       )
     ));
   }

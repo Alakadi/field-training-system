@@ -1275,6 +1275,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get single training site
+  app.get("/api/training-sites/:id", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const site = await storage.getTrainingSiteById(id);
+      
+      if (!site) {
+        return res.status(404).json({ message: "جهة التدريب غير موجودة" });
+      }
+      
+      res.json(site);
+    } catch (error) {
+      res.status(500).json({ message: "خطأ في استرجاع بيانات جهة التدريب" });
+    }
+  });
+
+  // Get training groups for a specific site
+  app.get("/api/training-course-groups/site/:siteId", authMiddleware, async (req: Request, res: Response) => {
+    try {
+      const siteId = parseInt(req.params.siteId);
+      const groups = await storage.getTrainingGroupsBySite(siteId);
+      res.json(groups);
+    } catch (error) {
+      console.error("Error getting training groups by site:", error);
+      res.status(500).json({ message: "خطأ في استرجاع المجموعات التدريبية" });
+    }
+  });
+
   app.post("/api/training-sites", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
     try {
       const { name, address, contactName, contactEmail, contactPhone } = req.body;
@@ -1304,6 +1332,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(site);
     } catch (error) {
       res.status(500).json({ message: "خطأ في إنشاء جهة تدريب جديدة" });
+    }
+  });
+
+  // Update training site
+  app.put("/api/training-sites/:id", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { name, address, contactName, contactEmail, contactPhone } = req.body;
+      
+      const updatedSite = await storage.updateTrainingSite(id, {
+        name,
+        address,
+        contactName,
+        contactEmail,
+        contactPhone
+      });
+
+      // Log activity
+      if (req.user) {
+        await logSecurityActivity(
+          req.user.username,
+          "update",
+          "training_sites",
+          id,
+          { 
+            message: `تم تعديل جهة تدريب: ${name}`,
+            siteData: { name, address, contactName, contactEmail, contactPhone }
+          }
+        );
+      }
+
+      res.json(updatedSite);
+    } catch (error) {
+      res.status(500).json({ message: "خطأ في تحديث بيانات جهة التدريب" });
+    }
+  });
+
+  // Delete training site
+  app.delete("/api/training-sites/:id", authMiddleware, requireRole("admin"), async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      const site = await storage.getTrainingSiteById(id);
+      
+      if (!site) {
+        return res.status(404).json({ message: "جهة التدريب غير موجودة" });
+      }
+
+      await storage.deleteTrainingSite(id);
+
+      // Log activity
+      if (req.user) {
+        await logSecurityActivity(
+          req.user.username,
+          "delete",
+          "training_sites",
+          id,
+          { 
+            message: `تم حذف جهة تدريب: ${site.name}`,
+            siteData: { name: site.name }
+          }
+        );
+      }
+
+      res.json({ message: "تم حذف جهة التدريب بنجاح" });
+    } catch (error) {
+      res.status(500).json({ message: "خطأ في حذف جهة التدريب" });
     }
   });
 
