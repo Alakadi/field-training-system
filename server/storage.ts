@@ -1398,7 +1398,9 @@ export class DatabaseStorage implements IStorage {
     name: string, 
     faculty: string, 
     major: string, 
-    level: string 
+    level: string,
+    email?: string,
+    phone?: string
   }[]): Promise<{ success: number, errors: number, messages: string[] }> {
     let successCount = 0;
     let errorCount = 0;
@@ -1411,6 +1413,44 @@ export class DatabaseStorage implements IStorage {
           errorCount++;
           messages.push(`الطالب ${studentData.name || 'غير محدد'}: الرقم الجامعي والاسم مطلوبان`);
           continue;
+        }
+
+        // التحقق من صحة الاسم (يجب أن يحتوي على 4 أسماء على الأقل)
+        const nameParts = studentData.name.trim().split(/\s+/);
+        if (nameParts.length < 4) {
+          errorCount++;
+          messages.push(`الطالب ${studentData.name}: يجب إدخال الاسم الرباعي (أربعة أسماء على الأقل)`);
+          continue;
+        }
+
+        // التحقق من صحة الرقم الجامعي (يجب أن يحتوي على 4 أرقام على الأقل)
+        if (studentData.universityId.length < 4) {
+          errorCount++;
+          messages.push(`الطالب ${studentData.name}: يجب أن يحتوي الرقم الجامعي على الأقل على 4 أرقام`);
+          continue;
+        }
+
+        // التحقق من صحة البريد الإلكتروني إذا تم توفيره
+        if (studentData.email && studentData.email.trim() !== "") {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(studentData.email.trim())) {
+            errorCount++;
+            messages.push(`الطالب ${studentData.name}: البريد الإلكتروني غير صالح`);
+            continue;
+          }
+        }
+
+        // التحقق من صحة رقم الهاتف إذا تم توفيره
+        if (studentData.phone && studentData.phone.trim() !== "") {
+          // إزالة الرمز الدولي والمسافات
+          const cleanPhone = studentData.phone.replace(/^\+967/, "").replace(/[\s-]/g, "");
+          // التحقق من أنه 9 أرقام ويبدأ بالأرقام الصحيحة
+          const phoneRegex = /^(73|77|78|71|70)\d{7}$/;
+          if (!phoneRegex.test(cleanPhone)) {
+            errorCount++;
+            messages.push(`الطالب ${studentData.name}: رقم الهاتف يجب أن يكون 9 أرقام ويبدأ بـ 73، 77، 78، 71، أو 70`);
+            continue;
+          }
         }
 
         // البحث عن الكلية (بالاسم أو الرقم)
@@ -1449,7 +1489,7 @@ export class DatabaseStorage implements IStorage {
           }
         }
 
-        // التحقق من وجود الطالب
+        // التحقق من تكرار الرقم الجامعي قبل إنشاء طالب جديد
         const existingStudent = await this.getStudentByUniversityId(studentData.universityId);
 
         if (existingStudent) {
@@ -1470,13 +1510,44 @@ export class DatabaseStorage implements IStorage {
             messages.push(`الطالب موجود بالفعل ولا يحتاج تحديث: ${studentData.name} (${studentData.universityId})`);
           }
         } else {
-          // طالب جديد - إنشاء حساب جديد
+          // طالب جديد - إنشاء حساب جديد مع التحققات
+          
+          // التحقق من عدم تكرار الرقم الجامعي مع طلاب آخرين
+          const duplicateUniversityId = await this.getStudentByUniversityId(studentData.universityId);
+          if (duplicateUniversityId) {
+            errorCount++;
+            messages.push(`خطأ في الطالب ${studentData.name}: الرقم الجامعي ${studentData.universityId} مستخدم بالفعل من قبل طالب آخر`);
+            continue;
+          }
+
+          // التحقق من عدم تكرار البريد الإلكتروني إذا تم توفيره
+          if (studentData.email && studentData.email.trim() !== "") {
+            const duplicateEmail = await this.getUserByEmail(studentData.email.trim());
+            if (duplicateEmail) {
+              errorCount++;
+              messages.push(`خطأ في الطالب ${studentData.name}: البريد الإلكتروني ${studentData.email} مستخدم بالفعل من قبل مستخدم آخر`);
+              continue;
+            }
+          }
+
+          // التحقق من عدم تكرار رقم الهاتف إذا تم توفيره
+          if (studentData.phone && studentData.phone.trim() !== "") {
+            const duplicatePhone = await this.getUserByPhone(studentData.phone.trim());
+            if (duplicatePhone) {
+              errorCount++;
+              messages.push(`خطأ في الطالب ${studentData.name}: رقم الهاتف ${studentData.phone} مستخدم بالفعل من قبل مستخدم آخر`);
+              continue;
+            }
+          }
+
           // إنشاء حساب المستخدم
           const user = await this.createUser({
             username: studentData.universityId,
             password: "password", // كلمة مرور افتراضية
             role: "student",
             name: studentData.name,
+            email: studentData.email && studentData.email.trim() !== "" ? studentData.email.trim() : undefined,
+            phone: studentData.phone && studentData.phone.trim() !== "" ? studentData.phone.trim() : undefined,
             active: true
           });
 

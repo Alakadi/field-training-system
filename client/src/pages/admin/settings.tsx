@@ -75,27 +75,27 @@ const AdminSettings: React.FC = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("profile");
   const [isAddingLevel, setIsAddingLevel] = useState(false);
-  
+
   // Fetch user profile data
   const { data: profileData, isLoading: isLoadingProfile } = useQuery({
     queryKey: ["/api/auth/me"]
   });
-  
+
   // Fetch system settings
   const { data: systemSettings, isLoading: isLoadingSettings } = useQuery({
     queryKey: ["/api/settings"]
   });
-  
+
   // Fetch faculties for settings
   const { data: faculties, isLoading: isLoadingFaculties } = useQuery({
     queryKey: ["/api/faculties"]
   });
-  
+
   // Fetch levels
   const { data: levels, isLoading: isLoadingLevels } = useQuery({
     queryKey: ["/api/levels"]
   });
-  
+
   // Password form
   const passwordForm = useForm<z.infer<typeof passwordSchema>>({
     resolver: zodResolver(passwordSchema),
@@ -105,7 +105,7 @@ const AdminSettings: React.FC = () => {
       confirmPassword: "",
     },
   });
-  
+
   // Profile form
   const profileForm = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -115,7 +115,7 @@ const AdminSettings: React.FC = () => {
       phone: profileData?.phone || "",
     },
   });
-  
+
   // Settings form
   const systemForm = useForm<z.infer<typeof systemSchema>>({
     resolver: zodResolver(systemSchema),
@@ -127,7 +127,7 @@ const AdminSettings: React.FC = () => {
       semester: systemSettings?.semester || "1",
     },
   });
-  
+
   // Level form
   const levelForm = useForm<z.infer<typeof levelSchema>>({
     resolver: zodResolver(levelSchema),
@@ -135,7 +135,7 @@ const AdminSettings: React.FC = () => {
       name: "",
     },
   });
-  
+
   // Update profile data when loaded
   React.useEffect(() => {
     if (profileData) {
@@ -146,7 +146,7 @@ const AdminSettings: React.FC = () => {
       });
     }
   }, [profileData, profileForm]);
-  
+
   // Update settings data when loaded
   React.useEffect(() => {
     if (systemSettings) {
@@ -159,45 +159,74 @@ const AdminSettings: React.FC = () => {
       });
     }
   }, [systemSettings, systemForm]);
-  
+
   // Password update mutation
-  const updatePasswordMutation = useMutation({
-    mutationFn: (data: z.infer<typeof passwordSchema>) => 
-      apiRequest("POST", "/api/auth/change-password", data),
+  const updatePasswordMutation =  useMutation({
+    mutationFn: async (data: z.infer<typeof passwordSchema>) => {
+      const response = await fetch("/api/auth/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: data.currentPassword,
+          newPassword: data.newPassword,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "خطأ في تغيير كلمة المرور");
+      }
+
+      return response.json();
+    },
     onSuccess: () => {
       toast({
-        title: "تم تغيير كلمة المرور بنجاح",
+        title: "تم التحديث بنجاح",
+        description: "تم تغيير كلمة المرور بنجاح",
       });
       passwordForm.reset();
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
-        title: "فشل تغيير كلمة المرور",
-        description: error.message || "حدث خطأ أثناء تغيير كلمة المرور",
+        title: "خطأ في تغيير كلمة المرور",
+        description: error.message,
         variant: "destructive",
       });
     },
   });
-  
+
   // Profile update mutation
-  const updateProfileMutation = useMutation({
-    mutationFn: (data: z.infer<typeof profileSchema>) => 
-      apiRequest("PUT", "/api/auth/profile", data),
+  const updateProfileMutation =  useMutation({
+    mutationFn: async (data: z.infer<typeof profileSchema>) => {
+      const response = await fetch("/api/auth/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "خطأ في تحديث الملف الشخصي");
+      }
+
+      return response.json();
+    },
     onSuccess: () => {
       toast({
-        title: "تم تحديث الملف الشخصي بنجاح",
+        title: "تم التحديث بنجاح",
+        description: "تم تحديث بيانات الملف الشخصي",
       });
       queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
-        title: "فشل تحديث الملف الشخصي",
-        description: error.message || "حدث خطأ أثناء تحديث الملف الشخصي",
+        title: "خطأ في التحديث",
+        description: error.message,
         variant: "destructive",
       });
     },
   });
-  
+
   // System settings update mutation
   const updateSystemSettingsMutation = useMutation({
     mutationFn: (data: z.infer<typeof systemSchema>) => 
@@ -216,7 +245,7 @@ const AdminSettings: React.FC = () => {
       });
     },
   });
-  
+
   // Add level mutation
   const addLevelMutation = useMutation({
     mutationFn: (data: z.infer<typeof levelSchema>) => 
@@ -237,7 +266,7 @@ const AdminSettings: React.FC = () => {
       });
     },
   });
-  
+
   // Delete level mutation
   const deleteLevelMutation = useMutation({
     mutationFn: (levelId: number) => 
@@ -256,36 +285,36 @@ const AdminSettings: React.FC = () => {
       });
     },
   });
-  
+
   // Form submissions
   const onPasswordSubmit = (data: z.infer<typeof passwordSchema>) => {
     updatePasswordMutation.mutate(data);
   };
-  
+
   const onProfileSubmit = (data: z.infer<typeof profileSchema>) => {
     updateProfileMutation.mutate(data);
   };
-  
+
   const onSystemSubmit = (data: z.infer<typeof systemSchema>) => {
     updateSystemSettingsMutation.mutate(data);
   };
-  
+
   const onLevelSubmit = (data: z.infer<typeof levelSchema>) => {
     addLevelMutation.mutate(data);
   };
-  
+
   const handleDeleteLevel = (levelId: number) => {
     deleteLevelMutation.mutate(levelId);
   };
 
   return (
-    <AdminLayout>
+    <AdminLayout >
       <div className="space-y-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold">الإعدادات</h1>
         </div>
 
-        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs dir="rtl" defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-6 mb-6">
             <TabsTrigger value="profile">الملف الشخصي</TabsTrigger>
             <TabsTrigger value="password">كلمة المرور</TabsTrigger>
@@ -294,11 +323,11 @@ const AdminSettings: React.FC = () => {
             <TabsTrigger value="faculties">الكليات والتخصصات</TabsTrigger>
             <TabsTrigger value="academic-years">السنوات الدراسية</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="profile">
             <Card className="bg-white p-6 rounded-lg shadow">
               <h2 className="text-xl font-bold mb-6">الملف الشخصي</h2>
-              
+
               {isLoadingProfile ? (
                 <div className="text-center p-8">
                   <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
@@ -320,7 +349,7 @@ const AdminSettings: React.FC = () => {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={profileForm.control}
                       name="email"
@@ -334,7 +363,7 @@ const AdminSettings: React.FC = () => {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={profileForm.control}
                       name="phone"
@@ -348,7 +377,7 @@ const AdminSettings: React.FC = () => {
                         </FormItem>
                       )}
                     />
-                    
+
                     <div className="flex justify-end">
                       <Button 
                         type="submit" 
@@ -363,11 +392,11 @@ const AdminSettings: React.FC = () => {
               )}
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="password">
             <Card className="bg-white p-6 rounded-lg shadow">
               <h2 className="text-xl font-bold mb-6">تغيير كلمة المرور</h2>
-              
+
               <Form {...passwordForm}>
                 <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-4">
                   <FormField
@@ -383,7 +412,7 @@ const AdminSettings: React.FC = () => {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={passwordForm.control}
                     name="newPassword"
@@ -400,7 +429,7 @@ const AdminSettings: React.FC = () => {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={passwordForm.control}
                     name="confirmPassword"
@@ -414,7 +443,7 @@ const AdminSettings: React.FC = () => {
                       </FormItem>
                     )}
                   />
-                  
+
                   <div className="flex justify-end">
                     <Button 
                       type="submit" 
@@ -428,11 +457,11 @@ const AdminSettings: React.FC = () => {
               </Form>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="system">
             <Card className="bg-white p-6 rounded-lg shadow">
               <h2 className="text-xl font-bold mb-6">إعدادات النظام</h2>
-              
+
               {isLoadingSettings ? (
                 <div className="text-center p-8">
                   <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
@@ -444,7 +473,7 @@ const AdminSettings: React.FC = () => {
                     <div>
                       <h3 className="text-lg font-medium mb-2">الإشعارات</h3>
                       <Separator className="mb-4" />
-                      
+
                       <div className="space-y-3">
                         <FormField
                           control={systemForm.control}
@@ -466,7 +495,7 @@ const AdminSettings: React.FC = () => {
                             </FormItem>
                           )}
                         />
-                        
+
                         <FormField
                           control={systemForm.control}
                           name="enableSmsNotifications"
@@ -489,11 +518,11 @@ const AdminSettings: React.FC = () => {
                         />
                       </div>
                     </div>
-                    
+
                     <div>
                       <h3 className="text-lg font-medium mb-2">الإعدادات الأكاديمية</h3>
                       <Separator className="mb-4" />
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                           control={systemForm.control}
@@ -520,7 +549,7 @@ const AdminSettings: React.FC = () => {
                             </FormItem>
                           )}
                         />
-                        
+
                         <FormField
                           control={systemForm.control}
                           name="academicYear"
@@ -534,7 +563,7 @@ const AdminSettings: React.FC = () => {
                             </FormItem>
                           )}
                         />
-                        
+
                         <FormField
                           control={systemForm.control}
                           name="semester"
@@ -556,7 +585,7 @@ const AdminSettings: React.FC = () => {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="flex justify-end">
                       <Button 
                         type="submit" 
@@ -571,7 +600,7 @@ const AdminSettings: React.FC = () => {
               )}
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="levels">
             <Card className="bg-white p-6 rounded-lg shadow">
               <div className="flex items-center justify-between mb-6">
@@ -584,7 +613,7 @@ const AdminSettings: React.FC = () => {
                   إضافة مستوى
                 </Button>
               </div>
-              
+
               {isAddingLevel && (
                 <Card className="mb-6 p-4 bg-gray-50">
                   <h3 className="text-lg font-medium mb-4">إضافة مستوى جديد</h3>
@@ -603,7 +632,7 @@ const AdminSettings: React.FC = () => {
                           </FormItem>
                         )}
                       />
-                      
+
                       <div className="flex justify-end space-x-2 space-x-reverse">
                         <Button
                           type="button"
@@ -627,7 +656,7 @@ const AdminSettings: React.FC = () => {
                   </Form>
                 </Card>
               )}
-              
+
               {isLoadingLevels ? (
                 <div className="text-center p-8">
                   <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
@@ -684,7 +713,7 @@ const AdminSettings: React.FC = () => {
                           </TableCell>
                         </TableRow>
                       ))}
-                      
+
                       {levels?.length === 0 && (
                         <TableRow>
                           <TableCell colSpan={3} className="text-center py-6 text-neutral-500">
@@ -698,7 +727,7 @@ const AdminSettings: React.FC = () => {
               )}
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="faculties">
             <Card className="bg-white p-6 rounded-lg shadow">
               <iframe 
@@ -708,7 +737,7 @@ const AdminSettings: React.FC = () => {
               />
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="academic-years">
             <Card className="bg-white p-6 rounded-lg shadow">
               <iframe 

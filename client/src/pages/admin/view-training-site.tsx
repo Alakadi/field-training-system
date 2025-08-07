@@ -367,16 +367,16 @@ const ViewTrainingSite: React.FC = () => {
                           </div>
                         </div>
                         
-                        <div className="pt-2">
+                        {/* <div className="pt-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setLocation(`/admin/groups/${group.id}`)}
+                            onClick={() => setLocation(`/admin/view-group/${group.id}`)}
                             className="w-full"
                           >
                             عرض التفاصيل
                           </Button>
-                        </div>
+                        </div> */}
                       </div>
                     </CardContent>
                   </Card>

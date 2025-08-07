@@ -241,7 +241,7 @@ const ViewStudent: React.FC = () => {
                 </Card>
               </TabsContent>
               
-              <TabsContent value="evaluations" className="mt-4">
+              <TabsContent dir="rtl" value="evaluations" className="mt-4">
                 <Card>
                   <CardContent className="p-4">
                     {isLoadingEvaluations ? (
@@ -261,17 +261,17 @@ const ViewStudent: React.FC = () => {
                             <CardHeader className="pb-2">
                               <div className="flex justify-between items-center">
                                 <CardTitle className="text-lg">{evaluation.course.name}</CardTitle>
-                                <Badge className="bg-blue-100 text-blue-800">
+                                {/* <Badge className="bg-blue-100 text-blue-800">
                                   {new Date(evaluation.evaluationDate).toLocaleDateString('en-GB')}
-                                </Badge>
+                                </Badge> */}
                               </div>
                             </CardHeader>
                             <CardContent>
                               <div className="space-y-4">
-                                <div>
+                                {/* <div>
                                   <p className="text-sm font-medium text-neutral-500">المشرف</p>
                                   <p>{evaluation.supervisor?.user?.name || "-"}</p>
-                                </div>
+                                </div> */}
                                 
                                 {/* الدرجات المفصلة */}
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

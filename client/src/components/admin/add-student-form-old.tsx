@@ -321,7 +321,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
                   )}
                 />
 
-                <FormField
+                {/* <FormField
                   control={form.control}
                   name="supervisorId"
                   render={({ field }) => (
@@ -347,7 +347,7 @@ const AddStudentForm: React.FC<AddStudentFormProps> = ({ onSuccess }) => {
                       <FormMessage />
                     </FormItem>
                   )}
-                />
+                /> */}
               </div>
             </form>
           </Form>
