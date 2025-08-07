@@ -111,8 +111,7 @@ new_admin_cookies.txt
 final_cookies.txt
 temp_cookies.txt
 
-# Attached assets (قد تحتوي على بيانات حساسة)
-attached_assets/
+
 
 # Test coverage
 coverage/
