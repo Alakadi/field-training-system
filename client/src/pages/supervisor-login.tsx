@@ -13,7 +13,7 @@ import { Link } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import ErrorMessage from "@/components/ui/error-message";
 import { showErrorToast, showSuccessToast } from "@/components/ui/toast-notification";
-import janadLogoPath from "@assets/JanadLogo1_1752368846626.png";
+import janadLogoPath from "@assets/JanadLogo1.png";
 
 const formSchema = z.object({
   username: z.string().min(1, "اسم المستخدم مطلوب"),
