@@ -42,6 +42,7 @@ cd field-training-system
 
 ```bash
 npm install
+npm install cross-env --save-dev     
 ```
 
 ### 3. إعداد قاعدة البيانات
